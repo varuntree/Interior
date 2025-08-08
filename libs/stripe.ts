@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { env } from "@/libs/env";
 
 interface CreateCheckoutParams {
   priceId: string;
@@ -29,8 +30,10 @@ export const createCheckout = async ({
   couponId,
 }: CreateCheckoutParams): Promise<string> => {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-08-16", // TODO: update this when Stripe updates their API
+    const secret = env.server.STRIPE_SECRET_KEY;
+    if (!secret) throw new Error("STRIPE_SECRET_KEY is not set");
+    const stripe = new Stripe(secret, {
+      apiVersion: "2023-08-16",
       typescript: true,
     });
 
@@ -92,8 +95,10 @@ export const createCustomerPortal = async ({
   customerId,
   returnUrl,
 }: CreateCustomerPortalParams): Promise<string> => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2023-08-16", // TODO: update this when Stripe updates their API
+  const secret = env.server.STRIPE_SECRET_KEY;
+  if (!secret) throw new Error("STRIPE_SECRET_KEY is not set");
+  const stripe = new Stripe(secret, {
+    apiVersion: "2023-08-16",
     typescript: true,
   });
 
@@ -108,8 +113,10 @@ export const createCustomerPortal = async ({
 // This is used to get the uesr checkout session and populate the data so we get the planId the user subscribed to
 export const findCheckoutSession = async (sessionId: string) => {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-08-16", // TODO: update this when Stripe updates their API
+    const secret = env.server.STRIPE_SECRET_KEY;
+    if (!secret) throw new Error("STRIPE_SECRET_KEY is not set");
+    const stripe = new Stripe(secret, {
+      apiVersion: "2023-08-16",
       typescript: true,
     });
 
