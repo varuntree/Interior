@@ -209,3 +209,17 @@ No other code paths should hardcode presets/limits—always import from runtime 
 ✅ Favorites exists and works out of the box.
 
 ✅ Replicate webhook and polling intervals reflect config values.
+
+9) Theme and Branding Alignment
+
+The `config.colors.main` value in `config.ts` should be aligned with the Theme v2 primary color for consistency across loaders, Chrome tabs, and other browser UI elements.
+
+**Recommended value:** `#47B3FF` (hex equivalent of `hsl(203.8863 88.2845% 53.1373%)`)
+
+This ensures visual consistency between:
+- NextTopLoader progress bar
+- Browser tab theme color
+- PWA splash screens (if applicable)
+- Any other components reading from config.colors.main
+
+The actual component styling should use the CSS variable `--primary` from the design tokens for maintainability.

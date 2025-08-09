@@ -187,6 +187,8 @@ Unknown style/room or aspect ratio → 400 VALIDATION_ERROR.
 
 In‑flight guard (Phase 2) still works.
 
+Generator page mobile layout works with sticky action button and no overflow on small screens (<768px).
+
 Build + greps green.
 
 8) Artifacts

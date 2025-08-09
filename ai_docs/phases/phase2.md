@@ -29,6 +29,12 @@ UI (new protected page):
 
 /app/(app)/dashboard/generate/page.tsx: textarea for prompt; Generate button; disabled & toast when in‑flight; loading indicator; result card when done.
 
+Apply Theme v2 tokens in app/globals.css with Open Sans font, 1.3rem radius, minimal shadows
+
+Ensure NextTopLoader uses primary color (#47B3FF)
+
+Verify dark mode functionality with proper contrast and visibility
+
 Credits:
 
 Stub check: checkUserHasCredits() in service returns true (placeholder for Phase 5).

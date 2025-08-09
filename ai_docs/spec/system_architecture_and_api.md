@@ -489,9 +489,28 @@ npm run build passes
 
 Grep checks (from handbook) all 0
 
-Create → Succeed round‑trip validated (manual): submit → spinner → webhook flips UI → results visible in My Renders, “Add to My Favorites” works
+Create → Succeed round‑trip validated (manual): submit → spinner → webhook flips UI → results visible in My Renders, "Add to My Favorites" works
 
 Failure path validated: force a Replicate error → job marked failed → user can re‑submit
+
+15) Rendering/UI infrastructure
+
+**Design System Integration:**
+- Theme v2 tokens live in `app/globals.css` under `:root` and `.dark` selectors
+- Tailwind reads design tokens via `tailwind.config.js` mapped to `hsl(var(--...))`
+- No API changes required for theme updates
+- Components automatically inherit theme variables through Tailwind utilities
+
+**Key Theme Variables:**
+- Primary color: `--primary` (blue tone for modern look)
+- Border radius: `--radius: 1.3rem` (rounded, modern aesthetic)
+- Typography: `--font-sans: Open Sans` (improved readability)
+- Shadows: Minimal/flat design with 0.00 opacity for clean look
+
+**Responsive Breakpoints:**
+- Mobile: <768px (single column, sticky CTAs)
+- Tablet: 768px-1279px (two column layouts)
+- Desktop: ≥1280px (three column layouts, full features)
 
 Appendix A — Mode prompt scaffolds (high level)
 (Exact text lives in the Generation Engine spec; shown here so API/service shape makes sense.)

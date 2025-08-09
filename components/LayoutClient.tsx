@@ -26,7 +26,7 @@ const ClientLayout = ({ children }: { children: ReactNode }) => {
         showSpinner={true}
         easing="ease"
         speed={200}
-        shadow="0 0 10px #2299DD,0 0 5px #2299DD"
+        shadow={`0 0 10px ${config.colors.main},0 0 5px ${config.colors.main}`}
       />
 
       {/* Toast notifications */}

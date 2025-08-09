@@ -129,6 +129,10 @@ Acceptance:
 
 Public read, admin write; no login required to view
 
+Theme v2 tokens applied globally (light + dark)
+
+All core flows are mobile-first and pass responsive smoke checks
+
 5) Data (conceptual, detailed schema in Data & Storage doc)
 profiles (already present; Supabase RLS)
 

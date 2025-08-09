@@ -126,7 +126,63 @@ A change is “done” when:
 8) Optional (nice to have later, not now)
 Add Playwright with 1–2 happy‑path flows (signin stub + imagine flow).
 
-Simple “smoke:api” Node script in scripts/smoke.mjs.
+Simple "smoke:api" Node script in scripts/smoke.mjs.
 
 Error boundary screenshots (already have a friendly error page).
+
+9) Responsive smoke matrix
+
+Test the application across key viewport sizes to ensure mobile-first responsive design works correctly.
+
+**Viewports to test:**
+- 375×812 (iPhone SE/8 - mobile baseline)
+- 414×896 (iPhone Plus/Pro Max - mobile large)
+- 768×1024 (iPad portrait - tablet)
+- 1280×800 (laptop/desktop - desktop)
+
+**Required checks for each viewport:**
+- ✅ No horizontal scroll (overflow-x hidden or properly contained)
+- ✅ Critical actions reachable (Generate button, Save, navigation)
+- ✅ Text truncation properly handled (ellipsis where appropriate)
+- ✅ Generator CTA sticky on mobile (bottom fixed position <768px)
+- ✅ Touch targets meet minimum size (44×44px on mobile)
+- ✅ Images scale correctly without breaking layout
+- ✅ Modal/dropdown positioning correct for viewport
+- ✅ Form inputs usable (no zoom on focus with 16px+ font)
+
+**Manual test flow:**
+1. Open Chrome DevTools, toggle device toolbar
+2. Select each viewport size from the list
+3. Navigate through: Login → Dashboard → Create → Generate → Results
+4. Check each requirement above
+5. Test both portrait and landscape orientations on mobile sizes
+
+10) Theme sanity checks
+
+Verify the Theme v2 design tokens are properly applied and accessible.
+
+**Contrast verification:**
+- Primary/foreground contrast meets WCAG AA (4.5:1 minimum)
+- Check using Chrome DevTools color picker or WebAIM contrast checker
+- Test both light and dark modes
+
+**Dark mode parity:**
+- Toggle between light/dark modes on generator flow
+- Verify all UI elements remain visible and usable
+- Check that primary actions maintain proper contrast
+- Ensure no "invisible" text or buttons in either mode
+
+**CSS variable resolution:**
+- Open DevTools → Elements → Computed styles
+- Verify CSS variables resolve to actual values (not var(--undefined))
+- Check key variables:
+  - `--primary`: Should be blue (hsl(203.8863 88.2845% 53.1373%))
+  - `--radius`: Should be 1.3rem
+  - `--font-sans`: Should load Open Sans
+  - Shadow variables: Should have 0.00 opacity (flat design)
+
+**Font loading:**
+- Verify Open Sans loads correctly (Network tab)
+- Check fallback to system fonts if CDN fails
+- Ensure font-display: swap for performance
 
