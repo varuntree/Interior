@@ -1,4 +1,5 @@
 import config from "@/config";
+import runtimeConfig from "@/libs/app-config/runtime";
 import { createCheckout, createCustomerPortal, findCheckoutSession } from "@/libs/stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProfileById, getProfileByEmail, setBillingByUserId, setAccessByCustomerId } from "@/libs/repositories/profiles";
@@ -41,6 +42,163 @@ export async function openCustomerPortalService(db: SupabaseClient, args: {
   return { url };
 }
 
+export interface PlanDetails {
+  id: string
+  label: string
+  priceAudPerMonth: number
+  monthlyGenerations: number
+  maxConcurrentJobs: number
+  stripePriceId: string
+  features: string[]
+  isActive: boolean
+}
+
+export interface UserBillingInfo {
+  customerId?: string
+  priceId?: string
+  hasAccess: boolean
+  plan: PlanDetails
+  nextBillingDate?: string
+  subscriptionStatus?: string
+}
+
+export function getAllAvailablePlans(): PlanDetails[] {
+  const configPlans = config.stripe.plans
+  
+  return configPlans.map(configPlan => {
+    const runtimePlan = runtimeConfig.plans[configPlan.priceId]
+    
+    return {
+      id: configPlan.priceId,
+      label: runtimePlan?.label || configPlan.name,
+      priceAudPerMonth: configPlan.price,
+      monthlyGenerations: runtimePlan?.monthlyGenerations || 0,
+      maxConcurrentJobs: runtimePlan?.maxConcurrentJobs || 1,
+      stripePriceId: configPlan.priceId,
+      features: configPlan.features?.map(f => f.name) || [],
+      isActive: true
+    }
+  })
+}
+
+export function getPlanByPriceId(priceId: string): PlanDetails | null {
+  const configPlan = config.stripe.plans.find(p => p.priceId === priceId)
+  if (!configPlan) return null
+  
+  const runtimePlan = runtimeConfig.plans[priceId]
+  if (!runtimePlan) return null
+  
+  return {
+    id: priceId,
+    label: runtimePlan.label,
+    priceAudPerMonth: configPlan.price,
+    monthlyGenerations: runtimePlan.monthlyGenerations,
+    maxConcurrentJobs: runtimePlan.maxConcurrentJobs || 1,
+    stripePriceId: priceId,
+    features: configPlan.features?.map(f => f.name) || [],
+    isActive: true
+  }
+}
+
+export function getFreePlan(): PlanDetails {
+  return {
+    id: 'free',
+    label: 'Free',
+    priceAudPerMonth: 0,
+    monthlyGenerations: 20,
+    maxConcurrentJobs: 1,
+    stripePriceId: '',
+    features: ['20 generations per month', '1 concurrent job', 'Basic support'],
+    isActive: true
+  }
+}
+
+export async function getUserBillingInfo(
+  ctx: { supabase: SupabaseClient },
+  userId: string
+): Promise<UserBillingInfo> {
+  const profile = await getProfileById(ctx.supabase, userId)
+  
+  if (!profile) {
+    throw new Error('User profile not found')
+  }
+
+  let plan: PlanDetails
+  if (profile.price_id) {
+    plan = getPlanByPriceId(profile.price_id) || getFreePlan()
+  } else {
+    plan = getFreePlan()
+  }
+
+  return {
+    customerId: profile.customer_id || undefined,
+    priceId: profile.price_id || undefined,
+    hasAccess: profile.has_access || false,
+    plan,
+    // TODO: Add subscription status and next billing date from Stripe
+  }
+}
+
+export function calculateUpgradeDowngrade(
+  currentPriceId: string | null,
+  targetPriceId: string
+): {
+  isUpgrade: boolean
+  isDowngrade: boolean
+  priceDifference: number
+  currentPlan: PlanDetails
+  targetPlan: PlanDetails
+} {
+  const currentPlan = currentPriceId ? getPlanByPriceId(currentPriceId) : getFreePlan()
+  const targetPlan = getPlanByPriceId(targetPriceId)
+  
+  if (!currentPlan || !targetPlan) {
+    throw new Error('Invalid plan configuration')
+  }
+
+  const priceDifference = targetPlan.priceAudPerMonth - currentPlan.priceAudPerMonth
+  
+  return {
+    isUpgrade: priceDifference > 0,
+    isDowngrade: priceDifference < 0,
+    priceDifference: Math.abs(priceDifference),
+    currentPlan,
+    targetPlan
+  }
+}
+
+export function formatPlanFeatures(plan: PlanDetails): string[] {
+  const features = [...plan.features]
+  
+  // Add generated features
+  if (plan.monthlyGenerations > 0) {
+    features.unshift(`${plan.monthlyGenerations} generations per month`)
+  }
+  
+  if (plan.maxConcurrentJobs > 1) {
+    features.push(`${plan.maxConcurrentJobs} concurrent jobs`)
+  }
+  
+  return features
+}
+
+export function isValidPlanForUpgrade(currentPriceId: string | null, targetPriceId: string): boolean {
+  try {
+    const comparison = calculateUpgradeDowngrade(currentPriceId, targetPriceId)
+    return comparison.isUpgrade || comparison.isDowngrade
+  } catch {
+    return false
+  }
+}
+
+export function getCurrentBillingPeriod(): { start: Date; end: Date } {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  
+  return { start, end }
+}
+
 /**
  * Handle Stripe webhook events (admin client should be passed in).
  * This function updates profiles and access flags according to the event.
@@ -56,9 +214,10 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       const customerEmail = (session?.customer_details?.email ||
                              stripeObject.customer_details?.email) as string | undefined;
 
-      // Validate plan from config
-      const plan = config.stripe.plans.find((p) => p.priceId === priceId);
-      if (!plan) return;
+      // Validate plan from both config and runtime config
+      const configPlan = config.stripe.plans.find((p) => p.priceId === priceId);
+      const runtimePlan = priceId ? runtimeConfig.plans[priceId] : null;
+      if (!configPlan || !runtimePlan) return;
 
       // Find user (prefer client_reference_id; fallback to email)
       let targetUserId = userId;
@@ -81,6 +240,21 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       break;
     }
 
+    case "customer.subscription.updated": {
+      const stripeObject = event.data.object;
+      const customerId = stripeObject.customer as string;
+      const priceId = stripeObject.items?.data?.[0]?.price?.id;
+      
+      // Update the user's plan
+      if (priceId && runtimeConfig.plans[priceId]) {
+        await setAccessByCustomerId(adminDb, {
+          customerId,
+          hasAccess: stripeObject.status === 'active',
+        });
+      }
+      break;
+    }
+
     case "customer.subscription.deleted": {
       const stripeObject = event.data.object;
       const subscription = stripeObject; // already contains customer
@@ -95,11 +269,26 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       const stripeObject = event.data.object;
       const priceId = stripeObject.lines.data[0]?.price?.id;
       const customerId = stripeObject.customer as string;
-      // (Optional) ensure invoice price matches the subscription plan in DB
-      // If you want to enforce same plan, you can read the profile and compare here
+      
+      // Validate plan exists in runtime config
+      if (priceId && runtimeConfig.plans[priceId]) {
+        await setAccessByCustomerId(adminDb, {
+          customerId,
+          hasAccess: true,
+        });
+      }
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      const stripeObject = event.data.object;
+      const customerId = stripeObject.customer as string;
+      
+      // Temporarily disable access on payment failure
+      // In production, you might want more sophisticated handling
       await setAccessByCustomerId(adminDb, {
         customerId,
-        hasAccess: true,
+        hasAccess: false,
       });
       break;
     }

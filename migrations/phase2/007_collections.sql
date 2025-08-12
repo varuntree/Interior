@@ -1,4 +1,4 @@
--- collections: user-defined groups with default "My Favorites"
+-- collections: user-defined groups; includes default "My Favorites"
 create table if not exists public.collections (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null,
@@ -6,10 +6,9 @@ create table if not exists public.collections (
   is_default_favorites boolean not null default false,
   created_at timestamptz not null default now()
 );
-
 alter table public.collections enable row level security;
 
--- RLS policies
+-- RLS
 drop policy if exists "collections_owner_select" on public.collections;
 create policy "collections_owner_select"
   on public.collections for select
@@ -33,20 +32,19 @@ create policy "collections_owner_delete"
 
 -- Unique default favorites per owner
 create unique index if not exists uniq_owner_default_fav
-  on public.collections(owner_id)
-  where is_default_favorites = true;
+on public.collections(owner_id)
+where is_default_favorites = true;
 
--- Collection items (many-to-many)
+-- Items (many-to-many to renders)
 create table if not exists public.collection_items (
   collection_id uuid not null references public.collections(id) on delete cascade,
   render_id uuid not null references public.renders(id) on delete cascade,
   added_at timestamptz not null default now(),
   primary key (collection_id, render_id)
 );
-
 alter table public.collection_items enable row level security;
 
--- RLS for collection items
+-- RLS: owner of the collection controls items
 drop policy if exists "coll_items_owner_select" on public.collection_items;
 create policy "coll_items_owner_select"
   on public.collection_items for select
@@ -71,5 +69,5 @@ create policy "coll_items_owner_delete"
            where c.id = collection_id and c.owner_id = auth.uid())
   );
 
-create index if not exists idx_coll_items_coll 
-  on public.collection_items (collection_id);
+-- Index
+create index if not exists idx_coll_items_coll on public.collection_items (collection_id);

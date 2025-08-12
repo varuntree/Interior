@@ -82,6 +82,8 @@ const config = {
     // REQUIRED — This color will be reflected on the whole app outside of the document (loading bar, Chrome tabs, etc..)
     // Matches Theme v2 primary color: hsl(203.8863 88.2845% 53.1373%)
     main: "#47B3FF",
+    // REQUIRED — Theme setting for types compatibility
+    theme: "light",
   },
   auth: {
     // REQUIRED — the path to log in users. It's use to protect private routes (like /dashboard). It's used in apiClient (/libs/api.js) upon 401 errors from our API

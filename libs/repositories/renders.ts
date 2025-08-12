@@ -128,3 +128,106 @@ export async function deleteRender(
   
   if (error) throw error
 }
+
+export async function batchGetRenders(
+  supabase: SupabaseClient,
+  renderIds: string[],
+  ownerId: string
+): Promise<Render[]> {
+  if (renderIds.length === 0) return []
+  
+  const { data, error } = await supabase
+    .from('renders')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .in('id', renderIds)
+    .order('created_at', { ascending: false })
+  
+  if (error) throw error
+  return data || []
+}
+
+export async function getRenderById(
+  supabase: SupabaseClient,
+  id: string,
+  ownerId: string
+): Promise<Render | null> {
+  const { data, error } = await supabase
+    .from('renders')
+    .select('*')
+    .eq('id', id)
+    .eq('owner_id', ownerId)
+    .single()
+  
+  if (error && error.code !== 'PGRST116') throw error
+  return data || null
+}
+
+export async function getVariantsByRender(
+  supabase: SupabaseClient,
+  renderId: string
+): Promise<RenderVariant[]> {
+  const { data, error } = await supabase
+    .from('render_variants')
+    .select('*')
+    .eq('render_id', renderId)
+    .order('idx')
+  
+  if (error) throw error
+  return data || []
+}
+
+export async function updateRenderCoverVariant(
+  supabase: SupabaseClient,
+  renderId: string,
+  ownerId: string,
+  coverVariant: number
+): Promise<void> {
+  const { error } = await supabase
+    .from('renders')
+    .update({ cover_variant: coverVariant })
+    .eq('id', renderId)
+    .eq('owner_id', ownerId)
+  
+  if (error) throw error
+}
+
+export async function countUserRenders(
+  supabase: SupabaseClient,
+  ownerId: string,
+  filters?: {
+    mode?: string
+    room_type?: string
+    style?: string
+  }
+): Promise<number> {
+  let query = supabase
+    .from('renders')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_id', ownerId)
+  
+  if (filters?.mode) query = query.eq('mode', filters.mode)
+  if (filters?.room_type) query = query.eq('room_type', filters.room_type)
+  if (filters?.style) query = query.eq('style', filters.style)
+  
+  const { count, error } = await query
+  if (error) throw error
+  
+  return count || 0
+}
+
+export async function getRecentRenders(
+  supabase: SupabaseClient,
+  ownerId: string,
+  limit = 10
+): Promise<Render[]> {
+  const { data, error } = await supabase
+    .from('renders')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  
+  if (error) throw error
+  return data || []
+}

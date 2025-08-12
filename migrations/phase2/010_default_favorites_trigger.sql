@@ -1,4 +1,5 @@
--- Auto-create "My Favorites" collection on profile creation
+-- Create "My Favorites" collection automatically on profile creation
+
 create or replace function public.create_default_favorites()
 returns trigger as $$
 begin
@@ -9,7 +10,7 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- Trigger after profile insert
+-- Add trigger after profiles row is inserted (profiles.id == auth.users.id)
 drop trigger if exists on_profile_created_create_fav on public.profiles;
 create trigger on_profile_created_create_fav
 after insert on public.profiles

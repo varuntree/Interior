@@ -1,0 +1,160 @@
+// app/api/v1/renders/[id]/route.ts
+import { NextRequest } from 'next/server'
+import { ok, fail } from '@/libs/api-utils/responses'
+import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
+import { createClient } from '@/libs/supabase/server'
+import { getRenderDetails, deleteUserRender } from '@/libs/services/renders'
+
+export const dynamic = 'force-dynamic'
+
+interface Context {
+  params: { id: string }
+}
+
+export async function GET(req: NextRequest, { params }: Context) {
+  try {
+    const { id: renderId } = params
+
+    // Get authenticated user
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return fail(401, 'UNAUTHORIZED', 'Authentication required')
+    }
+
+    // Validate render ID
+    if (!renderId || typeof renderId !== 'string') {
+      return fail(400, 'VALIDATION_ERROR', 'Invalid render ID')
+    }
+
+    // Get service client
+    const serviceSupabase = createServiceSupabaseClient()
+
+    // Get render details
+    const render = await getRenderDetails(
+      { supabase: serviceSupabase },
+      renderId,
+      user.id
+    )
+
+    if (!render) {
+      return fail(404, 'NOT_FOUND', 'Render not found or access denied')
+    }
+
+    // Build response
+    const response = {
+      id: render.id,
+      jobId: render.job_id,
+      mode: render.mode,
+      roomType: render.room_type,
+      style: render.style,
+      coverVariant: render.cover_variant,
+      createdAt: render.created_at,
+      variants: render.variants.map(variant => ({
+        id: variant.id,
+        index: variant.idx,
+        imageUrl: variant.image_url,
+        thumbUrl: variant.thumb_url,
+        imagePath: variant.image_path,
+        createdAt: variant.created_at
+      }))
+    }
+
+    return ok(response)
+
+  } catch (error: any) {
+    console.error('Get render error:', error)
+    
+    if (error.message === 'Render not found or access denied') {
+      return fail(404, 'NOT_FOUND', 'Render not found or access denied')
+    }
+
+    return fail(500, 'INTERNAL_ERROR', 'Failed to fetch render details')
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: Context) {
+  try {
+    const { id: renderId } = params
+
+    // Get authenticated user
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return fail(401, 'UNAUTHORIZED', 'Authentication required')
+    }
+
+    // Validate render ID
+    if (!renderId || typeof renderId !== 'string') {
+      return fail(400, 'VALIDATION_ERROR', 'Invalid render ID')
+    }
+
+    // Get service client
+    const serviceSupabase = createServiceSupabaseClient()
+
+    // Delete render
+    await deleteUserRender(
+      { supabase: serviceSupabase },
+      renderId,
+      user.id
+    )
+
+    return ok({ message: 'Render deleted successfully' })
+
+  } catch (error: any) {
+    console.error('Delete render error:', error)
+    
+    if (error.message === 'Render not found or access denied') {
+      return fail(404, 'NOT_FOUND', 'Render not found or access denied')
+    }
+
+    return fail(500, 'INTERNAL_ERROR', 'Failed to delete render')
+  }
+}
+
+export async function PATCH(req: NextRequest, { params }: Context) {
+  try {
+    const { id: renderId } = params
+
+    // Get authenticated user
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return fail(401, 'UNAUTHORIZED', 'Authentication required')
+    }
+
+    // Validate render ID
+    if (!renderId || typeof renderId !== 'string') {
+      return fail(400, 'VALIDATION_ERROR', 'Invalid render ID')
+    }
+
+    // Parse request body
+    const body = await req.json()
+    
+    // For MVP, only support updating cover variant
+    if (body.coverVariant !== undefined) {
+      const serviceSupabase = createServiceSupabaseClient()
+      const { updateRenderCover } = await import('@/libs/services/renders')
+      
+      await updateRenderCover(
+        { supabase: serviceSupabase },
+        renderId,
+        user.id,
+        body.coverVariant
+      )
+
+      return ok({ message: 'Cover variant updated successfully' })
+    }
+
+    return fail(400, 'VALIDATION_ERROR', 'No valid updates provided')
+
+  } catch (error: any) {
+    console.error('Update render error:', error)
+    
+    if (error.message === 'Render not found or access denied' || error.message === 'Variant not found or access denied') {
+      return fail(404, 'NOT_FOUND', 'Render or variant not found or access denied')
+    }
+
+    return fail(500, 'INTERNAL_ERROR', 'Failed to update render')
+  }
+}

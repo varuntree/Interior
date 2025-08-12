@@ -1,5 +1,6 @@
+// libs/api-utils/validate.ts
 import { z } from "zod";
-import { badRequest } from "./responses";
+import { fail } from "./responses";
 
 export function validate<TSchema extends z.ZodTypeAny>(
   schema: TSchema,
@@ -8,7 +9,30 @@ export function validate<TSchema extends z.ZodTypeAny>(
   const result = schema.safeParse(data);
   if (!result.success) {
     const message = result.error.issues.map(i => i.message).join("; ");
-    return { ok: false, res: badRequest(message) };
+    return { ok: false, res: fail(400, 'VALIDATION_ERROR', message, result.error.flatten()) };
   }
   return { ok: true, data: result.data };
+}
+
+export function safeParseJson<TSchema extends z.ZodTypeAny>(
+  schema: TSchema,
+  jsonString: string
+): { success: true; data: z.infer<TSchema> } | { success: false; error: z.ZodError } {
+  try {
+    const parsed = JSON.parse(jsonString);
+    const result = schema.safeParse(parsed);
+    return result;
+  } catch (err) {
+    // Return a ZodError-like object for JSON parse errors
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: "custom",
+          message: "Invalid JSON",
+          path: [],
+        },
+      ]),
+    };
+  }
 }

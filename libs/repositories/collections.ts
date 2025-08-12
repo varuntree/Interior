@@ -140,3 +140,67 @@ export async function listCollectionItems(
   if (error) throw error
   return data || []
 }
+
+export async function getCollectionById(
+  supabase: SupabaseClient,
+  collectionId: string,
+  ownerId: string
+): Promise<Collection | null> {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .eq('id', collectionId)
+    .eq('owner_id', ownerId)
+    .maybeSingle()
+  
+  if (error) throw error
+  return data
+}
+
+export async function getRenderById(
+  supabase: SupabaseClient,
+  renderId: string,
+  ownerId: string
+): Promise<{ id: string } | null> {
+  const { data, error } = await supabase
+    .from('renders')
+    .select('id')
+    .eq('id', renderId)
+    .eq('owner_id', ownerId)
+    .maybeSingle()
+  
+  if (error) throw error
+  return data
+}
+
+export async function batchAddToCollection(
+  supabase: SupabaseClient,
+  collectionId: string,
+  renderIds: string[]
+): Promise<void> {
+  const insertData = renderIds.map(renderId => ({
+    collection_id: collectionId,
+    render_id: renderId
+  }))
+
+  const { error } = await supabase
+    .from('collection_items')
+    .insert(insertData)
+  
+  if (error) throw error
+}
+
+export async function verifyRenderIds(
+  supabase: SupabaseClient,
+  renderIds: string[],
+  ownerId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('renders')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .in('id', renderIds)
+  
+  if (error) throw error
+  return data?.map(r => r.id) || []
+}

@@ -12,6 +12,9 @@ const serverSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
+  REPLICATE_API_TOKEN: z.string().min(1).optional(), // required for generation service
+  REPLICATE_WEBHOOK_SECRET: z.string().min(1).optional(), // for webhook signature verification
+  PUBLIC_BASE_URL: z.string().url().optional(), // for webhook URLs
 });
 
 export const env = {
@@ -24,5 +27,8 @@ export const env = {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
+    REPLICATE_WEBHOOK_SECRET: process.env.REPLICATE_WEBHOOK_SECRET,
+    PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
   }),
 };
