@@ -1,860 +1,339 @@
-# Phase 6: Dashboard UI & Core Flows
-## Complete Dashboard Interface with All Features
+# Phase 6: Generation UI & Workflows
 
-### Phase Overview
-**Duration**: 2-3 days
-**Dependencies**: Phases 1-5 completed (all APIs functional)
-**Goal**: Build the complete dashboard UI with Theme v2 design system
+## Prerequisites
+Before starting this phase, ensure Phases 1-5 are complete and load:
+- `ai_docs/spec/ux_ui.md` - Detailed UI workflows and states
+- `ai_docs/spec/generation_engine_and_external_service.md` - Generation modes and parameters
+- `ai_docs/spec/design_system.md` - Component styling guidelines
 
-### Required Reading Before Starting
-1. `/ai_docs/spec/ux_ui.md` - Complete UI specification
-2. `/ai_docs/spec/design_system.md` - Theme v2 implementation
-3. `/ai_docs/spec/prd.md` - User flows and features
-4. `/ai_docs/docs/01-handbook.md` - Section 15 (Rendering/UI)
+## Goals
+Implement the complete generation experience including all four modes, real-time status updates, results display, and collection management interfaces.
 
----
+## Dependencies from Previous Phases
+- Dashboard infrastructure (Phase 5)
+- All API endpoints working (Phase 4)
+- Generation engine functional (Phase 2)
+- Runtime configuration (Phase 1)
 
-## Task 6.1: Dashboard Layout
+## Tasks
 
-### Update Dashboard Layout
-Location: `app/(app)/dashboard/layout.tsx`
+### 1. Generation Workspace Implementation
 
-```typescript
-import { redirect } from 'next/navigation'
-import { createClient } from '@/libs/supabase/server'
-import { Sidebar } from '@/components/dashboard/Sidebar'
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
+#### 1.1 Create Page Core
+**File**: Complete `app/(app)/dashboard/create/page.tsx`
 
-export default async function DashboardLayout({
-  children
-}: {
-  children: React.ReactNode
-}) {
-  const supabase = createClient()
-  
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    redirect('/signin')
-  }
-  
-  // Fetch user profile for plan info
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-  
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar 
-          user={user} 
-          profile={profile}
-          className="hidden lg:flex"
-        />
-        
-        {/* Mobile sidebar - will be toggled */}
-        <Sidebar 
-          user={user}
-          profile={profile}
-          className="lg:hidden"
-          mobile
-        />
-        
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <DashboardHeader />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-            {children}
-          </main>
-        </div>
-      </div>
-    </div>
-  )
-}
-```
+Implement the main generation workspace following `ux_ui.md` section 4:
+- Mode selector component integration
+- Dynamic input areas based on mode
+- Settings panel
+- Generate button with states
+- Results display area
+- Mobile-responsive layout
 
-### Create Sidebar Component
-Location: `components/dashboard/Sidebar.tsx`
+#### 1.2 Mode Selector Component
+**File**: `components/generation/ModeSelector.tsx`
 
-```typescript
-'use client'
+Create the mode selection interface:
+- Four modes: Redesign, Staging, Compose, Imagine
+- Segmented button design
+- Tooltips with descriptions
+- Active mode highlighting
+- Smooth transitions
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { cn } from '@/libs/utils'
-import {
-  Home,
-  Sparkles,
-  Images,
-  FolderOpen,
-  Users,
-  Settings,
-  Menu,
-  X
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useState } from 'react'
-import runtimeConfig from '@/libs/app-config/runtime'
+#### 1.3 Image Upload Component
+**File**: `components/generation/ImageUpload.tsx`
 
-interface SidebarProps {
-  user: any
-  profile: any
-  className?: string
-  mobile?: boolean
-}
+Implement file upload with drag-and-drop:
+- Dropzone for drag-and-drop
+- File input fallback
+- Image preview with replace option
+- File type validation (JPG/PNG/WebP)
+- Size limit enforcement
+- Multiple inputs for Compose mode
 
-const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: Home },
-  { name: 'Create', href: '/dashboard/create', icon: Sparkles },
-  { name: 'My Renders', href: '/dashboard/renders', icon: Images },
-  { name: 'Collections', href: '/dashboard/collections', icon: FolderOpen },
-  { name: 'Community', href: '/dashboard/community', icon: Users },
-]
+Requirements by mode:
+- Redesign/Staging: Single input (required)
+- Compose: Two inputs (both required)
+- Imagine: No image inputs
 
-const bottomNavigation = [
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-]
+#### 1.4 Preset Selectors
+**File**: `components/generation/PresetSelectors.tsx`
 
-export function Sidebar({ user, profile, className, mobile }: SidebarProps) {
-  const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
-  
-  const sidebarContent = (
-    <>
-      {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
-        <h1 className="text-xl font-serif text-sidebar-foreground">
-          Interior AI
-        </h1>
-      </div>
-      
-      {/* Main navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-              )}
-              onClick={() => mobile && setIsOpen(false)}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.name}
-            </Link>
-          )
-        })}
-      </nav>
-      
-      {/* Bottom section */}
-      <div className="border-t border-sidebar-border p-3">
-        {/* Usage badge */}
-        <div className="mb-3 rounded-lg bg-sidebar-accent px-3 py-2">
-          <div className="text-xs text-sidebar-accent-foreground/70">
-            Plan: {profile?.plan_label || 'Free'}
-          </div>
-          <div className="text-sm font-medium text-sidebar-accent-foreground">
-            {/* This will be populated via API */}
-            <UsageBadge userId={user.id} />
-          </div>
-        </div>
-        
-        {/* Settings */}
-        {bottomNavigation.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname === item.href
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-            )}
-            onClick={() => mobile && setIsOpen(false)}
-          >
-            <item.icon className="h-5 w-5" />
-            {item.name}
-          </Link>
-        ))}
-      </div>
-    </>
-  )
-  
-  if (mobile) {
-    return (
-      <>
-        {/* Mobile menu button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="lg:hidden fixed top-4 left-4 z-50"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X /> : <Menu />}
-        </Button>
-        
-        {/* Mobile sidebar overlay */}
-        {isOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-        
-        {/* Mobile sidebar */}
-        <div className={cn(
-          'fixed inset-y-0 left-0 z-40 w-72 bg-sidebar transform transition-transform lg:hidden',
-          isOpen ? 'translate-x-0' : '-translate-x-full',
-          className
-        )}>
-          {sidebarContent}
-        </div>
-      </>
-    )
-  }
-  
-  return (
-    <div className={cn('w-72 bg-sidebar border-r border-sidebar-border', className)}>
-      {sidebarContent}
-    </div>
-  )
-}
+Create dropdown components for presets:
+- Room Type selector (from runtime config)
+- Style selector (from runtime config)
+- Searchable/filterable lists
+- Mobile-optimized selection
+- Default value handling
 
-// Usage badge component
-function UsageBadge({ userId }: { userId: string }) {
-  // This would fetch from API
-  return <span>-- / -- generations</span>
-}
-```
+#### 1.5 Prompt Input Component
+**File**: `components/generation/PromptInput.tsx`
 
----
+Implement the prompt textarea:
+- Placeholder text with examples
+- Character limit (if any)
+- Required indicator for Imagine mode
+- Auto-resize option
+- Mobile keyboard handling
 
-## Task 6.2: Create Page (Core Feature)
+#### 1.6 Generation Settings Panel
+**File**: `components/generation/GenerationSettings.tsx`
 
-### Build Generation Workspace
-Location: `app/(app)/dashboard/create/page.tsx`
+Create the settings accordion:
+- Aspect Ratio selection (1:1, 3:2, 2:3)
+- Quality selection (Auto, Low, Medium, High)
+- Variants counter (1-3)
+- Collapsible on mobile
+- Default values from config
 
-```typescript
-'use client'
+### 2. Generation State Management
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ImageDropzone } from '@/components/dashboard/ImageDropzone'
-import { GenerationResult } from '@/components/dashboard/GenerationResult'
-import { GenerationProgress } from '@/components/dashboard/GenerationProgress'
-import { toast } from '@/components/ui/use-toast'
-import runtimeConfig from '@/libs/app-config/runtime'
-import { Sparkles, Image, Layers, Wand } from 'lucide-react'
+#### 2.1 Generation Store/Context
+**File**: `contexts/GenerationContext.tsx` or state management solution
 
-const modes = [
-  { id: 'redesign', label: 'Redesign', icon: Sparkles, description: 'Keep structure, change style' },
-  { id: 'staging', label: 'Virtual Staging', icon: Image, description: 'Furnish empty rooms' },
-  { id: 'compose', label: 'Compose', icon: Layers, description: 'Merge two images' },
-  { id: 'imagine', label: 'Imagine', icon: Wand, description: 'Create from text' },
-] as const
+Manage generation state:
+- Current mode selection
+- Input files and URLs
+- Selected presets
+- Settings values
+- Generation status
+- Current job ID
+- Results data
 
-export default function CreatePage() {
-  const [mode, setMode] = useState<typeof modes[number]['id']>('redesign')
-  const [input1, setInput1] = useState<File | null>(null)
-  const [input2, setInput2] = useState<File | null>(null)
-  const [prompt, setPrompt] = useState('')
-  const [roomType, setRoomType] = useState('')
-  const [style, setStyle] = useState('')
-  const [aspectRatio, setAspectRatio] = useState<'1:1' | '3:2' | '2:3'>('1:1')
-  const [quality, setQuality] = useState<'auto' | 'low' | 'medium' | 'high'>('auto')
-  const [variants, setVariants] = useState(2)
-  
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [jobId, setJobId] = useState<string | null>(null)
-  const [results, setResults] = useState<any>(null)
-  
-  const handleGenerate = async () => {
-    // Validate inputs
-    if (mode === 'imagine' && !prompt) {
-      toast({
-        title: 'Prompt required',
-        description: 'Please enter a description for Imagine mode',
-        variant: 'destructive'
-      })
-      return
-    }
-    
-    if (['redesign', 'staging'].includes(mode) && !input1) {
-      toast({
-        title: 'Image required',
-        description: 'Please upload an image',
-        variant: 'destructive'
-      })
-      return
-    }
-    
-    if (mode === 'compose' && (!input1 || !input2)) {
-      toast({
-        title: 'Two images required',
-        description: 'Please upload both base and reference images',
-        variant: 'destructive'
-      })
-      return
-    }
-    
-    setIsGenerating(true)
-    setResults(null)
-    
-    try {
-      // Build form data
-      const formData = new FormData()
-      formData.append('mode', mode)
-      if (prompt) formData.append('prompt', prompt)
-      if (roomType) formData.append('roomType', roomType)
-      if (style) formData.append('style', style)
-      formData.append('aspectRatio', aspectRatio)
-      formData.append('quality', quality)
-      formData.append('variants', variants.toString())
-      if (input1) formData.append('input1', input1)
-      if (input2) formData.append('input2', input2)
-      
-      // Submit generation
-      const response = await fetch('/api/v1/generations', {
-        method: 'POST',
-        body: formData
-      })
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        throw new Error(data.error?.message || 'Generation failed')
-      }
-      
-      setJobId(data.data.id)
-      
-      // Poll for results
-      pollForResults(data.data.id)
-      
-    } catch (error) {
-      console.error('Generation error:', error)
-      toast({
-        title: 'Generation failed',
-        description: error instanceof Error ? error.message : 'Please try again',
-        variant: 'destructive'
-      })
-      setIsGenerating(false)
-    }
-  }
-  
-  const pollForResults = async (id: string) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/v1/generations/${id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          const job = data.data
-          
-          if (job.status === 'succeeded') {
-            clearInterval(pollInterval)
-            setResults(job)
-            setIsGenerating(false)
-            toast({
-              title: 'Generation complete!',
-              description: 'Your designs are ready'
-            })
-          } else if (job.status === 'failed') {
-            clearInterval(pollInterval)
-            setIsGenerating(false)
-            toast({
-              title: 'Generation failed',
-              description: job.error || 'Please try again',
-              variant: 'destructive'
-            })
-          }
-        }
-      } catch (error) {
-        console.error('Polling error:', error)
-      }
-    }, 2000)
-    
-    // Timeout after 10 minutes
-    setTimeout(() => {
-      clearInterval(pollInterval)
-      setIsGenerating(false)
-    }, 600000)
-  }
-  
-  return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-serif text-foreground mb-2">
-          Create Interior Design
-        </h1>
-        <p className="text-muted-foreground">
-          Transform your space with AI-powered design
-        </p>
-      </div>
-      
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left: Inputs */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Mode selector */}
-          <Card className="p-6">
-            <Label className="text-base font-medium mb-4 block">
-              Generation Mode
-            </Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {modes.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setMode(m.id)}
-                  className={cn(
-                    'flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors',
-                    mode === m.id
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border hover:border-primary/50'
-                  )}
-                >
-                  <m.icon className="h-6 w-6" />
-                  <span className="text-sm font-medium">{m.label}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground mt-3">
-              {modes.find(m => m.id === mode)?.description}
-            </p>
-          </Card>
-          
-          {/* Image inputs */}
-          {mode !== 'imagine' && (
-            <Card className="p-6">
-              <Label className="text-base font-medium mb-4 block">
-                {mode === 'compose' ? 'Upload Images' : 'Upload Room Photo'}
-              </Label>
-              
-              <div className={cn(
-                'grid gap-4',
-                mode === 'compose' ? 'md:grid-cols-2' : ''
-              )}>
-                <div>
-                  <Label className="text-sm text-muted-foreground mb-2 block">
-                    {mode === 'compose' ? 'Base Room' : 'Room Image'}
-                  </Label>
-                  <ImageDropzone
-                    value={input1}
-                    onChange={setInput1}
-                    accept="image/jpeg,image/png,image/webp"
-                  />
-                </div>
-                
-                {mode === 'compose' && (
-                  <div>
-                    <Label className="text-sm text-muted-foreground mb-2 block">
-                      Reference / Style Image
-                    </Label>
-                    <ImageDropzone
-                      value={input2}
-                      onChange={setInput2}
-                      accept="image/jpeg,image/png,image/webp"
-                    />
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
-          
-          {/* Presets */}
-          <Card className="p-6">
-            <Label className="text-base font-medium mb-4 block">
-              Design Preferences
-            </Label>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="roomType" className="text-sm mb-2 block">
-                  Room Type
-                </Label>
-                <Select value={roomType} onValueChange={setRoomType}>
-                  <SelectTrigger id="roomType">
-                    <SelectValue placeholder="Select room type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {runtimeConfig.presets.roomTypes.map((rt) => (
-                      <SelectItem key={rt.id} value={rt.id}>
-                        {rt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="style" className="text-sm mb-2 block">
-                  Style
-                </Label>
-                <Select value={style} onValueChange={setStyle}>
-                  <SelectTrigger id="style">
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {runtimeConfig.presets.styles.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {/* Prompt */}
-            <div className="mt-4">
-              <Label htmlFor="prompt" className="text-sm mb-2 block">
-                Additional Instructions {mode === 'imagine' && '(Required)'}
-              </Label>
-              <Textarea
-                id="prompt"
-                placeholder={
-                  mode === 'imagine'
-                    ? 'Describe the interior you want to create...'
-                    : 'Any specific requirements? (optional)'
-                }
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={3}
-                required={mode === 'imagine'}
-              />
-            </div>
-          </Card>
-        </div>
-        
-        {/* Right: Settings & Generate */}
-        <div className="space-y-6">
-          {/* Settings */}
-          <Card className="p-6">
-            <Label className="text-base font-medium mb-4 block">
-              Output Settings
-            </Label>
-            
-            <div className="space-y-4">
-              {/* Aspect Ratio */}
-              <div>
-                <Label className="text-sm mb-2 block">
-                  Aspect Ratio
-                </Label>
-                <RadioGroup value={aspectRatio} onValueChange={(v: any) => setAspectRatio(v)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="1:1" id="r1" />
-                    <Label htmlFor="r1">Square (1:1)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="3:2" id="r2" />
-                    <Label htmlFor="r2">Landscape (3:2)</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="2:3" id="r3" />
-                    <Label htmlFor="r3">Portrait (2:3)</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              {/* Quality */}
-              <div>
-                <Label className="text-sm mb-2 block">
-                  Quality
-                </Label>
-                <Select value={quality} onValueChange={(v: any) => setQuality(v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Auto</SelectItem>
-                    <SelectItem value="low">Low (Fast)</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High (Slow)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Variants */}
-              <div>
-                <Label className="text-sm mb-2 block">
-                  Number of Variants: {variants}
-                </Label>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  value={variants}
-                  onChange={(e) => setVariants(parseInt(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </Card>
-          
-          {/* Generate button */}
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <>Generating...</>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-5 w-5" />
-                Generate Design
-              </>
-            )}
-          </Button>
-          
-          {/* Usage info */}
-          <Card className="p-4 bg-muted/50">
-            <UsageInfo />
-          </Card>
-        </div>
-      </div>
-      
-      {/* Progress or Results */}
-      {isGenerating && jobId && (
-        <GenerationProgress jobId={jobId} />
-      )}
-      
-      {results && (
-        <GenerationResult
-          result={results}
-          onSaveToFavorites={async (renderId) => {
-            // Call API to save to favorites
-            try {
-              const response = await fetch('/api/v1/favorites', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ renderId })
-              })
-              
-              if (response.ok) {
-                toast({
-                  title: 'Added to favorites',
-                  description: 'Image saved to My Favorites collection'
-                })
-              }
-            } catch (error) {
-              console.error('Failed to save to favorites:', error)
-            }
-          }}
-        />
-      )}
-    </div>
-  )
-}
+#### 2.2 Generation Submission Handler
+**File**: `components/generation/GenerationSubmit.tsx`
 
-// Helper component for usage info
-function UsageInfo() {
-  // This would fetch from API
-  return (
-    <div className="text-sm">
-      <div className="font-medium mb-1">Usage This Month</div>
-      <div className="text-muted-foreground">
-        -- / -- generations remaining
-      </div>
-    </div>
-  )
-}
-```
+Handle the generation submission flow:
+- Validate required inputs per mode
+- Check user quota
+- Handle file uploads
+- Submit to API
+- Manage loading states
+- Error handling and display
 
-### Create Supporting Components
+### 3. Real-time Status Updates
 
-Location: `components/dashboard/ImageDropzone.tsx`
-```typescript
-'use client'
+#### 3.1 Generation Progress Component
+**File**: `components/generation/GenerationProgress.tsx`
 
-import { useCallback, useState } from 'react'
-import { Upload, X } from 'lucide-react'
-import { cn } from '@/libs/utils'
+Display generation progress:
+- Step indicators (Uploading → Creating → Rendering)
+- Progress animation/skeleton
+- Estimated time remaining (optional)
+- Cancel option (if applicable)
+- Mobile-optimized display
 
-interface ImageDropzoneProps {
-  value: File | null
-  onChange: (file: File | null) => void
-  accept?: string
-  className?: string
-}
+#### 3.2 Status Polling Hook
+**File**: `hooks/useGenerationStatus.ts`
 
-export function ImageDropzone({
-  value,
-  onChange,
-  accept = 'image/*',
-  className
-}: ImageDropzoneProps) {
-  const [isDragging, setIsDragging] = useState(false)
-  const [preview, setPreview] = useState<string | null>(null)
-  
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    
-    const file = e.dataTransfer.files[0]
-    if (file && file.type.startsWith('image/')) {
-      onChange(file)
-      
-      // Create preview
-      const reader = new FileReader()
-      reader.onload = () => setPreview(reader.result as string)
-      reader.readAsDataURL(file)
-    }
-  }, [onChange])
-  
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      onChange(file)
-      
-      // Create preview
-      const reader = new FileReader()
-      reader.onload = () => setPreview(reader.result as string)
-      reader.readAsDataURL(file)
-    }
-  }
-  
-  const handleRemove = () => {
-    onChange(null)
-    setPreview(null)
-  }
-  
-  return (
-    <div className={cn('relative', className)}>
-      {preview ? (
-        <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full h-full object-cover"
-          />
-          <button
-            onClick={handleRemove}
-            className="absolute top-2 right-2 p-1 rounded-full bg-background/80 hover:bg-background"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <label
-          className={cn(
-            'flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed cursor-pointer transition-colors',
-            isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:border-primary/50'
-          )}
-          onDragOver={(e) => {
-            e.preventDefault()
-            setIsDragging(true)
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-          <span className="text-sm text-muted-foreground">
-            Drop image here or click to browse
-          </span>
-          <input
-            type="file"
-            accept={accept}
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-        </label>
-      )}
-    </div>
-  )
-}
-```
+Implement status polling:
+- Poll generation endpoint every 2-3 seconds
+- Update UI on status changes
+- Stop polling on completion
+- Handle timeout scenarios
+- Error recovery
 
----
+### 4. Results Display and Actions
 
-## Task 6.3: Additional Pages
+#### 4.1 Results Grid Component
+**File**: `components/generation/ResultsGrid.tsx`
 
-Due to length constraints, here are the key additional pages to implement:
+Display generation results:
+- Grid layout for 1-3 variants
+- Full-size image preview on click
+- Mobile-responsive grid
+- Loading placeholders
+- Error state handling
 
-### My Renders Page
-Location: `app/(app)/dashboard/renders/page.tsx`
-- Grid layout with filtering
+#### 4.2 Result Card Component
+**File**: `components/generation/ResultCard.tsx`
+
+Individual result variant display:
+- Image with lazy loading
+- Action buttons toolbar
+- Download functionality
+- Save to collection options
+- Copy prompt feature
+- Re-run with same settings
+
+#### 4.3 Image Viewer Modal
+**File**: `components/generation/ImageViewer.tsx`
+
+Full-screen image viewer:
+- Zoom capabilities
+- Pan on mobile
+- Download option
+- Close on escape/backdrop
+- Swipe between variants (mobile)
+
+### 5. My Renders Gallery
+
+#### 5.1 Renders Page Implementation
+**File**: Complete `app/(app)/dashboard/renders/page.tsx`
+
+Implement the renders gallery:
+- Fetch and display user's renders
+- Filter controls (Mode, Room Type, Style)
+- Search functionality
+- Grid layout with thumbnails
+- Pagination or infinite scroll
+- Empty state with CTA
+
+#### 5.2 Render Filter Component
+**File**: `components/renders/RenderFilters.tsx`
+
+Create filtering interface:
+- Mode filter dropdown
+- Room type filter
+- Style filter
+- Clear filters option
+- Mobile-responsive layout
+
+#### 5.3 Render Grid Component
+**File**: `components/renders/RenderGrid.tsx`
+
+Display renders in grid:
+- Responsive columns
 - Lazy loading images
+- Hover effects
 - Click to view details
-- Actions: Save to collection, Download, Delete
+- Batch selection (optional)
 
-### Collections Page
-Location: `app/(app)/dashboard/collections/page.tsx`
-- List all collections
+#### 5.4 Render Detail Modal
+**File**: `components/renders/RenderDetail.tsx`
+
+Show render details:
+- Larger image display
+- Variant selector
+- Metadata display
+- Action buttons
+- Delete option
+
+### 6. Collections Interface
+
+#### 6.1 Collections Page Implementation
+**File**: Complete `app/(app)/dashboard/collections/page.tsx`
+
+Implement collections management:
+- Display all user collections
+- "My Favorites" pinned first
 - Create new collection
-- Default "My Favorites" always shown first
-- Click to view collection items
+- Collection tiles/cards
+- Empty state
 
-### Community Page
-Location: `app/(app)/dashboard/community/page.tsx`
-- Featured collections
-- Grid of inspirations
-- "Try this look" button to prefill Create page
+#### 6.2 Collection Card Component
+**File**: `components/collections/CollectionCard.tsx`
 
-### Settings Page
-Location: `app/(app)/dashboard/settings/page.tsx`
-- Profile information
-- Plan details
-- Billing management (Stripe portal link)
-- Support contact
+Display individual collection:
+- Cover image (first item)
+- Collection name
+- Item count
+- Actions menu
+- Click to open
 
----
+#### 6.3 Collection Detail View
+**File**: `app/(app)/dashboard/collections/[id]/page.tsx`
 
-## Mobile Responsiveness
+Show collection contents:
+- Collection header with actions
+- Renders grid
+- Remove from collection
+- Rename collection (except favorites)
+- Delete collection option
 
-### Key Responsive Patterns
-```css
-/* Mobile-first approach */
-.container {
-  @apply px-4 sm:px-6 lg:px-8;
-}
+#### 6.4 Add to Collection Modal
+**File**: `components/collections/AddToCollectionModal.tsx`
 
-.grid-responsive {
-  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
-}
+Collection selection interface:
+- List existing collections
+- "My Favorites" one-click option
+- Create new collection inline
+- Checkbox selection
+- Confirm action
 
-/* Sticky mobile CTAs */
-.mobile-sticky-cta {
-  @apply fixed bottom-0 left-0 right-0 p-4 bg-background border-t lg:relative lg:p-0 lg:border-0;
-}
-```
+### 7. Error Handling and Edge Cases
 
----
+#### 7.1 Quota Exceeded Handling
+Show clear messaging when:
+- No remaining generations
+- Upgrade CTA button
+- Link to billing page
+
+#### 7.2 In-flight Job Blocking
+Handle concurrent generation attempts:
+- Disable Generate button
+- Show toast message
+- Display current job status
+
+#### 7.3 Network Error Recovery
+Implement resilient error handling:
+- Retry mechanisms
+- Offline detection
+- Clear error messages
+- Recovery actions
+
+### 8. Mobile Optimizations
+
+#### 8.1 Touch Interactions
+Optimize for mobile:
+- Swipe gestures for images
+- Touch-friendly buttons (44px minimum)
+- Pinch to zoom in viewer
+- Pull to refresh (optional)
+
+#### 8.2 Mobile-Specific Layouts
+Adjust layouts for small screens:
+- Stacked mode selector
+- Bottom sheet for settings
+- Floating action buttons
+- Simplified navigation
+
+### 9. Verification Steps
+
+#### 9.1 Generation Flow Testing
+- [ ] All four modes work correctly
+- [ ] File uploads successful
+- [ ] Status updates in real-time
+- [ ] Results display properly
+
+#### 9.2 Collections Testing
+- [ ] Add to favorites works
+- [ ] Create new collection
+- [ ] Remove from collection
+- [ ] Delete collection (not favorites)
+
+#### 9.3 Mobile Testing
+- [ ] Touch targets adequate size
+- [ ] No horizontal scroll
+- [ ] Modals work on mobile
+- [ ] Image viewer touch-enabled
+
+#### 9.4 Error Scenarios
+- [ ] Quota exceeded message shows
+- [ ] Network errors handled
+- [ ] Invalid inputs validated
+- [ ] Timeout handling works
 
 ## Success Criteria
-- [ ] Dashboard layout with sidebar navigation
-- [ ] Create page supports all 4 modes
-- [ ] File upload with preview works
-- [ ] Generation flow completes end-to-end
-- [ ] Results display with save actions
-- [ ] Collections management works
-- [ ] Mobile responsive on all screens
-- [ ] Theme v2 design tokens applied
 
----
+This phase is complete when:
+1. All four generation modes fully functional
+2. Real-time status updates working
+3. Results display with all actions
+4. My Renders gallery complete
+5. Collections management working
+6. Mobile experience optimized
+7. Error states handled gracefully
 
-## Next Phase Preview
-Phase 7 will complete:
-- Testing implementation
-- Performance optimization
-- Error handling
-- Final polish
-- Documentation
+## Notes for Implementation
 
-Ensure all UI flows work before final testing phase.
+- Use runtime config for all presets
+- Implement proper loading states
+- Validate inputs on client and server
+- Test file upload thoroughly
+- Ensure mobile gestures work
+- Handle edge cases gracefully
+- No direct API calls - use fetch through services
+
+## Next Phase
+After completing Phase 6, proceed to Phase 7: Polish & Production Readiness, which will add the final features and prepare for deployment.

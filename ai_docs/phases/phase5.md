@@ -1,749 +1,281 @@
-# Phase 5: Collections & Organization APIs
-## Complete Renders, Collections, and Community Endpoints
+# Phase 5: Dashboard UI Foundation
 
-### Phase Overview
-**Duration**: 1 day
-**Dependencies**: Phases 1-4 completed
-**Goal**: Implement all organization features - renders list, collections CRUD, community
+## Prerequisites
+Before starting this phase, ensure Phases 1-4 are complete and load:
+- `ai_docs/spec/ux_ui.md` - Complete UI specifications
+- `ai_docs/spec/design_system.md` - Design tokens and theme system
+- `ai_docs/docs/01-handbook.md` - UI architecture rules
 
-### Required Reading Before Starting
-1. `/ai_docs/spec/system_architecture_and_api.md` - API contracts (Sections 6.3-6.5)
-2. `/ai_docs/spec/prd.md` - Collections and community requirements
-3. `/ai_docs/docs/01-handbook.md` - API standards
-4. `/ai_docs/docs/02-playbooks-and-templates.md` - API route template
+## Goals
+Build the core dashboard infrastructure with layouts, navigation, theme integration, and base components following mobile-first responsive design principles.
 
----
+## Dependencies from Previous Phases
+- All API endpoints functional (Phase 4)
+- Runtime configuration available (Phase 1)
+- Authentication system working (Phase 1-4)
 
-## Task 5.1: Renders API
+## Tasks
 
-### Create Renders List Endpoint
-Location: `app/api/v1/renders/route.ts`
+### 1. Dashboard Layout Structure
 
-```typescript
-import { NextRequest } from 'next/server'
-import { z } from 'zod'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, unauthorized, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as rendersService from '@/libs/services/renders'
-import { ServiceError } from '@/libs/services/types'
+#### 1.1 Dashboard Layout Enhancement
+**File**: `app/(app)/dashboard/layout.tsx`
 
-const QuerySchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.coerce.number().min(1).max(100).optional(),
-  mode: z.string().optional(),
-  roomType: z.string().optional(),
-  style: z.string().optional()
-})
+Enhance the existing dashboard layout:
+- Implement sidebar navigation structure
+- Add responsive mobile menu
+- Integrate theme tokens from design system
+- Ensure auth guard remains intact
+- Add loading states and error boundaries
 
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
-  try {
-    // Authenticate user
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    // Parse query parameters
-    const { searchParams } = new URL(req.url)
-    const query = QuerySchema.parse({
-      cursor: searchParams.get('cursor') || undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-      mode: searchParams.get('mode') || undefined,
-      roomType: searchParams.get('roomType') || undefined,
-      style: searchParams.get('style') || undefined
-    })
-    
-    // Create service context
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    // Get renders
-    const result = await rendersService.listRenders(
-      ctx,
-      user.id,
-      {
-        mode: query.mode,
-        roomType: query.roomType,
-        style: query.style
-      },
-      {
-        limit: query.limit || 24,
-        cursor: query.cursor
-      }
-    )
-    
-    return ok({
-      items: result.items,
-      nextCursor: result.nextCursor
-    })
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return serverError(error.message)
-    }
-    
-    console.error('Error listing renders:', error)
-    return serverError('Failed to list renders')
-  }
-})
-```
+The layout should follow the structure defined in `ux_ui.md` section 3.
 
-### Create Render Detail Endpoint
-Location: `app/api/v1/renders/[id]/route.ts`
+#### 1.2 Sidebar Component
+**File**: `components/dashboard/Sidebar.tsx`
 
-```typescript
-import { NextRequest } from 'next/server'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, unauthorized, notFound, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as rendersService from '@/libs/services/renders'
-import { ServiceError } from '@/libs/services/types'
+Create the persistent sidebar navigation:
+- Navigation items as specified in UX doc
+- Active state highlighting
+- Mobile-responsive drawer version
+- Plan/usage badge at bottom
+- Consistent with design tokens
 
-interface Params {
-  params: {
-    id: string
-  }
-}
+Navigation structure from spec:
+- Overview
+- Create (primary)
+- My Renders
+- Collections
+- Community
+- Settings (after divider)
 
-export const GET = withMethods(['GET'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    const render = await rendersService.getRenderDetails(
-      ctx,
-      params.id,
-      user.id
-    )
-    
-    if (!render) {
-      return notFound('Render not found')
-    }
-    
-    return ok(render)
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return serverError(error.message)
-    }
-    
-    console.error('Error fetching render:', error)
-    return serverError('Failed to fetch render')
-  }
-})
+### 2. Theme and Design System Integration
 
-export const DELETE = withMethods(['DELETE'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    await rendersService.deleteRender(ctx, params.id, user.id)
-    
-    return ok({ deleted: true })
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      if (error.code === 'NOT_FOUND') {
-        return notFound('Render not found')
-      }
-      return serverError(error.message)
-    }
-    
-    console.error('Error deleting render:', error)
-    return serverError('Failed to delete render')
-  }
-})
-```
+#### 2.1 Verify Theme Tokens
+**File**: Check `app/globals.css`
 
----
+Ensure all design tokens from `design_system.md` are present:
+- Color variables for light/dark modes
+- Border radius (1.3rem for modern look)
+- Typography (Open Sans)
+- Minimal shadow system (0.00 opacity)
+- Chart colors for data visualization
 
-## Task 5.2: Collections API
+#### 2.2 Theme Provider Setup
+**File**: Verify `app/layout.tsx`
 
-### Create Collections Endpoints
-Location: `app/api/v1/collections/route.ts`
+Ensure theme provider is configured:
+- next-themes integration
+- Class-based dark mode switching
+- Theme persistence
+- System preference detection
 
-```typescript
-import { NextRequest } from 'next/server'
-import { z } from 'zod'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, created, unauthorized, validationError, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as collectionsService from '@/libs/services/collections'
-import { ServiceError } from '@/libs/services/types'
+### 3. Base Component Library
 
-const CreateCollectionSchema = z.object({
-  name: z.string().min(1).max(100)
-})
+#### 3.1 Dashboard Header Component
+**File**: `components/dashboard/DashboardHeader.tsx`
 
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    const collections = await collectionsService.listCollections(ctx, user.id)
-    
-    // Ensure default favorites exists
-    await collectionsService.ensureDefaultFavorites(ctx, user.id)
-    
-    return ok(collections)
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      return serverError(error.message)
-    }
-    
-    console.error('Error listing collections:', error)
-    return serverError('Failed to list collections')
-  }
-})
+Create reusable page header:
+- Page title and optional subtitle
+- Breadcrumb support
+- Action buttons area
+- Mobile-responsive layout
+- Uses design tokens
 
-export const POST = withMethods(['POST'], async (req: NextRequest) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const body = await req.json()
-    const parsed = CreateCollectionSchema.safeParse(body)
-    
-    if (!parsed.success) {
-      return validationError('Invalid request', parsed.error.flatten())
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    const collection = await collectionsService.createCollection(
-      ctx,
-      user.id,
-      parsed.data.name
-    )
-    
-    return created(collection, 'Collection created successfully')
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      if (error.code === 'VALIDATION_ERROR') {
-        return validationError(error.message)
-      }
-      return serverError(error.message)
-    }
-    
-    console.error('Error creating collection:', error)
-    return serverError('Failed to create collection')
-  }
-})
-```
+#### 3.2 Empty State Component
+**File**: `components/dashboard/EmptyState.tsx`
 
-### Create Collection Management Endpoints
-Location: `app/api/v1/collections/[id]/route.ts`
+Create empty state for lists:
+- Illustration/icon area
+- Descriptive message
+- Call-to-action button
+- Responsive sizing
+- Follows design system
 
-```typescript
-import { NextRequest } from 'next/server'
-import { z } from 'zod'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, unauthorized, notFound, validationError, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as collectionsService from '@/libs/services/collections'
-import * as collectionsRepo from '@/libs/repositories/collections'
-import { ServiceError } from '@/libs/services/types'
+#### 3.3 Loading States
+**File**: `components/dashboard/LoadingStates.tsx`
 
-interface Params {
-  params: {
-    id: string
-  }
-}
+Create loading components:
+- Skeleton loaders for lists
+- Spinner variations
+- Progress indicators
+- Shimmer effects
+- Consistent with design tokens
 
-const UpdateCollectionSchema = z.object({
-  name: z.string().min(1).max(100)
-})
+### 4. Dashboard Pages Structure
 
-export const PATCH = withMethods(['PATCH'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const body = await req.json()
-    const parsed = UpdateCollectionSchema.safeParse(body)
-    
-    if (!parsed.success) {
-      return validationError('Invalid request', parsed.error.flatten())
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    
-    await collectionsRepo.renameCollection(
-      supabase,
-      params.id,
-      user.id,
-      parsed.data.name
-    )
-    
-    return ok({ updated: true })
-    
-  } catch (error) {
-    console.error('Error updating collection:', error)
-    return serverError('Failed to update collection')
-  }
-})
+#### 4.1 Dashboard Overview Page
+**File**: Update `app/(app)/dashboard/page.tsx`
 
-export const DELETE = withMethods(['DELETE'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    await collectionsService.deleteCollection(ctx, user.id, params.id)
-    
-    return ok({ deleted: true })
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      if (error.code === 'NOT_FOUND') {
-        return notFound('Collection not found')
-      }
-      if (error.code === 'VALIDATION_ERROR') {
-        return validationError(error.message)
-      }
-      return serverError(error.message)
-    }
-    
-    console.error('Error deleting collection:', error)
-    return serverError('Failed to delete collection')
-  }
-})
-```
+Implement the overview page:
+- Welcome message
+- Recent renders preview
+- Quick action cards
+- Usage summary
+- Mobile-first layout
 
-### Create Collection Items Endpoints
-Location: `app/api/v1/collections/[id]/items/route.ts`
+#### 4.2 Create Page Shell
+**File**: `app/(app)/dashboard/create/page.tsx`
 
-```typescript
-import { NextRequest } from 'next/server'
-import { z } from 'zod'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, created, unauthorized, validationError, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as collectionsRepo from '@/libs/repositories/collections'
-import { ServiceError } from '@/libs/services/types'
+Create the page structure (content in Phase 6):
+- Page header
+- Container for generation workspace
+- Proper spacing and layout
+- Mobile-responsive structure
 
-interface Params {
-  params: {
-    id: string
-  }
-}
+#### 4.3 Renders Page Shell
+**File**: `app/(app)/dashboard/renders/page.tsx`
 
-const AddItemSchema = z.object({
-  renderId: z.string().uuid()
-})
+Create the renders listing page structure:
+- Page header with filters
+- Grid container
+- Pagination area
+- Empty state handling
 
-export const GET = withMethods(['GET'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    
-    // Verify collection ownership
-    const collections = await collectionsRepo.listCollections(supabase, user.id)
-    const collection = collections.find(c => c.id === params.id)
-    
-    if (!collection) {
-      return notFound('Collection not found')
-    }
-    
-    const items = await collectionsRepo.listCollectionItems(supabase, params.id)
-    
-    return ok(items)
-    
-  } catch (error) {
-    console.error('Error listing collection items:', error)
-    return serverError('Failed to list collection items')
-  }
-})
+#### 4.4 Collections Page Shell
+**File**: `app/(app)/dashboard/collections/page.tsx`
 
-export const POST = withMethods(['POST'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const body = await req.json()
-    const parsed = AddItemSchema.safeParse(body)
-    
-    if (!parsed.success) {
-      return validationError('Invalid request', parsed.error.flatten())
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    
-    // Verify collection ownership
-    const collections = await collectionsRepo.listCollections(supabase, user.id)
-    const collection = collections.find(c => c.id === params.id)
-    
-    if (!collection) {
-      return notFound('Collection not found')
-    }
-    
-    await collectionsRepo.addToCollection(
-      supabase,
-      params.id,
-      parsed.data.renderId
-    )
-    
-    return created({ added: true }, 'Added to collection')
-    
-  } catch (error) {
-    console.error('Error adding to collection:', error)
-    return serverError('Failed to add to collection')
-  }
-})
-```
+Create collections page structure:
+- Page header with "New Collection" action
+- Collections grid container
+- Default favorites handling
 
-### Create Remove from Collection Endpoint
-Location: `app/api/v1/collections/[id]/items/[renderId]/route.ts`
+#### 4.5 Community Page Shell
+**File**: `app/(app)/dashboard/community/page.tsx`
 
-```typescript
-import { NextRequest } from 'next/server'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, unauthorized, notFound, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as collectionsRepo from '@/libs/repositories/collections'
+Create community page structure:
+- Page header
+- Sections for curated collections
+- Public access (no auth required for viewing)
 
-interface Params {
-  params: {
-    id: string
-    renderId: string
-  }
-}
+#### 4.6 Settings Page Shell
+**File**: `app/(app)/dashboard/settings/page.tsx`
 
-export const DELETE = withMethods(['DELETE'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    
-    // Verify collection ownership
-    const collections = await collectionsRepo.listCollections(supabase, user.id)
-    const collection = collections.find(c => c.id === params.id)
-    
-    if (!collection) {
-      return notFound('Collection not found')
-    }
-    
-    await collectionsRepo.removeFromCollection(
-      supabase,
-      params.id,
-      params.renderId
-    )
-    
-    return ok({ removed: true })
-    
-  } catch (error) {
-    console.error('Error removing from collection:', error)
-    return serverError('Failed to remove from collection')
-  }
-})
-```
+Create settings page structure:
+- Profile section
+- Plan/billing section
+- Support section
+- Form containers
 
-### Create Add to Favorites Shortcut
-Location: `app/api/v1/favorites/route.ts`
+### 5. Responsive Design Implementation
 
-```typescript
-import { NextRequest } from 'next/server'
-import { z } from 'zod'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, created, unauthorized, validationError, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient, getUserFromRequest } from '@/libs/api-utils/supabase'
-import * as collectionsService from '@/libs/services/collections'
-import { ServiceError } from '@/libs/services/types'
+#### 5.1 Mobile Navigation
+**File**: `components/dashboard/MobileNav.tsx`
 
-const AddToFavoritesSchema = z.object({
-  renderId: z.string().uuid()
-})
+Implement mobile navigation:
+- Hamburger menu trigger
+- Slide-out drawer
+- Touch-optimized menu items
+- Backdrop overlay
+- Smooth animations
 
-export const POST = withMethods(['POST'], async (req: NextRequest) => {
-  try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return unauthorized('Authentication required')
-    }
-    
-    const body = await req.json()
-    const parsed = AddToFavoritesSchema.safeParse(body)
-    
-    if (!parsed.success) {
-      return validationError('Invalid request', parsed.error.flatten())
-    }
-    
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase, user }
-    
-    await collectionsService.addToFavorites(ctx, user.id, parsed.data.renderId)
-    
-    return created({ added: true }, 'Added to favorites')
-    
-  } catch (error) {
-    if (error instanceof ServiceError) {
-      if (error.code === 'NOT_FOUND') {
-        return notFound('Render not found')
-      }
-      return serverError(error.message)
-    }
-    
-    console.error('Error adding to favorites:', error)
-    return serverError('Failed to add to favorites')
-  }
-})
-```
+#### 5.2 Responsive Grid System
+**File**: `components/dashboard/ResponsiveGrid.tsx`
 
----
+Create responsive grid utilities:
+- Mobile: 1 column
+- Tablet: 2 columns
+- Desktop: 3-4 columns
+- Proper spacing
+- Container queries support
 
-## Task 5.3: Community API
+### 6. Data Fetching Patterns
 
-### Create Community Endpoints
-Location: `app/api/v1/community/route.ts`
+#### 6.1 API Client Setup
+**File**: Update `libs/api/http.ts`
 
-```typescript
-import { NextRequest } from 'next/server'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
-import * as communityService from '@/libs/services/community'
+Ensure API client is configured for dashboard:
+- Authentication headers
+- Error handling
+- Base URL configuration
+- Response type safety
 
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
-  try {
-    // No authentication required for public read
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase }
-    
-    const collections = await communityService.listCommunityCollections(ctx)
-    
-    // For each collection, get a preview of items
-    const collectionsWithPreviews = await Promise.all(
-      collections.map(async (collection) => {
-        const details = await communityService.getCommunityCollection(
-          ctx,
-          collection.id
-        )
-        
-        return {
-          ...collection,
-          itemCount: details?.items.length || 0,
-          previewItems: details?.items.slice(0, 4) || []
-        }
-      })
-    )
-    
-    return ok(collectionsWithPreviews)
-    
-  } catch (error) {
-    console.error('Error listing community collections:', error)
-    return serverError('Failed to list community collections')
-  }
-})
-```
+#### 6.2 Data Hooks (Optional)
+**File**: `hooks/useApi.ts`
 
-### Create Community Collection Detail
-Location: `app/api/v1/community/[id]/route.ts`
+Create reusable data fetching hooks:
+- Loading states
+- Error handling
+- Refetch capabilities
+- Cache management (if using SWR/React Query)
 
-```typescript
-import { NextRequest } from 'next/server'
-import { withMethods } from '@/libs/api-utils/methods'
-import { ok, notFound, serverError } from '@/libs/api-utils/responses'
-import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
-import * as communityService from '@/libs/services/community'
+### 7. Accessibility Features
 
-interface Params {
-  params: {
-    id: string
-  }
-}
+#### 7.1 Keyboard Navigation
+Implement throughout dashboard:
+- Focus management
+- Skip links
+- Keyboard shortcuts (optional)
+- Escape key handling
+- Tab order optimization
 
-export const GET = withMethods(['GET'], async (req: NextRequest, { params }: Params) => {
-  try {
-    const supabase = createServiceSupabaseClient()
-    const ctx = { supabase }
-    
-    const collection = await communityService.getCommunityCollection(
-      ctx,
-      params.id
-    )
-    
-    if (!collection) {
-      return notFound('Community collection not found')
-    }
-    
-    return ok(collection)
-    
-  } catch (error) {
-    console.error('Error fetching community collection:', error)
-    return serverError('Failed to fetch community collection')
-  }
-})
-```
+#### 7.2 ARIA Labels
+Ensure all interactive elements have:
+- Proper ARIA labels
+- Role attributes
+- Screen reader support
+- Alt text for images
 
----
+### 8. Performance Optimizations
 
-## Verification Steps
+#### 8.1 Code Splitting
+Implement for dashboard routes:
+- Dynamic imports for heavy components
+- Route-based splitting
+- Lazy loading for modals
 
-### Step 1: Test Renders API
-```bash
-# List renders
-curl http://localhost:3000/api/v1/renders?limit=10 \
-  -H "Authorization: Bearer TOKEN"
+#### 8.2 Image Optimization
+Set up for renders:
+- Next.js Image component usage
+- Lazy loading
+- Responsive sizes
+- WebP format preference
 
-# Get render detail
-curl http://localhost:3000/api/v1/renders/RENDER_ID \
-  -H "Authorization: Bearer TOKEN"
+### 9. Verification Steps
 
-# Delete render
-curl -X DELETE http://localhost:3000/api/v1/renders/RENDER_ID \
-  -H "Authorization: Bearer TOKEN"
-```
+#### 9.1 Layout Testing
+- [ ] Sidebar navigation works
+- [ ] Mobile menu functions correctly
+- [ ] Auth guard redirects properly
+- [ ] Theme switching works
 
-### Step 2: Test Collections API
-```bash
-# List collections
-curl http://localhost:3000/api/v1/collections \
-  -H "Authorization: Bearer TOKEN"
+#### 9.2 Responsive Testing
+- [ ] Mobile layout (375px)
+- [ ] Tablet layout (768px)
+- [ ] Desktop layout (1280px)
+- [ ] No horizontal scroll
 
-# Create collection
-curl -X POST http://localhost:3000/api/v1/collections \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN" \
-  -d '{"name": "My Project"}'
+#### 9.3 Theme Testing
+- [ ] Light mode renders correctly
+- [ ] Dark mode has proper contrast
+- [ ] Theme persists on refresh
+- [ ] Design tokens applied
 
-# Add to collection
-curl -X POST http://localhost:3000/api/v1/collections/COLLECTION_ID/items \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN" \
-  -d '{"renderId": "RENDER_ID"}'
-
-# Add to favorites (shortcut)
-curl -X POST http://localhost:3000/api/v1/favorites \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer TOKEN" \
-  -d '{"renderId": "RENDER_ID"}'
-```
-
-### Step 3: Test Community API
-```bash
-# List community collections (public)
-curl http://localhost:3000/api/v1/community
-
-# Get community collection detail
-curl http://localhost:3000/api/v1/community/COLLECTION_ID
-```
-
-### Step 4: Verify Pagination
-```javascript
-// Test cursor pagination
-async function testPagination() {
-  let cursor = null
-  let allItems = []
-  
-  do {
-    const url = cursor 
-      ? `/api/v1/renders?cursor=${cursor}&limit=5`
-      : '/api/v1/renders?limit=5'
-    
-    const response = await fetch(url, {
-      headers: { 'Authorization': 'Bearer TOKEN' }
-    })
-    
-    const data = await response.json()
-    allItems.push(...data.data.items)
-    cursor = data.data.nextCursor
-  } while (cursor)
-  
-  console.log('Total items:', allItems.length)
-}
-```
-
----
+#### 9.4 Accessibility Testing
+- [ ] Keyboard navigation works
+- [ ] Focus indicators visible
+- [ ] ARIA labels present
+- [ ] Screen reader compatible
 
 ## Success Criteria
-- [ ] Renders list with filtering works
-- [ ] Pagination with cursor works
-- [ ] Collections CRUD operations work
-- [ ] Default favorites auto-created
-- [ ] Add/remove from collections works
-- [ ] Community collections publicly readable
-- [ ] All endpoints return normalized responses
-- [ ] Proper authorization checks
 
----
+This phase is complete when:
+1. Dashboard layout with sidebar navigation working
+2. All page shells created and routable
+3. Theme system fully integrated
+4. Mobile-responsive design implemented
+5. Base components ready for use
+6. Loading and empty states available
+7. Accessibility features in place
 
-## Common Issues & Solutions
+## Notes for Implementation
 
-### Issue: Collections not showing favorites
-**Solution**: Ensure trigger from Phase 1 migration is applied
+- Follow mobile-first approach
+- Use Tailwind classes with design tokens
+- Maintain consistent spacing
+- Test on multiple viewport sizes
+- Ensure smooth transitions
+- Keep components reusable
+- No direct API calls from components (use services)
 
-### Issue: Pagination returning duplicates
-**Solution**: Check cursor-based ordering is by created_at DESC
-
-### Issue: Community collections empty
-**Solution**: Manually insert test data via Supabase dashboard
-
-### Issue: Can't add render to collection
-**Solution**: Verify render belongs to user and collection exists
-
----
-
-## Performance Optimization
-
-### Caching Strategy
-```typescript
-// Add cache headers for community endpoints
-return ok(data, {
-  headers: {
-    'Cache-Control': 'public, max-age=300' // 5 minutes for community
-  }
-})
-```
-
-### Query Optimization
-- Use database indexes from Phase 1
-- Limit default page size to 24 items
-- Consider adding Redis cache layer later
-
----
-
-## Next Phase Preview
-Phase 6 will build the complete dashboard UI:
-- Create page with all 4 modes
-- Results display and actions
-- Collections management UI
-- Community inspiration gallery
-- Mobile-responsive layouts
-
-Ensure all APIs work correctly before building the UI.
+## Next Phase
+After completing Phase 5, proceed to Phase 6: Generation UI & Workflows, which will implement the complete generation experience and render management interfaces.
