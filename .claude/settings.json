@@ -26,5 +26,9 @@
     "enableAllProjectMcpServers": true,
     "enabledMcpjsonServers": [
       "supabase"
-    ]
+    ],
+    "statusLine": {
+      "type": "command",
+      "command": "bun x ccusage statusline"
+    }
   }
