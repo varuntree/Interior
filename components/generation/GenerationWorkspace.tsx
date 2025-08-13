@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+// no-op
 import { cn } from "@/libs/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -57,13 +57,7 @@ export function GenerationWorkspace() {
     }
   });
 
-  // Initialize with defaults
-  useEffect(() => {
-    setMode(runtimeConfig.defaults.mode);
-    setAspectRatio(runtimeConfig.defaults.aspectRatio);
-    setQuality(runtimeConfig.defaults.quality);
-    setVariants(runtimeConfig.defaults.variants);
-  }, [setMode, setAspectRatio, setQuality, setVariants]);
+  // Defaults are initialized in context. No-op here to avoid redundant updates.
 
   const showInput1 = state.mode !== 'imagine';
   const showInput2 = state.mode === 'compose';

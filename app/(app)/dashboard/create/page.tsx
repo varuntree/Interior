@@ -31,14 +31,19 @@ export default function CreatePage() {
       if (searchParams.get('variants')) prefill.variants = parseInt(searchParams.get('variants') || '2');
 
       if (Object.keys(prefill).length > 0) {
-        setPrefillData(prefill);
-        setShowCommunityAlert(true);
-        
-        // Auto-hide alert after 5 seconds
-        setTimeout(() => setShowCommunityAlert(false), 5000);
+        // Only update if different to avoid loops
+        const isDifferent = JSON.stringify(prefillData) !== JSON.stringify(prefill);
+        if (isDifferent) {
+          setPrefillData(prefill);
+          setShowCommunityAlert(true);
+          const timeout = setTimeout(() => setShowCommunityAlert(false), 5000);
+          return () => clearTimeout(timeout);
+        }
       }
     }
-  }, [searchParams]);
+    return undefined;
+  // Depend on stringified params to avoid unstable object ref causing loops
+  }, [searchParams, prefillData]);
 
   return (
     <GenerationProvider initialValues={prefillData}>

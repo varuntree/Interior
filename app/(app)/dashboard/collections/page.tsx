@@ -1,3 +1,5 @@
+"use client";
+
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,9 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FolderHeart, Plus, Heart, Sparkles } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
-export default async function CollectionsPage() {
+export default function CollectionsPage() {
   return (
     <div className="space-y-6 p-6">
       <DashboardHeader 

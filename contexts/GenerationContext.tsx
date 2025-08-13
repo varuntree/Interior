@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode } from "react";
-import { Mode, AspectRatio, Quality } from "@/libs/app-config/runtime";
+import { createContext, useContext, useReducer, ReactNode, useCallback, useMemo } from "react";
+import runtimeConfig, { Mode, AspectRatio, Quality } from "@/libs/app-config/runtime";
 
 // Types
 export interface GenerationState {
@@ -53,15 +53,15 @@ type GenerationAction =
 
 // Initial state
 const initialState: GenerationState = {
-  mode: 'redesign',
+  mode: runtimeConfig.defaults.mode,
   input1File: null,
   input2File: null,
   roomType: '',
   style: '',
   prompt: '',
-  aspectRatio: '1:1',
-  quality: 'auto',
-  variants: 2,
+  aspectRatio: runtimeConfig.defaults.aspectRatio,
+  quality: runtimeConfig.defaults.quality,
+  variants: runtimeConfig.defaults.variants,
   isGenerating: false,
   currentJobId: null,
   generationStatus: 'idle',
@@ -209,50 +209,52 @@ export function GenerationProvider({ children, initialValues }: GenerationProvid
   const [state, dispatch] = useReducer(generationReducer, getInitialState());
 
   // Convenience functions
-  const setMode = (mode: Mode) => dispatch({ type: 'SET_MODE', payload: mode });
-  const setInput1File = (file: File | null) => dispatch({ type: 'SET_INPUT1_FILE', payload: file });
-  const setInput2File = (file: File | null) => dispatch({ type: 'SET_INPUT2_FILE', payload: file });
-  const setRoomType = (roomType: string) => dispatch({ type: 'SET_ROOM_TYPE', payload: roomType });
-  const setStyle = (style: string) => dispatch({ type: 'SET_STYLE', payload: style });
-  const setPrompt = (prompt: string) => dispatch({ type: 'SET_PROMPT', payload: prompt });
-  const setAspectRatio = (ratio: AspectRatio) => dispatch({ type: 'SET_ASPECT_RATIO', payload: ratio });
-  const setQuality = (quality: Quality) => dispatch({ type: 'SET_QUALITY', payload: quality });
-  const setVariants = (variants: number) => dispatch({ type: 'SET_VARIANTS', payload: variants });
-  const startGeneration = (jobId: string) => dispatch({ type: 'START_GENERATION', payload: jobId });
-  const updateStatus = (status: GenerationState['generationStatus']) => dispatch({ type: 'UPDATE_STATUS', payload: status });
-  const setResults = (results: GenerationResult[]) => dispatch({ type: 'SET_RESULTS', payload: results });
-  const setError = (error: string) => dispatch({ type: 'SET_ERROR', payload: error });
-  const resetGeneration = () => dispatch({ type: 'RESET_GENERATION' });
-  const resetForm = () => dispatch({ type: 'RESET_FORM' });
+  const setMode = useCallback((mode: Mode) => dispatch({ type: 'SET_MODE', payload: mode }), []);
+  const setInput1File = useCallback((file: File | null) => dispatch({ type: 'SET_INPUT1_FILE', payload: file }), []);
+  const setInput2File = useCallback((file: File | null) => dispatch({ type: 'SET_INPUT2_FILE', payload: file }), []);
+  const setRoomType = useCallback((roomType: string) => dispatch({ type: 'SET_ROOM_TYPE', payload: roomType }), []);
+  const setStyle = useCallback((style: string) => dispatch({ type: 'SET_STYLE', payload: style }), []);
+  const setPrompt = useCallback((prompt: string) => dispatch({ type: 'SET_PROMPT', payload: prompt }), []);
+  const setAspectRatio = useCallback((ratio: AspectRatio) => dispatch({ type: 'SET_ASPECT_RATIO', payload: ratio }), []);
+  const setQuality = useCallback((quality: Quality) => dispatch({ type: 'SET_QUALITY', payload: quality }), []);
+  const setVariants = useCallback((variants: number) => dispatch({ type: 'SET_VARIANTS', payload: variants }), []);
+  const startGeneration = useCallback((jobId: string) => dispatch({ type: 'START_GENERATION', payload: jobId }), []);
+  const updateStatus = useCallback((status: GenerationState['generationStatus']) => dispatch({ type: 'UPDATE_STATUS', payload: status }), []);
+  const setResults = useCallback((results: GenerationResult[]) => dispatch({ type: 'SET_RESULTS', payload: results }), []);
+  const setError = useCallback((error: string) => dispatch({ type: 'SET_ERROR', payload: error }), []);
+  const resetGeneration = useCallback(() => dispatch({ type: 'RESET_GENERATION' }), []);
+  const resetForm = useCallback(() => dispatch({ type: 'RESET_FORM' }), []);
 
   // Computed values
-  const requiredFiles: string[] = [];
-  if (state.mode === 'redesign' || state.mode === 'staging') {
-    requiredFiles.push('Room image');
-  }
-  if (state.mode === 'compose') {
-    requiredFiles.push('Base room image', 'Reference image');
-  }
+  const { requiredFiles, missingRequirements, canGenerate } = useMemo(() => {
+    const files: string[] = [];
+    if (state.mode === 'redesign' || state.mode === 'staging') {
+      files.push('Room image');
+    }
+    if (state.mode === 'compose') {
+      files.push('Base room image', 'Reference image');
+    }
 
-  const missingRequirements: string[] = [];
-  
-  // Check file requirements
-  if ((state.mode === 'redesign' || state.mode === 'staging') && !state.input1File) {
-    missingRequirements.push('Room image required');
-  }
-  if (state.mode === 'compose') {
-    if (!state.input1File) missingRequirements.push('Base room image required');
-    if (!state.input2File) missingRequirements.push('Reference image required');
-  }
-  
-  // Check prompt requirement for imagine mode
-  if (state.mode === 'imagine' && !state.prompt.trim()) {
-    missingRequirements.push('Description required for Imagine mode');
-  }
+    const missing: string[] = [];
+    if ((state.mode === 'redesign' || state.mode === 'staging') && !state.input1File) {
+      missing.push('Room image required');
+    }
+    if (state.mode === 'compose') {
+      if (!state.input1File) missing.push('Base room image required');
+      if (!state.input2File) missing.push('Reference image required');
+    }
+    if (state.mode === 'imagine' && !state.prompt.trim()) {
+      missing.push('Description required for Imagine mode');
+    }
 
-  const canGenerate = missingRequirements.length === 0 && !state.isGenerating;
+    return {
+      requiredFiles: files,
+      missingRequirements: missing,
+      canGenerate: missing.length === 0 && !state.isGenerating,
+    };
+  }, [state.mode, state.input1File, state.input2File, state.prompt, state.isGenerating]);
 
-  const value: GenerationContextValue = {
+  const value: GenerationContextValue = useMemo(() => ({
     state,
     dispatch,
     setMode,
@@ -273,7 +275,27 @@ export function GenerationProvider({ children, initialValues }: GenerationProvid
     canGenerate,
     requiredFiles,
     missingRequirements,
-  };
+  }), [
+    state,
+    setMode,
+    setInput1File,
+    setInput2File,
+    setRoomType,
+    setStyle,
+    setPrompt,
+    setAspectRatio,
+    setQuality,
+    setVariants,
+    startGeneration,
+    updateStatus,
+    setResults,
+    setError,
+    resetGeneration,
+    resetForm,
+    canGenerate,
+    requiredFiles,
+    missingRequirements,
+  ]);
 
   return (
     <GenerationContext.Provider value={value}>
