@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
@@ -58,10 +59,12 @@ export default async function CollectionPage({
           {items.map((item) => (
             <Card key={item.id} className="overflow-hidden">
               <div className="aspect-square relative">
-                <img
+                <Image
                   src={item.image_url}
                   alt={item.title || 'Community item'}
-                  className="object-cover w-full h-full"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                 />
               </div>
               {(item.title || item.tags?.length) && (

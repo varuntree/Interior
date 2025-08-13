@@ -1,9 +1,13 @@
 // libs/api-utils/responses.ts
 import { NextResponse } from 'next/server'
+import { type CacheConfig, buildCacheHeaders, CACHE_CONFIGS } from './cache'
 
-export function ok<T>(data: T, message?: string) {
+export function ok<T>(data: T, message?: string, cache?: CacheConfig) {
+  const cacheHeaders = cache ? buildCacheHeaders(cache) : { 'Cache-Control': 'private, no-store' };
   return NextResponse.json({ success: true, data, message } as const, {
-    headers: { 'Cache-Control': 'private, no-store' },
+    headers: {
+      ...cacheHeaders,
+    },
   })
 }
 

@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server';
 // Removed unused withMethods import
 import { ok, fail } from '@/libs/api-utils/responses';
+import { CACHE_CONFIGS } from '@/libs/api-utils/cache';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { createClient } from '@/libs/supabase/server';
 import { getGeneration } from '@/libs/services/generation';
@@ -89,7 +90,12 @@ export async function GET(req: NextRequest, { params }: Context) {
       error: generation.error
     };
 
-    return ok(response);
+    // Use short cache for in-progress generations, longer for completed ones
+    const cacheConfig = generation.status === 'succeeded' 
+      ? CACHE_CONFIGS.MEDIUM 
+      : CACHE_CONFIGS.SHORT;
+    
+    return ok(response, undefined, cacheConfig);
 
   } catch (error: any) {
     console.error('Generation status error:', error);

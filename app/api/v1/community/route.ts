@@ -1,13 +1,15 @@
 // app/api/v1/community/route.ts
 import { NextRequest } from 'next/server'
-import { withMethods } from '@/libs/api-utils/methods'
-import { fail } from '@/libs/api-utils/responses'
+import { withMethods } from '@/libs/api-utils/handler'
+import { ok, fail } from '@/libs/api-utils/responses'
+import { CACHE_CONFIGS } from '@/libs/api-utils/cache'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { getCommunityGallery, getFeaturedCollections } from '@/libs/services/community'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
+export const GET = withMethods({
+  GET: async (req: NextRequest) => {
   try {
     // Parse query parameters
     const url = new URL(req.url)
@@ -111,19 +113,11 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
     }
 
     // Return with caching headers for public content
-    return new Response(JSON.stringify({
-      success: true,
-      data: response
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300, s-maxage=600' // Cache for 5 minutes, CDN for 10 minutes
-      }
-    })
+    return ok(response, undefined, CACHE_CONFIGS.PUBLIC)
 
   } catch (error: any) {
     console.error('Community gallery error:', error)
     return fail(500, 'INTERNAL_ERROR', 'Failed to fetch community content')
+  }
   }
 })

@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server'
 import { withMethods } from '@/libs/api-utils/methods'
 import { ok, fail } from '@/libs/api-utils/responses'
+import { CACHE_CONFIGS } from '@/libs/api-utils/cache'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { getUserUsageStatus, getUserUsageHistory } from '@/libs/services/usage'
@@ -114,7 +115,7 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
         : 0
     }
 
-    return ok(response)
+    return ok(response, undefined, CACHE_CONFIGS.AUTH)
 
   } catch (error: any) {
     console.error('Usage status error:', error)

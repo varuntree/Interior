@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface CommunityCollection {
@@ -39,10 +40,12 @@ export default async function CommunityPage() {
             <a href={`/community/${collection.id}`}>
               {collection.cover_image_url && (
                 <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                  <img
+                  <Image
                     src={collection.cover_image_url}
                     alt={collection.title}
-                    className="object-cover w-full h-full"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
               )}

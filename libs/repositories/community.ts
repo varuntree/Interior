@@ -1,5 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+export interface ApplySettings {
+  mode?: string
+  roomType?: string
+  style?: string
+  prompt?: string
+  aspectRatio?: string
+  quality?: string
+  variants?: number
+}
+
 export interface CommunityCollection {
   id: string
   title: string
@@ -14,7 +24,7 @@ export interface CommunityItem {
   collection_id: string
   render_id?: string
   external_image_url?: string
-  apply_settings?: any
+  apply_settings?: ApplySettings
   order_index: number
   created_at: string
 }
@@ -24,7 +34,7 @@ export interface CommunityItemWithRender {
   collection_id: string
   render_id?: string
   external_image_url?: string
-  apply_settings?: any
+  apply_settings?: ApplySettings
   order_index: number
   created_at: string
   render?: {

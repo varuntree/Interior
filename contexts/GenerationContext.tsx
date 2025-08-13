@@ -195,10 +195,18 @@ const GenerationContext = createContext<GenerationContextValue | undefined>(unde
 // Provider
 interface GenerationProviderProps {
   children: ReactNode;
+  initialValues?: Partial<GenerationState>;
 }
 
-export function GenerationProvider({ children }: GenerationProviderProps) {
-  const [state, dispatch] = useReducer(generationReducer, initialState);
+export function GenerationProvider({ children, initialValues }: GenerationProviderProps) {
+  const getInitialState = () => {
+    if (initialValues) {
+      return { ...initialState, ...initialValues };
+    }
+    return initialState;
+  };
+
+  const [state, dispatch] = useReducer(generationReducer, getInitialState());
 
   // Convenience functions
   const setMode = (mode: Mode) => dispatch({ type: 'SET_MODE', payload: mode });
