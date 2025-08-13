@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "sonner";
 import NextTopLoader from "nextjs-toploader";
 import config from "@/config";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -30,11 +30,7 @@ const ClientLayout = ({ children }: { children: ReactNode }) => {
       />
 
       {/* Toast notifications */}
-      <Toaster
-        toastOptions={{
-          duration: 3000,
-        }}
-      />
+      <Toaster richColors />
 
       {/* Main app content */}
       {children}

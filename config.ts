@@ -2,12 +2,12 @@ import { ConfigProps } from "./types/config";
 
 const config = {
   // REQUIRED
-  appName: "ShipFast",
+  appName: "Interior AI",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
-    "The NextJS boilerplate with all you need to build your SaaS, AI tool, or any other web app.",
+    "Transform your space with AI-powered interior design. Generate beautiful room designs with Australian-inspired styles.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
-  domainName: "shipfa.st",
+  domainName: "interior-ai.com",
   crisp: {
     // Crisp website ID. IF YOU DON'T USE CRISP: just remove this => Then add a support email in this config file (resend.supportEmail) otherwise customer support won't work.
     id: "",
@@ -26,18 +26,18 @@ const config = {
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Starter",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
-        description: "Perfect for small projects",
+        description: "Perfect for getting started with AI interior design",
         // The price you want to display, the one user will be charged on Stripe.
-        price: 99,
+        price: 29,
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 149,
+        priceAnchor: 49,
         features: [
           {
-            name: "NextJS boilerplate",
+            name: "150 generations per month",
           },
-          { name: "User oauth" },
-          { name: "Database" },
-          { name: "Emails" },
+          { name: "4 design modes" },
+          { name: "Australian style presets" },
+          { name: "Collections & favorites" },
         ],
       },
       {
@@ -48,18 +48,18 @@ const config = {
         // This plan will look different on the pricing page, it will be highlighted. You can only have one plan with isFeatured: true
         isFeatured: true,
         name: "Advanced",
-        description: "You need more power",
-        price: 149,
-        priceAnchor: 299,
+        description: "For designers and power users",
+        price: 79,
+        priceAnchor: 129,
         features: [
           {
-            name: "NextJS boilerplate",
+            name: "600 generations per month",
           },
-          { name: "User oauth" },
-          { name: "Database" },
-          { name: "Emails" },
-          { name: "1 year of updates" },
-          { name: "24/7 support" },
+          { name: "4 design modes" },
+          { name: "Australian style presets" },
+          { name: "Collections & favorites" },
+          { name: "Priority generation queue" },
+          { name: "Community gallery access" },
         ],
       },
     ],
