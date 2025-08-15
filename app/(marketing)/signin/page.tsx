@@ -28,7 +28,9 @@ export default function Login() {
 
     try {
       const { type, provider } = options;
-      const redirectURL = window.location.origin + "/api/auth/callback";
+      // Use environment variable for redirect URL, fallback to window.location.origin
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      const redirectURL = baseUrl + "/api/auth/callback";
 
       if (type === "oauth") {
         await supabase.auth.signInWithOAuth({

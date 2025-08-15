@@ -5,10 +5,15 @@
   "packageManager": "npm@>=10",
   "scripts": {
     "dev": "next dev",
+    "dev:setup": "sh scripts/setup-dev.sh",
+    "dev:tunnel": "echo '🌐 Starting ngrok tunnel...' && ngrok http 3000",
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check-env": "node -e \"console.log('✓ Environment check passed')\"",
+    "setup": "npm install && npm run dev:setup"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",

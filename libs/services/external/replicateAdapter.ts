@@ -19,19 +19,21 @@ export interface GenerationRequest {
 }
 
 export interface ReplicateInputs {
-  prompt: string;
-  image?: string[];
-  aspect_ratio: string;
-  num_outputs: number;
-  output_format?: string;
-  output_quality?: number;
-  guidance_scale?: number;
-  num_inference_steps?: number;
+  openai_api_key: string;           // REQUIRED for gpt-image-1
+  prompt: string;                    // REQUIRED
+  input_images?: string[];           // Optional reference images (was 'image')
+  aspect_ratio: string;              // Correct
+  number_of_images: number;          // Was 'num_outputs'
+  output_format?: string;            // Correct
+  quality?: string;                  // Direct quality parameter
+  background?: string;               // New optional parameter
+  user_id?: string;                  // New optional for abuse monitoring
 }
 
 export function toReplicateInputs(
   req: GenerationRequest,
-  signedInputUrls: string[]
+  signedInputUrls: string[],
+  openaiApiKey: string
 ): ReplicateInputs {
   const { settings } = req;
 
@@ -42,54 +44,25 @@ export function toReplicateInputs(
     '2:3': '2:3'
   };
 
-  // Map quality to inference steps and guidance
-  const qualitySettings = getQualitySettings(settings.quality);
-
   const inputs: ReplicateInputs = {
+    openai_api_key: openaiApiKey,     // REQUIRED for gpt-image-1
     prompt: req.prompt || '',
     aspect_ratio: aspectRatioMapping[settings.aspectRatio],
-    num_outputs: Math.min(settings.variants, runtimeConfig.limits.maxVariantsPerRequest),
+    number_of_images: Math.min(settings.variants, runtimeConfig.limits.maxVariantsPerRequest),
     output_format: 'webp',
-    ...qualitySettings
+    quality: settings.quality,         // Direct mapping, no conversion
+    background: 'auto',                // Default to auto
+    user_id: req.ownerId               // For abuse monitoring
   };
 
-  // Add images for modes that require them
+  // Add reference images if provided
   if (signedInputUrls.length > 0) {
-    inputs.image = signedInputUrls;
+    inputs.input_images = signedInputUrls;  // Changed from 'image'
   }
 
   return inputs;
 }
 
-function getQualitySettings(quality: Quality): Partial<ReplicateInputs> {
-  switch (quality) {
-    case 'low':
-      return {
-        output_quality: 80,
-        guidance_scale: 7.5,
-        num_inference_steps: 20
-      };
-    case 'medium':
-      return {
-        output_quality: 90,
-        guidance_scale: 7.5,
-        num_inference_steps: 30
-      };
-    case 'high':
-      return {
-        output_quality: 95,
-        guidance_scale: 9.0,
-        num_inference_steps: 50
-      };
-    case 'auto':
-    default:
-      return {
-        output_quality: 90,
-        guidance_scale: 7.5,
-        num_inference_steps: 30
-      };
-  }
-}
 
 export function buildWebhookUrl(baseUrl: string): string {
   const cleanBaseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash

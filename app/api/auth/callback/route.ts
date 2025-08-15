@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { getApplicationUrl } from "@/libs/api-utils/url-validation";
 import config from "@/config";
 
 export const dynamic = "force-dynamic";
@@ -15,5 +16,7 @@ export async function GET(req: NextRequest) {
   }
 
   // URL to redirect to after sign in process completes
-  return NextResponse.redirect(requestUrl.origin + config.auth.callbackUrl);
+  // Use environment-based URL to ensure consistent redirects
+  const baseUrl = getApplicationUrl(req);
+  return NextResponse.redirect(baseUrl + config.auth.callbackUrl);
 }

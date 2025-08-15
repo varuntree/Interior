@@ -1,71 +1,296 @@
-# ShipFast — Typescript
+# Interior AI Design Generator
 
-Hey maker 👋 it's Marc from [ShipFast](https://shipfa.st/docs). Let's get your startup off the ground, FAST ⚡️
+An AI-powered interior design generation platform for the Australian market. Create stunning redesigns, virtual staging, composition, and imagination-based interior designs using advanced AI models.
 
-<sub>**Watch/Star the repo to be notified when updates are pushed**</sub>
+## 🚀 Quick Start
 
-## Get Started
+### Prerequisites
+- Node.js 18+ 
+- npm (included with Node.js)
+- A free [ngrok](https://ngrok.com) account (for local development)
 
-1. Follow the [Get Started Tutorial](https://shipfa.st/docs) to clone the repo and run your local server 💻
+### For Generation Features (Webhook Support Required)
 
-<sub>**Looking for the /pages router version?** Use this [documentation](https://shipfa.st/docs-old) instead</sub>
+The generation features require webhook support from external services. This means your local development server needs to be accessible via HTTPS from the internet.
 
-2. Follow the [Ship In 5 Minutes Tutorial](https://shipfa.st/docs/tutorials/ship-in-5-minutes) to learn the foundation and ship your app quickly ⚡️
+#### Option 1: Automated Setup (Recommended)
+```bash
+# Clone and set up the project
+git clone <repository-url>
+cd Interior
+npm install
+npm run setup
+```
 
-## Links
+The setup script will:
+- Install ngrok if not present
+- Create `.env.local` from example
+- Guide you through configuration
+- Set up the development environment
 
--   [📚 Documentation](https://shipfa.st/docs)
--   [📣 Updates](https://shipfast.beehiiv.com/)
--   [🧑‍💻 Discord](https://shipfa.st/dashboard)
--   [🥇 Leaderboard](https://shipfa.st/leaderboard)
+#### Option 2: Manual Setup
+```bash
+# 1. Install dependencies
+npm install
 
-## Support
+# 2. Set up environment
+cp .env.local.example .env.local
 
-Reach out at hello@shipfa.st
+# 3. Install ngrok
+npm install -g ngrok
 
-Let's ship it, FAST ⚡️
+# 4. Start ngrok tunnel
+ngrok http 3000
+# Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
 
-\_
+# 5. Update .env.local
+# Set NEXT_PUBLIC_APP_URL=https://abc123.ngrok.io
 
-**📈 Grow your startup with [DataFast](https://datafa.st?ref=shipfast_readme)**
+# 6. Start development server
+npm run dev
+```
 
--   Analyze your traffic
--   Get insights on your customers
--   Make data-driven decisions
+### Environment Variables
 
-ShipFast members get 30% OFF on all plans! 🎁
+Create `.env.local` from `.env.local.example` and configure:
 
-![datafast](https://github.com/user-attachments/assets/2a9710f8-9a39-4593-b4bf-9ee933529870)
+**Required:**
+- `NEXT_PUBLIC_APP_URL` - Your public URL (ngrok for development)
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+- `REPLICATE_API_TOKEN` - Replicate API token for AI generation
+- `OPENAI_API_KEY` - OpenAI API key (REQUIRED for gpt-image-1 model)
+- `STRIPE_SECRET_KEY` - Stripe secret key for billing
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
 
-## Contributor Cookbook (Baseline)
+**Optional:**
+- `WEBHOOK_SECRET` - Custom webhook verification secret
+- `SENTRY_DSN` - Error tracking (if using Sentry)
 
-### Add a new API endpoint
-1. Create a versioned Route Handler under `app/api/v1/<domain>/<name>/route.ts`.
-2. Use `withMethods` from `libs/api-utils/handler`.
-3. Validate input with Zod via `libs/api-utils/validate`.
-4. Call a Service function (create one under `libs/services/`) and pass a Supabase server client from `libs/supabase/server`.
-5. Services call Repositories in `libs/repositories/` for DB access.
-6. If you must keep a legacy path working, create a tiny "bridge" file that re-exports the POST/GET from the new v1 route.
+### OpenAI API Key Requirement
 
-### Add a new Repository function
-1. Create/modify a file under `libs/repositories/` (one file per entity).
-2. Export **pure functions** that accept a `SupabaseClient` and return typed data.
-3. **No HTTP logic** or `Request`/`Response` imports here.
+The image generation uses OpenAI's GPT-Image-1 model through Replicate, which requires:
 
-### Add a new Service function
-1. Create/modify a file under `libs/services/`.
-2. Compose repositories + external SDKs (Stripe, etc.).
-3. **No HTTP** here. Accept a `SupabaseClient` and plain arguments.
+- **Valid OpenAI API Key**: Get from [OpenAI API Keys](https://platform.openai.com/api-keys)
+- **Image Generation Access**: Ensure your OpenAI account has image generation enabled
+- **Sufficient Credits**: You'll be charged by OpenAI for each image generated
+- **Dual Billing**: You pay both Replicate (platform) and OpenAI (model usage)
 
-### Storage
-- Use `libs/storage/storageRepository.ts` helpers.
-- Public assets: use bucket `public`.
-- Private assets: use bucket `private` with per-user path (e.g., `${userId}/file.ext`) and signed URLs.
+**Important**: You need BOTH `REPLICATE_API_TOKEN` AND `OPENAI_API_KEY` for generation to work.
 
-### Migrations
-- Place SQL files under `migrations/phaseX/` folders.
-- **Do not apply** by default. Apply only when explicitly requested.
+**Cost Estimate per Image**:
+- Replicate Platform Fee: ~$0.01-0.02
+- OpenAI API Usage: ~$0.02-0.04  
+- **Total**: ~$0.03-0.06 per image
 
-### Auth & Data Fetching
-- Server and Client code must call **APIs** (Route Handlers).
-- **No direct DB calls in pages/components** (except global auth refresh middleware).
+## 🏗️ Architecture
+
+This application follows a strict architectural pattern:
+
+```
+UI Components → API Routes → Services → Repositories → Database
+```
+
+### Key Principles
+- **No Server Actions** - All data flows through API routes
+- **No direct DB calls** from components - Use API endpoints
+- **Service layer** handles business logic
+- **Repository layer** handles data access
+- **Mobile-first** responsive design
+
+### Directory Structure
+```
+app/                    # Next.js App Router pages
+├── (app)/             # Private dashboard pages
+├── (marketing)/       # Public marketing pages
+└── api/v1/           # API endpoints
+components/            # React components
+├── ui/               # shadcn/ui components
+├── generation/       # Generation-specific components
+└── dashboard/        # Dashboard components
+libs/
+├── services/         # Business logic
+├── repositories/     # Database access
+├── api-utils/        # API utilities
+└── app-config/       # Runtime configuration
+```
+
+## 🎨 Features
+
+### Generation Modes
+1. **Redesign** - Keep room structure, change furnishings and style
+2. **Staging** - Add furniture to empty or partially furnished rooms
+3. **Compose** - Merge two images (base room + reference style)
+4. **Imagine** - Generate rooms from text descriptions only
+
+### Organization
+- **My Renders** - All generated designs auto-saved
+- **Collections** - Custom folders + default "My Favorites"
+- **Community** - Curated inspiration galleries
+
+### Australian Focus
+- AU-specific room types (Alfresco, Granny Flat)
+- AU-oriented styles (Coastal AU, Hamptons AU, etc.)
+- Local design sensibilities and materials
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+npm run dev              # Start development server
+npm run dev:setup       # Run setup script for new developers
+npm run dev:tunnel      # Start ngrok tunnel
+npm run build           # Build for production
+npm run typecheck       # TypeScript type checking
+npm run lint            # ESLint checking
+npm run setup           # Complete project setup
+```
+
+### Adding New Features
+
+#### Add an API Endpoint
+1. Create `app/api/v1/<domain>/<action>/route.ts`
+2. Use `withMethods` from `libs/api-utils/methods`
+3. Validate input with Zod
+4. Call service function
+5. Return normalized JSON response
+
+#### Add Business Logic
+1. Create/modify files under `libs/services/`
+2. Compose repositories + external SDKs
+3. Keep HTTP logic out of services
+4. Use dependency injection pattern
+
+#### Add Database Access
+1. Create/modify files under `libs/repositories/`
+2. Export pure functions accepting `SupabaseClient`
+3. No HTTP imports or logic
+4. Return typed data
+
+## 🔧 Troubleshooting
+
+### Generation Fails with "Not a valid HTTPS URL"
+This means the webhook URL is not properly configured:
+
+1. **Check environment variable:**
+   ```bash
+   # Ensure NEXT_PUBLIC_APP_URL is set in .env.local
+   echo $NEXT_PUBLIC_APP_URL
+   ```
+
+2. **Restart ngrok and update URL:**
+   ```bash
+   # Start new ngrok session
+   ngrok http 3000
+   
+   # Copy new HTTPS URL to .env.local
+   # Restart development server
+   npm run dev
+   ```
+
+3. **Verify webhook endpoint:**
+   Your webhook URL should be: `https://your-subdomain.ngrok.io/api/v1/webhooks/replicate`
+
+### Generation Fails with "openai_api_key is required"
+This means your OpenAI API key is not configured:
+
+1. **Get OpenAI API Key:**
+   - Visit [OpenAI API Keys](https://platform.openai.com/api-keys)
+   - Create a new secret key
+   - Ensure your account has image generation access
+
+2. **Configure in environment:**
+   ```bash
+   # Add to .env.local
+   OPENAI_API_KEY=sk-your-actual-api-key-here
+   
+   # Restart development server
+   npm run dev
+   ```
+
+3. **Verify both keys are set:**
+   ```bash
+   # Check both required keys are present
+   grep -E "(REPLICATE_API_TOKEN|OPENAI_API_KEY)" .env.local
+   ```
+
+### Common Issues
+
+**Port 3000 already in use:**
+```bash
+# Kill process on port 3000
+npx kill-port 3000
+npm run dev
+```
+
+**Environment variables not loading:**
+```bash
+# Restart development server after changing .env.local
+# Ensure no trailing spaces in environment variable values
+```
+
+**TypeScript errors:**
+```bash
+npm run typecheck  # Check for type errors
+npm run build      # Ensure build passes
+```
+
+## 🚢 Deployment
+
+### Environment Setup
+1. Set all required environment variables in your hosting platform
+2. Ensure `NEXT_PUBLIC_APP_URL` points to your production domain
+3. Use HTTPS URLs for all external integrations
+
+### Build Process
+```bash
+npm run build      # Creates optimized production build
+npm run start      # Starts production server
+```
+
+### Webhooks Configuration
+Update webhook URLs in external services:
+- **Stripe:** `https://yourdomain.com/api/v1/webhooks/stripe`
+- **Replicate:** `https://yourdomain.com/api/v1/webhooks/replicate`
+
+## 🧪 Testing
+
+### Manual Testing Checklist
+- [ ] Sign in with Google OAuth
+- [ ] Generate image using Imagine mode
+- [ ] Save result to My Favorites
+- [ ] View result in My Renders
+- [ ] Create custom collection
+- [ ] Browse community gallery
+
+### Automated Checks
+```bash
+npm run typecheck  # TypeScript validation
+npm run lint      # Code style validation
+npm run build     # Build validation
+```
+
+## 📚 Additional Resources
+
+- [Supabase Documentation](https://supabase.com/docs)
+- [Replicate Documentation](https://replicate.com/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [shadcn/ui Components](https://ui.shadcn.com/)
+
+## 🤝 Contributing
+
+1. Follow the established architecture patterns
+2. Use the provided templates for new features
+3. Ensure all tests pass before submitting
+4. Update documentation for new features
+
+## 📄 License
+
+[Add your license information here]
+
+---
+
+**Need help?** Check the troubleshooting section above or review the setup instructions.

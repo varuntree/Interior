@@ -1,6 +1,7 @@
 // libs/services/generation.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
 import runtimeConfig from '@/libs/app-config/runtime';
+import { env } from '@/libs/env';
 import { buildPrompt, validatePromptParams } from './generation/prompts';
 import { moderateContent, moderateImageInputs } from './generation/moderation';
 import { uploadGenerationInput } from './storage/uploads';
@@ -157,8 +158,13 @@ export async function submitGeneration(
     idempotencyKey: submission.idempotencyKey
   };
 
+  // Validate OpenAI API key is available
+  if (!env.server.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is required for image generation');
+  }
+
   // Create Replicate prediction
-  const replicateInputs = toReplicateInputs(generationRequest, signedUrls);
+  const replicateInputs = toReplicateInputs(generationRequest, signedUrls, env.server.OPENAI_API_KEY);
   const webhookUrl = buildWebhookUrl(baseUrl || 'http://localhost:3000');
 
   const prediction = await createPrediction({

@@ -14,6 +14,7 @@ const serverSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   REPLICATE_API_TOKEN: z.string().min(1).optional(), // required for generation service
   REPLICATE_WEBHOOK_SECRET: z.string().min(1).optional(), // for webhook signature verification
+  OPENAI_API_KEY: z.string().min(1), // REQUIRED for gpt-image-1 model
   PUBLIC_BASE_URL: z.string().url().optional(), // for webhook URLs
 });
 
@@ -29,6 +30,7 @@ export const env = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
     REPLICATE_WEBHOOK_SECRET: process.env.REPLICATE_WEBHOOK_SECRET,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
   }),
 };

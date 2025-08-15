@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withMethods } from '@/libs/api-utils/methods';
 import { fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
+import { getApplicationUrl } from '@/libs/api-utils/url-validation';
 import { submitGeneration } from '@/libs/services/generation';
 import { createClient } from '@/libs/supabase/server';
 
@@ -115,9 +116,8 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       idempotencyKey: parsedData.idempotencyKey
     };
 
-    // Get base URL for webhook
-    const origin = req.headers.get('origin') || req.headers.get('host') || 'http://localhost:3000';
-    const baseUrl = origin.startsWith('http') ? origin : `https://${origin}`;
+    // Get base URL for webhook - prioritize environment variable
+    const baseUrl = getApplicationUrl(req);
 
     // Submit generation
     const serviceSupabase = createServiceSupabaseClient();
@@ -156,6 +156,18 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     if (error.message.startsWith('VALIDATION_ERROR:')) {
       const message = error.message.replace('VALIDATION_ERROR: ', '');
       return fail(400, 'VALIDATION_ERROR', message);
+    }
+
+    // Handle URL configuration errors
+    if (error.message.includes('NEXT_PUBLIC_APP_URL') || error.message.includes('HTTPS required')) {
+      return fail(500, 'CONFIGURATION_ERROR', 
+        'Application URL not configured properly. Please set NEXT_PUBLIC_APP_URL environment variable to your application\'s public HTTPS URL.');
+    }
+
+    // Handle OpenAI API key errors
+    if (error.message.includes('openai_api_key') || error.message.includes('OPENAI_API_KEY')) {
+      return fail(500, 'CONFIGURATION_ERROR', 
+        'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable. You need both Replicate and OpenAI API keys for image generation.');
     }
 
     // Generic server error

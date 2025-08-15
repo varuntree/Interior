@@ -112,8 +112,8 @@ export function BillingSection({ userId }: BillingSectionProps) {
         body: JSON.stringify({
           priceId: 'price_pro_plan', // This should come from config
           mode: 'subscription',
-          successUrl: `${window.location.origin}/dashboard/settings?success=true`,
-          cancelUrl: window.location.href
+          successUrl: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/dashboard/settings?success=true`,
+          cancelUrl: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings` : window.location.href
         })
       });
 
