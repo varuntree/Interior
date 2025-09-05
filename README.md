@@ -5,30 +5,14 @@ An AI-powered interior design generation platform for the Australian market. Cre
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm (included with Node.js)
-- A free [ngrok](https://ngrok.com) account (for local development)
 
-### For Generation Features (Webhook Support Required)
+### For Generation Features (Webhook Support)
 
-The generation features require webhook support from external services. This means your local development server needs to be accessible via HTTPS from the internet.
+The generation features use webhooks from external services. In development, you can run the app normally at `http://localhost:3000`. For testing webhooks locally, use any method to expose a public HTTPS URL to your dev server or deploy a preview to your hosting provider.
 
-#### Option 1: Automated Setup (Recommended)
-```bash
-# Clone and set up the project
-git clone <repository-url>
-cd Interior
-npm install
-npm run setup
-```
-
-The setup script will:
-- Install ngrok if not present
-- Create `.env.local` from example
-- Guide you through configuration
-- Set up the development environment
-
-#### Option 2: Manual Setup
+#### Manual Setup
 ```bash
 # 1. Install dependencies
 npm install
@@ -36,17 +20,7 @@ npm install
 # 2. Set up environment
 cp .env.local.example .env.local
 
-# 3. Install ngrok
-npm install -g ngrok
-
-# 4. Start ngrok tunnel
-ngrok http 3000
-# Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
-
-# 5. Update .env.local
-# Set NEXT_PUBLIC_APP_URL=https://abc123.ngrok.io
-
-# 6. Start development server
+# 3. Start development server
 npm run dev
 ```
 
@@ -55,7 +29,7 @@ npm run dev
 Create `.env.local` from `.env.local.example` and configure:
 
 **Required:**
-- `NEXT_PUBLIC_APP_URL` - Your public URL (ngrok for development)
+- `NEXT_PUBLIC_APP_URL` - Your public URL (e.g., http://localhost:3000 for dev, https://your-domain.com for prod)
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
@@ -139,13 +113,10 @@ libs/
 ### Available Scripts
 
 ```bash
-npm run dev              # Start development server
-npm run dev:setup       # Run setup script for new developers
-npm run dev:tunnel      # Start ngrok tunnel
-npm run build           # Build for production
-npm run typecheck       # TypeScript type checking
-npm run lint            # ESLint checking
-npm run setup           # Complete project setup
+npm run dev        # Start development server
+npm run build      # Build for production
+npm run typecheck  # TypeScript type checking
+npm run lint       # ESLint checking
 ```
 
 ### Adding New Features
@@ -176,22 +147,13 @@ This means the webhook URL is not properly configured:
 
 1. **Check environment variable:**
    ```bash
-   # Ensure NEXT_PUBLIC_APP_URL is set in .env.local
+   # Ensure NEXT_PUBLIC_APP_URL is set appropriately
+   # e.g., http://localhost:3000 for dev or your HTTPS domain in prod
    echo $NEXT_PUBLIC_APP_URL
    ```
 
-2. **Restart ngrok and update URL:**
-   ```bash
-   # Start new ngrok session
-   ngrok http 3000
-   
-   # Copy new HTTPS URL to .env.local
-   # Restart development server
-   npm run dev
-   ```
-
-3. **Verify webhook endpoint:**
-   Your webhook URL should be: `https://your-subdomain.ngrok.io/api/v1/webhooks/replicate`
+2. **Verify webhook endpoint:**
+   It should resolve under your public base URL, for example: `https://your-domain.com/api/v1/webhooks/replicate`
 
 ### Generation Fails with "openai_api_key is required"
 This means your OpenAI API key is not configured:

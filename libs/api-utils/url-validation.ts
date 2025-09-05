@@ -50,12 +50,7 @@ export function getApplicationUrl(req?: NextRequest): string {
   // Priority 3: Development fallback only
   if (process.env.NODE_ENV === 'development') {
     console.warn(
-      '⚠️  No NEXT_PUBLIC_APP_URL set. Webhooks may fail in development.\n' +
-      '   For local development with generation features:\n' +
-      '   1. Install ngrok: npm install -g ngrok\n' +
-      '   2. Run: ngrok http 3000\n' +
-      '   3. Set NEXT_PUBLIC_APP_URL=https://your-subdomain.ngrok.io in .env.local\n' +
-      '   4. Restart development server'
+      '⚠️  NEXT_PUBLIC_APP_URL is not set. Using http://localhost:3000 for development.'
     );
     return 'http://localhost:3000';
   }
@@ -113,7 +108,7 @@ function shouldUseHttps(host: string): boolean {
     return false;
   }
   
-  // Default to HTTPS for other hosts (likely tunneling services)
+  // Default to HTTPS for other hosts
   return true;
 }
 
@@ -140,12 +135,8 @@ export function validateUrlConfiguration(): {
     if (process.env.NODE_ENV === 'production' && url.startsWith('http://')) {
       errors.push('HTTP URL detected in production - HTTPS is required');
     }
-    
-    // Check for ngrok in production (common mistake)
-    if (process.env.NODE_ENV === 'production' && url.includes('ngrok.io')) {
-      warnings.push('ngrok URL detected in production - consider using a permanent domain');
-    }
-    
+    // No special cases for temporary tunnel URLs
+
     // Check for default example URLs
     if (url.includes('your-url-here') || url.includes('example.com')) {
       errors.push('Example URL detected - please set a real URL in NEXT_PUBLIC_APP_URL');

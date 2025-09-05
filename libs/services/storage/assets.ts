@@ -15,6 +15,21 @@ export interface ProcessedAsset {
   thumbPath?: string;
 }
 
+export interface AssetProcessingError {
+  type: 'DOWNLOAD_FAILED' | 'STORAGE_FAILED' | 'DATABASE_FAILED' | 'VALIDATION_FAILED';
+  message: string;
+  jobId: string;
+  predictionId: string;
+  retryable: boolean;
+}
+
+export interface ProcessingResult {
+  success: boolean;
+  renderId?: string;
+  variantsCreated: number;
+  errors: AssetProcessingError[];
+}
+
 export async function processGenerationAssets(
   supabase: SupabaseClient,
   params: ProcessAssetsParams
