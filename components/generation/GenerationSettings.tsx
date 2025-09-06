@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { AspectRatio, Quality } from "@/libs/app-config/runtime";
 import { Settings2, Square, RectangleHorizontal, RectangleVertical, Minus, Plus } from "lucide-react";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 interface GenerationSettingsProps {
   aspectRatio: AspectRatio;
@@ -81,7 +82,8 @@ export function GenerationSettings({
 }: GenerationSettingsProps) {
   const handleVariantsChange = (delta: number) => {
     const newValue = variants + delta;
-    if (newValue >= 1 && newValue <= 3) {
+    const maxVariants = runtimeConfig.limits.maxVariantsPerRequest;
+    if (newValue >= 1 && newValue <= maxVariants) {
       onVariantsChange(newValue);
     }
   };
@@ -213,7 +215,7 @@ export function GenerationSettings({
                     variant="outline"
                     size="sm"
                     onClick={() => handleVariantsChange(1)}
-                    disabled={disabled || variants >= 3}
+                    disabled={disabled || variants >= runtimeConfig.limits.maxVariantsPerRequest}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

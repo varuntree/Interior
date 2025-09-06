@@ -1,5 +1,5 @@
 import { withMethods } from "@/libs/api-utils/handler";
-import { ok, unauthorized } from "@/libs/api-utils/responses";
+import { ok, fail } from "@/libs/api-utils/responses";
 import { CACHE_CONFIGS } from '@/libs/api-utils/cache';
 import { createClient } from "@/libs/supabase/server";
 
@@ -9,7 +9,7 @@ export const GET = withMethods({
   GET: async () => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return unauthorized("Not signed in");
+    if (!user) return fail(401, 'UNAUTHORIZED', 'Not signed in');
     // Return a minimal shape only (no secrets)
     return ok({ id: user.id, email: user.email, createdAt: user.created_at }, undefined, CACHE_CONFIGS.AUTH);
   }

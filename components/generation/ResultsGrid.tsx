@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo, useMemo } from "react";
 import { cn } from "@/libs/utils";
 import { ResultCard } from "./ResultCard";
 import { GenerationResult } from "@/contexts/GenerationContext";
@@ -40,7 +41,7 @@ function ResultCardSkeleton() {
   );
 }
 
-export function ResultsGrid({
+function ResultsGridInner({
   results,
   mode,
   roomType,
@@ -53,6 +54,30 @@ export function ResultsGrid({
   onDownload,
   className
 }: ResultsGridProps) {
+  const count = results?.length ?? 0;
+
+  const gridClass = useMemo(() => cn(
+    "grid gap-4",
+    count === 1 && "grid-cols-1 max-w-md mx-auto",
+    count === 2 && "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto",
+    count >= 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+  ), [count]);
+
+  const items = useMemo(() => (results || []).map((result) => (
+    <ResultCard
+      key={result.id}
+      result={result}
+      mode={mode}
+      roomType={roomType}
+      style={style}
+      prompt={prompt}
+      onAddToFavorites={onAddToFavorites}
+      onAddToCollection={onAddToCollection}
+      onRerun={onRerun}
+      onDownload={onDownload}
+    />
+  )), [results, mode, roomType, style, prompt, onAddToFavorites, onAddToCollection, onRerun, onDownload]);
+
   if (isLoading) {
     return (
       <div className={cn("space-y-6", className)}>
@@ -94,27 +119,7 @@ export function ResultsGrid({
       </div>
 
       {/* Results Grid */}
-      <div className={cn(
-        "grid gap-4",
-        results.length === 1 && "grid-cols-1 max-w-md mx-auto",
-        results.length === 2 && "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto",
-        results.length >= 3 && "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-      )}>
-        {results.map((result) => (
-          <ResultCard
-            key={result.id}
-            result={result}
-            mode={mode}
-            roomType={roomType}
-            style={style}
-            prompt={prompt}
-            onAddToFavorites={onAddToFavorites}
-            onAddToCollection={onAddToCollection}
-            onRerun={onRerun}
-            onDownload={onDownload}
-          />
-        ))}
-      </div>
+      <div className={gridClass}>{items}</div>
 
       {/* Bulk Actions */}
       {results.length > 1 && (
@@ -140,3 +145,5 @@ export function ResultsGrid({
     </div>
   );
 }
+
+export const ResultsGrid = memo(ResultsGridInner);

@@ -117,7 +117,19 @@ npm run dev        # Start development server
 npm run build      # Build for production
 npm run typecheck  # TypeScript type checking
 npm run lint       # ESLint checking
+npm run verify:grep # Guardrails (forbidden patterns)
+npm run test       # Unit tests (prompt builder + replicate adapter)
 ```
+
+### Codebase Standards & Cleanup Docs
+
+This repo follows a strict, documented architecture and coding standard to keep changes fast and reliable.
+
+- Codebase Cleaning docs (plans, audits, standards, changelog): `ai_docs/codebase_cleaning/`
+  - Start with `ai_docs/codebase_cleaning/01-guiding-principles.md`
+  - See per‑phase plans under `ai_docs/codebase_cleaning/phased plans/`
+- Golden path: Route → Service → Repository → DB; no Server Actions; no direct DB/storage in components.
+- API responses: always `{ success, data? | error? }` via `libs/api-utils/responses`.
 
 ### Adding New Features
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { withMethods } from '@/libs/api-utils/handler'
-import { ok, badRequest, forbidden } from '@/libs/api-utils/responses'
+import { ok, fail } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { upsertItem } from '@/libs/services/community'
 import { checkAdminStatus } from '@/libs/services/admin'
@@ -19,7 +19,7 @@ async function handlePOST(req: Request) {
     const body = await req.json()
     const parsed = BodySchema.safeParse(body)
     if (!parsed.success) {
-      return badRequest('Invalid request body')
+      return fail(400, 'VALIDATION_ERROR', 'Invalid request body', parsed.error.flatten())
     }
 
     const supabase = createServiceSupabaseClient()
@@ -27,7 +27,7 @@ async function handlePOST(req: Request) {
     // Check admin status
     const { isAdmin } = await checkAdminStatus({ supabase })
     if (!isAdmin) {
-      return forbidden('Admin access required')
+      return fail(403, 'FORBIDDEN', 'Admin access required')
     }
 
     const data = await upsertItem({ supabase }, {

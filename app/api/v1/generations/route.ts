@@ -176,6 +176,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
 });
 
 // GET method to list generations (optional for this route)
+// eslint-disable-next-line no-unused-vars
 export const GET = withMethods(['GET'], async (req: NextRequest) => {
   try {
     // Get authenticated user

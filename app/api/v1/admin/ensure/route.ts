@@ -1,15 +1,15 @@
 import { withMethods } from '@/libs/api-utils/handler'
-import { ok, unauthorized } from '@/libs/api-utils/responses'
+import { ok, fail } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { bootstrapAdmin } from '@/libs/services/admin'
 
-async function handlePOST(req: Request) {
+async function handlePOST() {
   try {
     const supabase = createServiceSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
-      return unauthorized('Authentication required')
+      return fail(401, 'UNAUTHORIZED', 'Authentication required')
     }
 
     const allowlistEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || []

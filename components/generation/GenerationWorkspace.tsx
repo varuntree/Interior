@@ -185,7 +185,8 @@ export function GenerationWorkspace() {
       )}
 
       {/* Generate Button */}
-      <div className="flex justify-center">
+      {/* Desktop/tablet center button */}
+      <div className="hidden md:flex justify-center">
         <Button
           size="lg"
           onClick={submitGeneration}
@@ -209,6 +210,35 @@ export function GenerationWorkspace() {
             </>
           )}
         </Button>
+      </div>
+
+      {/* Mobile sticky CTA */}
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3">
+        <div className="max-w-3xl mx-auto">
+          <Button
+            size="lg"
+            onClick={submitGeneration}
+            disabled={!canSubmit}
+            className="w-full text-base font-semibold"
+          >
+            {isSubmitting ? (
+              <>
+                <Wand2 className="h-5 w-5 mr-2 animate-spin" />
+                Starting Generation...
+              </>
+            ) : state.isGenerating ? (
+              <>
+                <Wand2 className="h-5 w-5 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Zap className="h-5 w-5 mr-2" />
+                Generate Design
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Generation Progress */}

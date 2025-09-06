@@ -6,8 +6,8 @@ import { CACHE_CONFIGS } from '@/libs/api-utils/cache';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { createClient } from '@/libs/supabase/server';
 import { getGeneration } from '@/libs/services/generation';
-import * as rendersRepo from '@/libs/repositories/renders';
-import { getAssetUrls } from '@/libs/services/storage/assets';
+import * as rendersService from '@/libs/services/renders';
+import { cancelGeneration } from '@/libs/services/generation';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,35 +44,11 @@ export async function GET(req: NextRequest, { params }: Context) {
 
     // If generation is succeeded, fetch variant URLs
     let variants: Array<{ index: number; url: string; thumbUrl?: string }> = [];
-    
     if (generation.status === 'succeeded') {
       try {
-        // Find render by job_id first
-        const { data: renders } = await serviceSupabase
-          .from('renders')
-          .select('id')
-          .eq('job_id', jobId)
-          .eq('owner_id', user.id)
-          .limit(1);
-        
-        if (renders && renders.length > 0) {
-          const renderData = await rendersRepo.getRenderWithVariants(serviceSupabase, renders[0].id, user.id);
-        
-          if (renderData) {
-            // Build variant URLs
-            for (const variant of renderData.variants) {
-              const urls = await getAssetUrls(serviceSupabase, variant.image_path, variant.thumb_path);
-              variants.push({
-                index: variant.idx,
-                url: urls.imageUrl,
-                thumbUrl: urls.thumbUrl
-              });
-            }
-          }
-        }
+        variants = await rendersService.getVariantsForJob({ supabase: serviceSupabase }, jobId, user.id)
       } catch (error) {
         console.error(`Failed to fetch variants for job ${jobId}:`, error);
-        // Continue with empty variants array
       }
     }
 
@@ -141,18 +117,7 @@ export async function DELETE(req: NextRequest, { params }: Context) {
       return fail(400, 'VALIDATION_ERROR', 'Cannot delete in-progress generation');
     }
 
-    // Delete the render and its variants (this will cascade)
-    const { data: renders } = await serviceSupabase
-      .from('renders')
-      .select('id')
-      .eq('job_id', jobId)
-      .eq('owner_id', user.id);
-    
-    if (renders && renders.length > 0) {
-      for (const render of renders) {
-        await rendersRepo.deleteRender(serviceSupabase, render.id, user.id);
-      }
-    }
+    await rendersService.deleteRendersByJob({ supabase: serviceSupabase }, jobId, user.id)
 
     return ok({ message: 'Generation deleted successfully' });
 
@@ -195,15 +160,7 @@ export async function PATCH(req: NextRequest, { params }: Context) {
         return fail(400, 'VALIDATION_ERROR', 'Cannot cancel completed generation');
       }
 
-      // Cancel the prediction on Replicate (if we want to implement this)
-      // For MVP, we'll just mark it as canceled in our DB
-      
-      // Update job status
-      const { updateJobStatus } = await import('@/libs/repositories/generation_jobs');
-      await updateJobStatus(serviceSupabase, jobId, {
-        status: 'canceled',
-        completed_at: new Date().toISOString()
-      });
+      await cancelGeneration({ supabase: serviceSupabase, userId: user.id }, jobId)
 
       return ok({ message: 'Generation canceled successfully' });
     }

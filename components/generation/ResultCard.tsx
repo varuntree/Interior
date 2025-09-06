@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { memo, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/libs/utils";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ interface ResultCardProps {
   className?: string;
 }
 
-export function ResultCard({
+function ResultCardInner({
   result,
   mode,
   roomType,
@@ -109,6 +109,7 @@ export function ResultCard({
                 imageLoading && "blur-sm"
               )}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
               onLoad={() => setImageLoading(false)}
               onError={() => {
                 setImageError(true);
@@ -148,6 +149,7 @@ export function ResultCard({
                       fill
                       className="object-contain"
                       sizes="(max-width: 768px) 100vw, 80vw"
+                      loading="lazy"
                     />
                   </div>
                 </DialogContent>
@@ -241,3 +243,23 @@ export function ResultCard({
     </Card>
   );
 }
+
+function propsEqual(prev: ResultCardProps, next: ResultCardProps) {
+  return (
+    prev.result.id === next.result.id &&
+    prev.result.url === next.result.url &&
+    prev.result.thumbUrl === next.result.thumbUrl &&
+    prev.result.index === next.result.index &&
+    prev.mode === next.mode &&
+    prev.roomType === next.roomType &&
+    prev.style === next.style &&
+    prev.prompt === next.prompt &&
+    prev.onAddToFavorites === next.onAddToFavorites &&
+    prev.onAddToCollection === next.onAddToCollection &&
+    prev.onRerun === next.onRerun &&
+    prev.onDownload === next.onDownload &&
+    prev.className === next.className
+  );
+}
+
+export const ResultCard = memo(ResultCardInner, propsEqual);

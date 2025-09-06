@@ -1,16 +1,12 @@
-import { NextRequest } from 'next/server';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
-import { ok, fail } from '@/libs/api-utils/responses';
+import { ok } from '@/libs/api-utils/responses';
+import { checkDbConnectivity } from '@/libs/services/health'
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const supabase = createServiceSupabaseClient();
-    // Test with a simple query
-    const { error } = await supabase.from('profiles').select('id').limit(1);
-    
-    return ok({
-      supabase: error ? 'error' : 'ok'
-    });
+    const result = await checkDbConnectivity({ supabase })
+    return ok(result);
   } catch (error) {
     return ok({
       supabase: 'error'

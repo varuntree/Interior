@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { withMethods } from "@/libs/api-utils/handler";
-import { ok, unauthorized } from "@/libs/api-utils/responses";
+import { ok, fail } from "@/libs/api-utils/responses";
 import { validate } from "@/libs/api-utils/validate";
 import { createClient } from "@/libs/supabase/server";
 import { startCheckoutService } from "@/libs/services/billing";
@@ -19,7 +19,7 @@ export const POST = withMethods({
   POST: async (req: Request) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return unauthorized("You must be logged in to checkout.");
+    if (!user) return fail(401, 'UNAUTHORIZED', 'You must be logged in to checkout.');
 
     const body = await req.json().catch(() => ({}));
     const v = validate(BodySchema, body);

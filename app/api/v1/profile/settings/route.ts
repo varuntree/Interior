@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+// no NextRequest/NextResponse imports needed
 import { z } from 'zod';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { withMethods } from '@/libs/api-utils/handler';
@@ -12,7 +12,7 @@ const UpdateSettingsSchema = z.object({
 });
 
 export const GET = withMethods({
-  GET: async (req: Request) => {
+  GET: async () => {
     try {
       const supabase = createServiceSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();

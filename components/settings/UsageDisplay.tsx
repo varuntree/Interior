@@ -128,15 +128,11 @@ export function UsageDisplay({ className }: UsageDisplayProps) {
 
   const getUsageColor = (percentage: number) => {
     if (percentage >= 90) return 'text-destructive';
-    if (percentage >= 75) return 'text-yellow-600';
+    if (percentage >= 75) return 'text-accent-foreground';
     return 'text-primary';
   };
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 90) return 'bg-destructive';
-    if (percentage >= 75) return 'bg-yellow-500';
-    return 'bg-primary';
-  };
+  // Removed custom progress color mapping; component tokens handle styling
 
   return (
     <Card className={className}>
@@ -171,7 +167,7 @@ export function UsageDisplay({ className }: UsageDisplayProps) {
             )}
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-primary">
               {usageData.remaining}
             </div>
             <div className="text-sm text-muted-foreground">Remaining</div>
@@ -211,9 +207,9 @@ export function UsageDisplay({ className }: UsageDisplayProps) {
 
         {/* Usage Tips */}
         {usageData.usagePercentage >= 75 && (
-          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="mt-4 p-3 bg-accent/20 border border-accent rounded-lg">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-yellow-600" />
+              <TrendingUp className="h-4 w-4 text-accent-foreground" />
               <div className="text-sm">
                 <span className="font-medium">High usage detected.</span>{' '}
                 {usageData.remaining > 0 

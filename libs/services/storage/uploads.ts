@@ -1,9 +1,12 @@
 // libs/services/storage/uploads.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export interface UploadResult {
+  // Path relative to the bucket (used for storage API calls)
   path: string;
+  // Path stored in DB following convention: private/<userId>/inputs/<filename>
+  dbPath: string;
   signedUrl: string;
 }
 
@@ -20,7 +23,7 @@ export async function uploadGenerationInput(
   
   // Generate unique file path following convention: private/${userId}/inputs/<uuid>.<ext>
   const fileExtension = getFileExtension(fileName || 'image', contentType);
-  const uniqueFileName = `${uuidv4()}${fileExtension}`;
+  const uniqueFileName = `${randomUUID()}${fileExtension}`;
   const storagePath = `${userId}/inputs/${uniqueFileName}`;
   
   // Upload to private bucket
@@ -46,6 +49,7 @@ export async function uploadGenerationInput(
 
   return {
     path: storagePath,
+    dbPath: `private/${storagePath}`,
     signedUrl: signedUrlData.signedUrl
   };
 }

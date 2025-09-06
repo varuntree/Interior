@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { memo, useState } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,10 +31,10 @@ interface CommunityItemProps {
       style?: string;
     };
   };
-  onApplySettings?: (settings: any) => void;
+  onApplySettings?: (payload: any) => void;
 }
 
-export function CommunityItem({ item, onApplySettings }: CommunityItemProps) {
+function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleApplySettings = () => {
@@ -43,7 +43,7 @@ export function CommunityItem({ item, onApplySettings }: CommunityItemProps) {
     }
   };
 
-  const hasApplySettings = item.applySettings && (
+  const hasApplySettings = !!item.applySettings && (
     item.applySettings.mode ||
     item.applySettings.roomType ||
     item.applySettings.style ||
@@ -67,6 +67,7 @@ export function CommunityItem({ item, onApplySettings }: CommunityItemProps) {
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            loading="lazy"
             onLoad={() => setImageLoaded(true)}
           />
 
@@ -79,7 +80,7 @@ export function CommunityItem({ item, onApplySettings }: CommunityItemProps) {
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="bg-white/90 hover:bg-white text-black"
+                      className="bg-background/90 hover:bg-background text-foreground"
                       onClick={() => window.open(item.imageUrl, '_blank')}
                     >
                       <Eye className="h-4 w-4" />
@@ -168,3 +169,5 @@ export function CommunityItem({ item, onApplySettings }: CommunityItemProps) {
     </Card>
   );
 }
+
+export const CommunityItem = memo(CommunityItemInner);

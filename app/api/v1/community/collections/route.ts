@@ -3,7 +3,7 @@ import { ok } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { listPublishedCollections } from '@/libs/services/community'
 
-async function handleGET(req: Request) {
+async function handleGET() {
   try {
     const supabase = createServiceSupabaseClient()
     const data = await listPublishedCollections({ supabase })

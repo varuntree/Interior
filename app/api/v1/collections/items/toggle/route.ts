@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { withMethods } from '@/libs/api-utils/handler';
 import { validate } from '@/libs/api-utils/validate';
-import { ok, unauthorized } from '@/libs/api-utils/responses';
+import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import * as collectionsService from '@/libs/services/collections';
 
@@ -16,7 +16,7 @@ async function handlePOST(req: Request) {
   // Get user session
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
-    return unauthorized('Authentication required');
+    return fail(401, 'UNAUTHORIZED', 'Authentication required');
   }
 
   const body = await req.json().catch(() => ({}));

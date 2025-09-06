@@ -1,17 +1,54 @@
 // libs/api-utils/responses.ts
 import { NextResponse } from 'next/server'
-import { type CacheConfig, buildCacheHeaders, CACHE_CONFIGS } from './cache'
+import { type CacheConfig, buildCacheHeaders } from './cache'
 
-export function ok<T>(data: T, message?: string, cache?: CacheConfig) {
-  const cacheHeaders = cache ? buildCacheHeaders(cache) : { 'Cache-Control': 'private, no-store' };
-  return NextResponse.json({ success: true, data, message } as const, {
-    headers: {
-      ...cacheHeaders,
-    },
-  })
+// Flexible ok: supports (data, message?), (data, cacheConfig?), or (data, initLike)
+export function ok<T>(
+  data: T,
+  messageOrInit?: string | ResponseInit | CacheConfig,
+  cache?: CacheConfig
+) {
+  let message: string | undefined
+  let headers: Record<string, string> = {}
+
+  // Determine headers from cache config or init
+  if (typeof messageOrInit === 'string' || typeof messageOrInit === 'undefined') {
+    message = messageOrInit as string | undefined
+    const cacheHeaders = cache ? buildCacheHeaders(cache) : { 'Cache-Control': 'private, no-store' }
+    headers = { ...cacheHeaders }
+  } else {
+    // Treat second arg as ResponseInit or CacheConfig-like
+    const possibleInit = messageOrInit as ResponseInit
+    const cacheHeaders = { 'Cache-Control': 'private, no-store' }
+    headers = { ...cacheHeaders, ...(possibleInit.headers as any) }
+  }
+
+  return NextResponse.json({ success: true, data, message } as const, { headers })
 }
 
-export function fail(status: number, code: string, message: string, details?: unknown) {
+// Flexible fail: supports (status, code, message, details?) or (code, message, status, details?)
+export function fail(
+  a: number | string,
+  b: string,
+  c?: string | number,
+  d?: unknown
+) {
+  let status: number
+  let code: string
+  let message: string
+  let details: unknown = d
+
+  if (typeof a === 'number') {
+    status = a
+    code = b
+    message = (c as string) ?? ''
+  } else {
+    // a is code, b is message, c is status
+    code = a
+    message = b
+    status = typeof c === 'number' ? c : 500
+  }
+
   return NextResponse.json(
     { success: false, error: { code, message, details } } as const,
     { status, headers: { 'Cache-Control': 'private, no-store' } }

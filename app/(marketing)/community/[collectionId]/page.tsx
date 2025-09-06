@@ -9,11 +9,7 @@ interface CommunityItem {
   tags?: string[]
 }
 
-interface CommunityCollection {
-  id: string
-  title: string
-  description?: string
-}
+// removed unused CommunityCollection interface
 
 async function getCollectionItems(collectionId: string): Promise<{
   items: CommunityItem[]

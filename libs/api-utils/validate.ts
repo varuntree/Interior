@@ -36,3 +36,16 @@ export function safeParseJson<TSchema extends z.ZodTypeAny>(
     };
   }
 }
+
+// Convenience: parse JSON body of a Request using a Zod schema
+export async function validateRequest<TSchema extends z.ZodTypeAny>(
+  req: Request,
+  schema: TSchema
+): Promise<z.infer<TSchema>> {
+  const body = await req.json().catch(() => ({}))
+  const parsed = schema.safeParse(body)
+  if (!parsed.success) {
+    throw fail(400, 'VALIDATION_ERROR', 'Invalid request body', parsed.error.flatten())
+  }
+  return parsed.data as z.infer<TSchema>
+}

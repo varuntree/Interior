@@ -112,7 +112,7 @@ export async function submitGeneration(
 
   // Handle file uploads
   const signedUrls: string[] = [];
-  const inputPaths: string[] = [];
+  const inputDbPaths: string[] = [];
 
   if (submission.input1) {
     const upload1 = await uploadGenerationInput(supabase, {
@@ -122,7 +122,7 @@ export async function submitGeneration(
       fileName: submission.input1 instanceof File ? submission.input1.name : undefined
     });
     signedUrls.push(upload1.signedUrl);
-    inputPaths.push(upload1.path);
+    inputDbPaths.push(upload1.dbPath);
   }
 
   if (submission.input2) {
@@ -133,7 +133,7 @@ export async function submitGeneration(
       fileName: submission.input2 instanceof File ? submission.input2.name : undefined
     });
     signedUrls.push(upload2.signedUrl);
-    inputPaths.push(upload2.path);
+    inputDbPaths.push(upload2.dbPath);
   }
 
   // Build generation request
@@ -153,8 +153,8 @@ export async function submitGeneration(
     roomType: submission.roomType,
     style: submission.style,
     settings,
-    input1Path: inputPaths[0],
-    input2Path: inputPaths[1],
+    input1Path: inputDbPaths[0],
+    input2Path: inputDbPaths[1],
     idempotencyKey: submission.idempotencyKey
   };
 
@@ -172,6 +172,7 @@ export async function submitGeneration(
     webhookUrl,
     idempotencyKey: submission.idempotencyKey
   });
+  console.log('[generation:submit]', { ownerId: userId, jobPredictionId: prediction.id, status: 'starting' })
 
   // Create job record
   const job = await jobsRepo.createJob(supabase, {
@@ -182,8 +183,8 @@ export async function submitGeneration(
     aspect_ratio: settings.aspectRatio,
     quality: settings.quality,
     variants: settings.variants,
-    input1_path: inputPaths[0],
-    input2_path: inputPaths[1],
+    input1_path: inputDbPaths[0],
+    input2_path: inputDbPaths[1],
     prompt: finalPrompt,
     prediction_id: prediction.id,
     status: 'starting',
@@ -196,6 +197,7 @@ export async function submitGeneration(
     jobId: job.id,
     idempotencyKey: submission.idempotencyKey
   });
+  console.log('[generation:debit]', { ownerId: userId, jobId: job.id })
 
   return jobToResult(job);
 }
@@ -221,6 +223,7 @@ export async function getGeneration(
           error: prediction.error || undefined,
           completed_at: prediction.completed_at || undefined
         });
+        console.log('[generation:poll]', { jobId: job.id, status })
         job.status = status;
         job.error = prediction.error || undefined;
         job.completed_at = prediction.completed_at || undefined;
@@ -260,6 +263,22 @@ function jobToResult(job: any): GenerationResult {
     createdAt: job.created_at,
     completedAt: job.completed_at
   };
+}
+
+export async function cancelGeneration(
+  ctx: { supabase: SupabaseClient; userId: string },
+  jobId: string
+): Promise<void> {
+  const { supabase, userId } = ctx
+  const job = await jobsRepo.getJobById(supabase, jobId, userId)
+  if (!job) throw new Error('NOT_FOUND')
+  if (job.status !== 'starting' && job.status !== 'processing') {
+    throw new Error('INVALID_STATE')
+  }
+  await jobsRepo.updateJobStatus(supabase, jobId, {
+    status: 'canceled',
+    completed_at: new Date().toISOString()
+  })
 }
 
 async function getUserPlan(supabase: SupabaseClient, userId: string): Promise<{ monthlyGenerations: number }> {
