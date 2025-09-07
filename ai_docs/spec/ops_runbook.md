@@ -10,7 +10,7 @@ A Supabase project
 
 A Stripe account (for checkout/portal)
 
-A Replicate account/token (to call openai/gpt-image-1)
+A Replicate account/token
 
 2) Environment variables
 Copy .env.example → .env.local, then fill:
@@ -33,8 +33,8 @@ STRIPE_WEBHOOK_SECRET=                 # from Stripe CLI or dashboard webhook
 # --- Replicate (required for generation) ---
 REPLICATE_API_TOKEN=                   # Personal token
 # Optional: override model (we default in runtime config)
-# REPLICATE_OWNER=openai
-# REPLICATE_MODEL=gpt-image-1
+# REPLICATE_OWNER=google
+# REPLICATE_MODEL=nano-banana
 We’ll reference REPLICATE_API_TOKEN in the Replicate client (service). If the env helper doesn’t include it yet, add server.REPLICATE_API_TOKEN to libs/env.
 
 3) Install & run (dev)

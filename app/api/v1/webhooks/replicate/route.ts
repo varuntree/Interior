@@ -15,7 +15,8 @@ export const dynamic = 'force-dynamic';
 interface ReplicateWebhookPayload {
   id: string; // prediction_id
   status: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled';
-  output?: string[] | null;
+  // google/nano-banana returns a single URL string; legacy models may return array
+  output?: string | string[] | null;
   error?: string | null;
   logs?: string;
   created_at: string;

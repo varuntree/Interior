@@ -18,8 +18,7 @@ Copy
 // File: libs/app-config/runtime.ts
 export type Mode = 'redesign' | 'staging' | 'compose' | 'imagine'
 
-export type AspectRatio = '1:1' | '3:2' | '2:3'
-export type Quality = 'auto' | 'low' | 'medium' | 'high'
+// AspectRatio and Quality removed for current provider
 
 export interface PresetItem { id: string; label: string }
 export interface Presets {
@@ -29,15 +28,11 @@ export interface Presets {
 
 export interface GenerationDefaults {
   mode: Mode
-  aspectRatio: AspectRatio
-  quality: Quality
-  variants: number               // 1..3
 }
 
 export interface GenerationLimits {
-  maxVariantsPerRequest: 3
-  maxUploadsMB: number           // per image input
-  acceptedMimeTypes: string[]    // e.g., ['image/jpeg','image/png','image/webp']
+  maxUploadsMB: number
+  acceptedMimeTypes: string[]
 }
 
 export interface Plans {
@@ -50,7 +45,7 @@ export interface Plans {
 }
 
 export interface ReplicateConfig {
-  model: 'openai/gpt-image-1'
+  model: 'google/nano-banana'
   webhookEnabled: boolean        // MVP: true (cheap, reliable)
   webhookRelativePath: '/api/v1/replicate/webhook'
   pollingIntervalMs: number      // if we also poll as a fallback (e.g., 2000)
@@ -97,18 +92,9 @@ const runtimeConfig: RuntimeConfig = {
     ],
   },
 
-  defaults: {
-    mode: 'redesign',
-    aspectRatio: '1:1',
-    quality: 'auto',
-    variants: 2
-  },
+  defaults: { mode: 'redesign' },
 
-  limits: {
-    maxVariantsPerRequest: 3,
-    maxUploadsMB: 15,
-    acceptedMimeTypes: ['image/jpeg','image/png','image/webp']
-  },
+  limits: { maxUploadsMB: 15, acceptedMimeTypes: ['image/jpeg','image/png','image/webp'] },
 
   // IMPORTANT: fill these with YOUR Stripe priceIds from config.ts at deploy time.
   plans: {
@@ -118,7 +104,7 @@ const runtimeConfig: RuntimeConfig = {
   },
 
   replicate: {
-    model: 'openai/gpt-image-1',
+    model: 'google/nano-banana',
     webhookEnabled: true,
     webhookRelativePath: '/api/v1/replicate/webhook',
     pollingIntervalMs: 2000,

@@ -4,7 +4,7 @@ Purpose
 - Describe how prompts are composed, how inputs map to the external model (Replicate → OpenAI gpt‑image‑1), and how jobs move from submit to results. Keep model specifics in adapters so we can swap/upgrade without rippling changes. This doc is contract‑first with essential snippets only.
 
 Internal Types & Settings (Mental Model)
-- A submission carries: `mode` (redesign|staging|compose|imagine), optional `prompt`, `roomType`, `style`, `settings` (aspectRatio 1:1|3:2|2:3; quality auto|low|medium|high; variants 1..3), and optional image inputs depending on mode.
+- A submission carries: `mode` (redesign|staging|compose|imagine), optional `prompt`, `roomType`, `style`, and optional image inputs depending on mode.
 - Services normalize to a GenerationRequest with storage paths for inputs (private bucket), a composed prompt string, and the user’s id. Limits and defaults come from `libs/app-config/runtime.ts` (single source of truth).
 
 Prompt System (Mode Templates + AU Guardrails)
@@ -17,14 +17,10 @@ Prompt System (Mode Templates + AU Guardrails)
 - Style descriptions are kept brief and expandable; current seeds include coastal_au, contemporary_au, japandi, scandi_au, minimal_au, midcentury_au, industrial_au, hamptons_au.
 
 Adapter Mapping (Internal → Replicate/OpenAI)
-- Single adapter shapes model inputs so services never depend on vendor fields. Current mappings:
+- Single adapter shapes model inputs so services never depend on vendor fields. Current mappings (nano‑banana):
   - `prompt` → composed prompt string.
-  - `input_images` → signed URLs array for image inputs (0–2 based on mode).
-  - `aspect_ratio` → pass through as '1:1' | '3:2' | '2:3'.
-  - `number_of_images` → variants, clamped to runtime.limits.maxVariantsPerRequest.
-  - `quality` → direct mapping (auto|low|medium|high) when supported.
-  - `output_format` → 'webp'; `background` → 'auto'.
-  - `openai_api_key` → required for gpt‑image‑1; `user_id` → owner id for abuse monitoring.
+  - `image_input` → signed URLs array for image inputs (0–2 based on mode).
+  - `output_format` → default 'jpg' (we may omit to use default).
 - Keep all model‑specific field names and defaults in `libs/services/external/replicateAdapter.ts`. Services pass internal types only.
 
 Submission Flow (Service Contract)
@@ -39,20 +35,20 @@ Submission Flow (Service Contract)
 
 Webhook Processing (Idempotent)
 - Verify signature when configured; otherwise constrain via infra. Load job by prediction id; if not found, no‑op success.
-- On `succeeded`: create a `renders` row inheriting mode/room/style; download each output URL and write to `public/renders/<renderId>/<idx>.webp`; insert `render_variants` rows; mark job `succeeded` with `completed_at`. If upstream returned fewer images than requested, store what exists and succeed.
+- On `succeeded`: create a `renders` row inheriting mode/room/style; download each output URL and write to `public/renders/<renderId>/<idx>.jpg`; insert `render_variants` rows; mark job `succeeded` with `completed_at`.
 - On `failed|canceled`: mark job terminal with normalized `error` and `completed_at`. All actions must be repeat‑safe.
 
 Status & Polling (GET by Id)
-- If non‑terminal and stale (>~5s), poll Replicate once (by prediction id) to refresh status and timestamps. When terminal and succeeded, include variants with public URLs derived from storage paths. Keep responses small; fetch variants only on succeeded.
+- If non‑terminal and stale (>~5s), poll Replicate once (by prediction id) to refresh status and timestamps. When terminal and succeeded, include the result image with public URL derived from storage paths. Keep responses small.
 
 Moderation & Validation (Lightweight)
 - Prompt moderation rejects explicit, hateful, violent, illegal, or PII‑like content via simple patterns and repetition checks; returns a generic message on rejection. Image inputs are validated per mode (Compose needs two, Redesign/Staging need one, Imagine needs none). Keep rules minimal and fast.
 
 Edge Behavior & Limits
-- Variants are capped at runtime.limits.maxVariantsPerRequest (UI shows up to 3). Accepted MIME types and max upload size are enforced server‑side on uploads and reflected in the UI. Outputs use `.webp` for size/perf; thumbnails are optional and can be added later without changing contracts.
+- Accepted MIME types and max upload size are enforced server‑side on uploads and reflected in the UI. Outputs use `.jpg` for size/perf; thumbnails are optional and can be added later without changing contracts.
 
 Tiny Snippets (for implementers)
-- Replicate fields used now: `{ openai_api_key, prompt, input_images?, aspect_ratio, number_of_images, output_format: 'webp', quality, background: 'auto', user_id }`.
+- Replicate fields used now: `{ prompt, image_input?, output_format? }`.
 - Job statuses we rely on: `starting → processing → succeeded|failed|canceled`. Webhook events listened: start, output, logs, completed.
 
 Cross‑References

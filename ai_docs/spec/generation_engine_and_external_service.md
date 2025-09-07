@@ -1,16 +1,10 @@
 0) Purpose
-Defines the generation engine (prompts, presets, parameter mapping), the adapter to Replicate (OpenAI gpt-image-1), and the webhook flow. Keeps MVP simple, reliable, and aligned with our “one in‑flight per user, async via webhook” strategy.
+Defines the generation engine (prompts, presets, parameter mapping), the adapter to Replicate (Google nano‑banana), and the webhook flow. Keeps MVP simple, reliable, and aligned with our “one in‑flight per user, async via webhook” strategy.
 
 1) Interfaces (internal types)
 ts
 Copy
 // Internal request coming from route after validation
-type GenerationSettings = {
-  aspectRatio: '1:1' | '3:2' | '2:3';
-  quality: 'auto' | 'low' | 'medium' | 'high';
-  variants: 1 | 2 | 3;
-};
-
 type Mode = 'redesign' | 'staging' | 'compose' | 'imagine';
 
 type GenerationRequest = {
@@ -19,7 +13,6 @@ type GenerationRequest = {
   prompt?: string;                 // required for 'imagine'
   roomType?: string;               // preset dropdown
   style?: string;                  // preset dropdown
-  settings: GenerationSettings;
   input1Path?: string;             // storage path (private bucket)
   input2Path?: string;             // for 'compose'
   idempotencyKey?: string;         // UUID
@@ -189,7 +182,7 @@ Copy
 {
   "id": "replicate_prediction_id",
   "status": "succeeded|failed|processing|starting",
-  "output": ["https://.../0.png", "https://.../1.png"],
+  "output": "https://.../0.jpg",
   "error": null
 }
 5.3 Actions
@@ -201,7 +194,7 @@ Create a render row (inherits mode, roomType, style from job).
 
 For each output URL:
 
-Download and store to public/renders/<renderId>/<idx>.webp.
+Download and store to public/renders/<renderId>/<idx>.jpg.
 
 Optionally generate a _thumb.webp.
 
@@ -307,4 +300,3 @@ All routes return normalized JSON and use the helpers from libs/api-utils/* per 
 ✅ Collections: default My Favorites exists; user can add results with one click.
 
 ✅ No queue infra; Replicate handles scheduling; our app remains simple.
-

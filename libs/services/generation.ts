@@ -16,11 +16,6 @@ export interface GenerationSubmission {
   prompt?: string;
   roomType?: string;
   style?: string;
-  settings?: {
-    aspectRatio?: '1:1' | '3:2' | '2:3';
-    quality?: 'auto' | 'low' | 'medium' | 'high';
-    variants?: number;
-  };
   input1?: File | Blob;
   input2?: File | Blob;
   idempotencyKey?: string;
@@ -33,9 +28,6 @@ export interface GenerationResult {
   settings: {
     roomType?: string;
     style?: string;
-    aspectRatio: '1:1' | '3:2' | '2:3';
-    quality: 'auto' | 'low' | 'medium' | 'high';
-    variants: number;
   };
   variants?: Array<{
     index: number;
@@ -145,22 +137,12 @@ export async function submitGeneration(
   }
 
   // Build generation request
-  const settings = {
-    aspectRatio: submission.settings?.aspectRatio || runtimeConfig.defaults.aspectRatio,
-    quality: submission.settings?.quality || runtimeConfig.defaults.quality,
-    variants: Math.min(
-      submission.settings?.variants || runtimeConfig.defaults.variants,
-      runtimeConfig.limits.maxVariantsPerRequest
-    )
-  };
-
   const generationRequest: GenerationRequest = {
     ownerId: userId,
     mode: submission.mode,
     prompt: finalPrompt,
     roomType: submission.roomType,
     style: submission.style,
-    settings,
     input1Path: inputDbPaths[0],
     input2Path: inputDbPaths[1],
     idempotencyKey: submission.idempotencyKey
@@ -174,9 +156,6 @@ export async function submitGeneration(
     mode: submission.mode,
     room_type: submission.roomType,
     style: submission.style,
-    aspect_ratio: settings.aspectRatio,
-    quality: settings.quality,
-    variants: settings.variants,
     input1_path: inputDbPaths[0],
     input2_path: inputDbPaths[1],
     prompt: finalPrompt,
@@ -291,9 +270,6 @@ function jobToResult(job: any): GenerationResult {
     settings: {
       roomType: job.room_type,
       style: job.style,
-      aspectRatio: job.aspect_ratio,
-      quality: job.quality,
-      variants: job.variants
     },
     error: job.error,
     createdAt: job.created_at,

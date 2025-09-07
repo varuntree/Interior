@@ -34,18 +34,16 @@ Keeps architecture guardrails for Redesign/Staging/Compose.
 
 “Imagine” requires userPrompt.
 
-Why: Protects UX intent and reduces LLM regressions when prompts change.
+Why: Protects UX intent and reduces regressions when prompts change.
 
-2.2 Adapter mapping unit test
-Target: replicateAdapter.toReplicateInputs (pure function).
+2.2 Adapter mapping unit test (Google)
+Target: googleNanoBananaAdapter.toGoogleNanoBananaInputs (pure function).
 
 Asserts:
 
-aspect ratio → width/height mapping (1:1 / 3:2 / 2:3).
+maps `prompt` and `image_input` correctly; 
 
-variants → num_outputs.
-
-quality tiers → size tier logic.
+omits or sets `output_format='jpg'`.
 
 These two tests can run with Vitest or Jest. If we prefer zero setup for now, we can also run them with ts-node and simple assert calls. Keep it tiny.
 
@@ -63,7 +61,7 @@ curl -X POST http://localhost:3000/api/v1/generations \
   -F "roomType=Living Room" \
   -F "style=Coastal AU" \
   -F "prompt=A bright coastal living room with light oak and linen" \
-  -F "aspectRatio=1:1" -F "quality=auto" -F "variants=2"
+  # simplified: no aspect ratio, quality, or variants
 Expect: 202 { success: true, data: { id, predictionId, status } }.
 
 Poll:
@@ -185,4 +183,3 @@ Verify the Theme v2 design tokens are properly applied and accessible.
 - Verify Open Sans loads correctly (Network tab)
 - Check fallback to system fonts if CDN fails
 - Ensure font-display: swap for performance
-

@@ -35,9 +35,6 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
         prompt: formData.get('prompt') as string || undefined,
         roomType: formData.get('roomType') as string || undefined,
         style: formData.get('style') as string || undefined,
-        aspectRatio: formData.get('aspectRatio') as string || undefined,
-        quality: formData.get('quality') as string || undefined,
-        variants: formData.get('variants') ? parseInt(formData.get('variants') as string) : undefined,
         idempotencyKey: formData.get('idempotencyKey') as string || undefined
       };
 
@@ -77,11 +74,6 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       prompt: parsedData.prompt,
       roomType: parsedData.roomType,
       style: parsedData.style,
-      settings: {
-        aspectRatio: parsedData.aspectRatio,
-        quality: parsedData.quality,
-        variants: parsedData.variants
-      },
       input1: files.input1,
       input2: files.input2,
       idempotencyKey: parsedData.idempotencyKey
@@ -124,12 +116,6 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     if (error.message.includes('NEXT_PUBLIC_APP_URL') || error.message.includes('HTTPS required')) {
       return fail(500, 'CONFIGURATION_ERROR', 
         'Application URL not configured properly. Please set NEXT_PUBLIC_APP_URL environment variable to your application\'s public HTTPS URL.');
-    }
-
-    // Handle OpenAI API key errors
-    if (error.message.includes('openai_api_key') || error.message.includes('OPENAI_API_KEY')) {
-      return fail(500, 'CONFIGURATION_ERROR', 
-        'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable. You need both Replicate and OpenAI API keys for image generation.');
     }
 
     // Generic server error

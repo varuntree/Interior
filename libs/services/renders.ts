@@ -91,16 +91,34 @@ export async function listUserRenders(
     pagination
   )
 
-  const renderListItems: RenderListItem[] = items.map(render => ({
-    id: render.id,
-    mode: render.mode,
-    room_type: render.room_type,
-    style: render.style,
-    cover_variant: render.cover_variant,
-    created_at: render.created_at,
-    cover_variant_url: buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
-    cover_thumb_url: buildImageUrl(`renders/${render.id}/${render.cover_variant}_thumb.webp`)
-  }))
+  // Fetch cover variant image paths to avoid extension assumptions
+  const renderListItems: RenderListItem[] = []
+  for (const render of items) {
+    let coverUrl: string | undefined
+    let coverThumbUrl: string | undefined
+    try {
+      const variant = await rendersRepo.findVariantByRenderAndIdx(ctx.supabase, render.id, render.cover_variant)
+      if (variant) {
+        coverUrl = buildImageUrl(variant.image_path)
+        if (variant.thumb_path) {
+          coverThumbUrl = buildImageUrl(variant.thumb_path)
+        }
+      }
+    } catch {
+      // fall through; URLs remain undefined
+    }
+
+    renderListItems.push({
+      id: render.id,
+      mode: render.mode,
+      room_type: render.room_type,
+      style: render.style,
+      cover_variant: render.cover_variant,
+      created_at: render.created_at,
+      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
+      cover_thumb_url: coverThumbUrl,
+    })
+  }
 
   // Get total count if this is the first page
   let totalCount: number | undefined
@@ -211,16 +229,31 @@ export async function getRecentUserRenders(
 ): Promise<RenderListItem[]> {
   const renders = await rendersRepo.getRecentRenders(ctx.supabase, ownerId, limit)
 
-  return renders.map(render => ({
-    id: render.id,
-    mode: render.mode,
-    room_type: render.room_type,
-    style: render.style,
-    cover_variant: render.cover_variant,
-    created_at: render.created_at,
-    cover_variant_url: buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
-    cover_thumb_url: buildImageUrl(`renders/${render.id}/${render.cover_variant}_thumb.webp`)
-  }))
+  const items: RenderListItem[] = []
+  for (const render of renders) {
+    let coverUrl: string | undefined
+    let coverThumbUrl: string | undefined
+    try {
+      const variant = await rendersRepo.findVariantByRenderAndIdx(ctx.supabase, render.id, render.cover_variant)
+      if (variant) {
+        coverUrl = buildImageUrl(variant.image_path)
+        if (variant.thumb_path) coverThumbUrl = buildImageUrl(variant.thumb_path)
+      }
+    } catch {}
+
+    items.push({
+      id: render.id,
+      mode: render.mode,
+      room_type: render.room_type,
+      style: render.style,
+      cover_variant: render.cover_variant,
+      created_at: render.created_at,
+      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
+      cover_thumb_url: coverThumbUrl,
+    })
+  }
+
+  return items
 }
 
 export async function getRenderStatistics(
@@ -341,16 +374,29 @@ export async function searchRenders(
   const limit = pagination?.limit || 24
   const paginatedItems = filteredItems.slice(0, limit)
 
-  const renderListItems: RenderListItem[] = paginatedItems.map(render => ({
-    id: render.id,
-    mode: render.mode,
-    room_type: render.room_type,
-    style: render.style,
-    cover_variant: render.cover_variant,
-    created_at: render.created_at,
-    cover_variant_url: buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
-    cover_thumb_url: buildImageUrl(`renders/${render.id}/${render.cover_variant}_thumb.webp`)
-  }))
+  const renderListItems: RenderListItem[] = []
+  for (const render of paginatedItems) {
+    let coverUrl: string | undefined
+    let coverThumbUrl: string | undefined
+    try {
+      const variant = await rendersRepo.findVariantByRenderAndIdx(ctx.supabase, render.id, render.cover_variant)
+      if (variant) {
+        coverUrl = buildImageUrl(variant.image_path)
+        if (variant.thumb_path) coverThumbUrl = buildImageUrl(variant.thumb_path)
+      }
+    } catch {}
+
+    renderListItems.push({
+      id: render.id,
+      mode: render.mode,
+      room_type: render.room_type,
+      style: render.style,
+      cover_variant: render.cover_variant,
+      created_at: render.created_at,
+      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
+      cover_thumb_url: coverThumbUrl,
+    })
+  }
 
   return {
     items: renderListItems,

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import * as communityRepo from '@/libs/repositories/community'
+import * as rendersRepo from '@/libs/repositories/renders'
 
 export interface CommunityCollectionForUI {
   id: string
@@ -28,9 +29,6 @@ export interface GenerationSettings {
   roomType?: string
   style?: string
   prompt?: string
-  aspectRatio?: string
-  quality?: string
-  variants?: number
 }
 
 export async function getCommunityGallery(
@@ -44,15 +42,24 @@ export async function getCommunityGallery(
     itemsPerCollection
   )
 
-  return collectionsWithItems.map(({ collection, items }) => ({
-    id: collection.id,
-    title: collection.title,
-    description: collection.description,
-    is_featured: collection.is_featured,
-    order_index: collection.order_index,
-    created_at: collection.created_at,
-    items: items.map(formatCommunityItemForUI)
-  }))
+  const result: CommunityCollectionForUI[] = []
+  for (const { collection, items } of collectionsWithItems) {
+    const baseItems = items.map(formatCommunityItemForUI)
+    const hydrated: CommunityItemForUI[] = []
+    for (let i = 0; i < baseItems.length; i++) {
+      hydrated.push(await hydrateCommunityItemUrls(ctx.supabase, baseItems[i], items[i]))
+    }
+    result.push({
+      id: collection.id,
+      title: collection.title,
+      description: collection.description,
+      is_featured: collection.is_featured,
+      order_index: collection.order_index,
+      created_at: collection.created_at,
+      items: hydrated,
+    })
+  }
+  return result
 }
 
 export async function getCommunityCollectionDetails(
@@ -66,6 +73,11 @@ export async function getCommunityCollectionDetails(
   }
 
   const { collection, items } = result
+  const base = items.map(formatCommunityItemForUI)
+  const hydrated: CommunityItemForUI[] = []
+  for (let i = 0; i < base.length; i++) {
+    hydrated.push(await hydrateCommunityItemUrls(ctx.supabase, base[i], items[i]))
+  }
 
   return {
     id: collection.id,
@@ -74,42 +86,63 @@ export async function getCommunityCollectionDetails(
     is_featured: collection.is_featured,
     order_index: collection.order_index,
     created_at: collection.created_at,
-    items: items.map(formatCommunityItemForUI)
+    items: hydrated
   }
 }
 
 export function formatCommunityItemForUI(item: communityRepo.CommunityItemWithRender): CommunityItemForUI {
-  let image_url: string
-  let thumb_url: string | undefined
-  let source_type: 'internal' | 'external'
-
   if (item.render_id && item.render) {
-    // Internal render
-    source_type = 'internal'
-    image_url = item.render.cover_image_url
-    thumb_url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/public/renders/${item.render.id}/${item.render.cover_variant}_thumb.webp`
-  } else if (item.external_image_url) {
-    // External image
-    source_type = 'external'
-    image_url = item.external_image_url
-    thumb_url = item.external_image_url // Could be processed for thumbnails
-  } else {
-    // Fallback
-    source_type = 'external'
-    image_url = '/placeholder-image.jpg'
+    return {
+      id: item.id,
+      collection_id: item.collection_id,
+      order_index: item.order_index,
+      created_at: item.created_at,
+      image_url: '', // hydrated later
+      thumb_url: undefined,
+      apply_settings: item.apply_settings,
+      source_type: 'internal',
+      render_id: item.render_id
+    }
   }
 
+  // External or fallback
+  const url = item.external_image_url || '/placeholder-image.jpg'
   return {
     id: item.id,
     collection_id: item.collection_id,
     order_index: item.order_index,
     created_at: item.created_at,
-    image_url,
-    thumb_url,
+    image_url: url,
+    thumb_url: item.external_image_url || undefined,
     apply_settings: item.apply_settings,
-    source_type,
+    source_type: 'external',
     render_id: item.render_id
   }
+}
+
+function buildPublicUrl(path: string) {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/public/${path}`
+}
+
+async function hydrateCommunityItemUrls(
+  supabase: SupabaseClient,
+  item: CommunityItemForUI,
+  raw: communityRepo.CommunityItemWithRender
+): Promise<CommunityItemForUI> {
+  if (item.source_type === 'internal' && raw.render_id && raw.render) {
+    try {
+      const variant = await rendersRepo.findVariantByRenderAndIdx(supabase, raw.render_id, raw.render.cover_variant)
+      if (variant) {
+        item.image_url = buildPublicUrl(variant.image_path)
+        if (variant.thumb_path) item.thumb_url = buildPublicUrl(variant.thumb_path)
+      } else {
+        item.image_url = '/placeholder-image.jpg'
+      }
+    } catch {
+      item.image_url = '/placeholder-image.jpg'
+    }
+  }
+  return item
 }
 
 export function extractApplySettings(item: CommunityItemForUI): GenerationSettings {
@@ -124,9 +157,7 @@ export function extractApplySettings(item: CommunityItemForUI): GenerationSettin
   if (item.apply_settings.roomType) settings.roomType = item.apply_settings.roomType
   if (item.apply_settings.style) settings.style = item.apply_settings.style
   if (item.apply_settings.prompt) settings.prompt = item.apply_settings.prompt
-  if (item.apply_settings.aspectRatio) settings.aspectRatio = item.apply_settings.aspectRatio
-  if (item.apply_settings.quality) settings.quality = item.apply_settings.quality
-  if (item.apply_settings.variants) settings.variants = item.apply_settings.variants
+  // Ignore legacy fields (aspectRatio, quality, variants) for UI prefill
 
   return settings
 }
@@ -209,17 +240,14 @@ export function validateApplySettings(settings: any): GenerationSettings | null 
   }
 
   // Validate other string fields
-  const stringFields = ['roomType', 'style', 'prompt', 'aspectRatio', 'quality']
+  const stringFields = ['roomType', 'style', 'prompt']
   stringFields.forEach(field => {
     if (settings[field] && typeof settings[field] === 'string') {
       (validSettings as any)[field] = settings[field]
     }
   })
 
-  // Validate variants (number)
-  if (settings.variants && typeof settings.variants === 'number' && settings.variants >= 1 && settings.variants <= 3) {
-    validSettings.variants = settings.variants
-  }
+  // variants ignored in new model
 
   return Object.keys(validSettings).length > 0 ? validSettings : null
 }
@@ -253,19 +281,7 @@ export function urlParamsToSettings(params: URLSearchParams): GenerationSettings
   const prompt = params.get('prompt')
   if (prompt) settings.prompt = prompt
   
-  const aspectRatio = params.get('aspectRatio')
-  if (aspectRatio) settings.aspectRatio = aspectRatio
-  
-  const quality = params.get('quality')
-  if (quality) settings.quality = quality
-  
-  const variants = params.get('variants')
-  if (variants) {
-    const variantsNum = parseInt(variants, 10)
-    if (!isNaN(variantsNum) && variantsNum >= 1 && variantsNum <= 3) {
-      settings.variants = variantsNum
-    }
-  }
+  // Ignore legacy aspectRatio/quality/variants
   
   return settings
 }

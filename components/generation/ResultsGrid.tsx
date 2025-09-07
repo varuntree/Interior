@@ -130,7 +130,10 @@ function ResultsGridInner({
               results.forEach((result) => {
                 const link = document.createElement('a');
                 link.href = result.url;
-                link.download = `interior-design-${result.index + 1}.webp`;
+                // Infer extension from URL; default to jpg
+                const extMatch = result.url.match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/);
+                const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
+                link.download = `interior-design-${result.index + 1}.${ext}`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

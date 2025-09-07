@@ -26,9 +26,7 @@ export default function CreatePage() {
       if (searchParams.get('roomType')) prefill.roomType = searchParams.get('roomType');
       if (searchParams.get('style')) prefill.style = searchParams.get('style');
       if (searchParams.get('prompt')) prefill.prompt = searchParams.get('prompt');
-      if (searchParams.get('aspectRatio')) prefill.aspectRatio = searchParams.get('aspectRatio');
-      if (searchParams.get('quality')) prefill.quality = searchParams.get('quality');
-      if (searchParams.get('variants')) prefill.variants = parseInt(searchParams.get('variants') || '2');
+      // legacy settings removed; ignore aspectRatio/quality/variants
 
       if (Object.keys(prefill).length > 0) {
         // Only update if different to avoid loops

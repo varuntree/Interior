@@ -5,9 +5,6 @@ export interface ApplySettings {
   roomType?: string
   style?: string
   prompt?: string
-  aspectRatio?: string
-  quality?: string
-  variants?: number
 }
 
 export interface CommunityCollection {

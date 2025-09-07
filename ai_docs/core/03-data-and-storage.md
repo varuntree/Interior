@@ -8,7 +8,7 @@ Entity Model (ER Overview)
 
 Table Summaries & RLS (Intent)
 - profiles: basic account and billing linkage (email, price_id, customer_id). RLS: self select/update (owner id == auth.uid()).
-- generation_jobs: owner_id, mode, room_type, style, aspect_ratio, quality, variants, input paths, prompt, prediction_id, status, error, idempotency_key, timestamps. RLS: owner can select/insert; owner cannot update (status is webhook/admin only). Indexes: (owner_id, created_at desc), (owner_id, status), unique (owner_id, idempotency_key) where key not null.
+- generation_jobs: owner_id, mode, room_type, style, input paths, prompt, prediction_id, status, error, idempotency_key, timestamps. RLS: owner can select/insert; owner cannot update (status is webhook/admin only). Indexes: (owner_id, created_at desc), (owner_id, status), unique (owner_id, idempotency_key) where key not null.
 - renders: one per job; copies mode/room/style; cover_variant; created_at. RLS: owner select/insert/delete. Index: (owner_id, created_at desc).
 - render_variants: render_id, owner_id, idx (0..N‑1), image_path, thumb_path?, created_at. RLS: owner select/insert/delete. Index: (render_id, idx).
 - collections: owner_id, name, is_default_favorites. RLS: owner select/insert/update/delete (delete disallowed for default favorites). Unique partial index: one default favorites per owner.
@@ -30,7 +30,7 @@ Idempotency & Integrity
 - Jobs: per‑owner partial unique index on (owner_id, idempotency_key) prevents duplicate accepts on retries; repositories offer `findJobByIdempotencyKey`. Usage debits include the jobId and idempotencyKey in `meta` so the service can no‑op on repeated submits. Community items enforce XOR between `render_id` and `external_image_url` via a table constraint.
 
 Performance Notes (Indexes & Size)
-- Hot paths are indexed: jobs by owner/time and status; renders by owner/time; variants by render/idx; usage by owner/time; community by featured/order. Inputs are capped by accepted MIME types and max upload size (see runtime config), and outputs are `.webp` for efficient delivery. Avoid large response payloads; fetch variants on demand.
+- Hot paths are indexed: jobs by owner/time and status; renders by owner/time; variants by render/idx; usage by owner/time; community by featured/order. Inputs are capped by accepted MIME types and max upload size (see runtime config), and outputs are `.jpg` for efficient delivery. Avoid large response payloads; fetch variants on demand.
 
 Security & RLS Summary
 - All user‑owned tables use owner‑scoped RLS for select/insert (updates/deletes as appropriate). Job status updates are blocked to users and performed only by webhook/admin. Community tables allow public read only; admin writes are enforced in server code using the service‑role client. Private inputs never become public; only derived outputs are public. Ensure env‑validated keys are used exclusively on server.

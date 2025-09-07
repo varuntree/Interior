@@ -1,6 +1,6 @@
 prd.md
 0) Product summary
-Interior design generator for Australia. Users upload a room photo (or two), or start from text, then get stunning redesigns in Australian‑relevant styles. We keep the experience simple and guided, with presets and one‑click “wow” flows. Images are generated via Replicate using OpenAI gpt-image-1. MVP ships fast with a thin, reliable backend and a crisp UI.
+Interior design generator for Australia. Users upload a room photo (or two), or start from text, then get stunning redesigns in Australian‑relevant styles. We keep the experience simple and guided, with presets and one‑click “wow” flows. Images are generated via Replicate using Google’s nano‑banana model. MVP ships fast with a thin, reliable backend and a crisp UI.
 
 1) Goals (MVP)
 Create photorealistic interiors with 4 guided modes:
@@ -67,7 +67,7 @@ Room Type (dropdown)
 
 Style (dropdown)
 
-Settings: aspect ratio (1:1 | 3:2 | 2:3), quality (auto | low | medium | high), variants (default 2, max 3)
+Settings: simplified (mode, presets, prompt). No aspect ratio, quality, or multi‑variant knobs.
 
 Uploads:
 
@@ -89,7 +89,7 @@ Show progress state (spinner/“Generating …”)
 
 Create job, call Replicate with webhook URL
 
-On webhook completion, render variants in the UI grid
+On webhook completion, render the result in the UI grid
 
 Acceptance:
 
@@ -99,7 +99,7 @@ On network retry, idempotency prevents duplicates
 
 “Stuck” protection: jobs that exceed 10 min move to failed with retry CTA
 
-Completed variants are persisted (see 5. Data), thumbs visible in My Renders
+Completed images are persisted (see 5. Data), thumbs visible in My Renders
 
 4.2 Organize
 My Renders:
@@ -194,4 +194,3 @@ Multi‑image batch in a single call
 Collaboration/sharing flows
 
 Fine‑grained per‑element editing
-

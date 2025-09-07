@@ -3,7 +3,7 @@ import type {
   ProviderSubmitResult,
   ProviderStatusResult,
 } from '@/libs/services/generation/types'
-import { toReplicateInputs } from '@/libs/services/external/replicateAdapter'
+import { toGoogleNanoBananaInputs } from '@/libs/services/external/googleNanoBananaAdapter'
 import { createPrediction, getPrediction } from '@/libs/services/external/replicateClient'
 import { env } from '@/libs/env'
 
@@ -12,11 +12,7 @@ export function createReplicateProvider() {
     async submit(args: ProviderSubmitArgs): Promise<ProviderSubmitResult> {
       const { request, signedInputUrls, webhookUrl } = args
 
-      if (!env.server.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY is required for image generation')
-      }
-
-      const inputs = toReplicateInputs(request, signedInputUrls, env.server.OPENAI_API_KEY)
+      const inputs = toGoogleNanoBananaInputs(request, signedInputUrls, { forceJpg: true })
       const prediction = await createPrediction({
         inputs,
         webhookUrl,
@@ -40,4 +36,3 @@ export function createReplicateProvider() {
     },
   }
 }
-

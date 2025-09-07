@@ -14,7 +14,7 @@ const serverSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   REPLICATE_API_TOKEN: z.string().min(1).optional(), // required for generation service
   REPLICATE_WEBHOOK_SECRET: z.string().min(1).optional(), // for webhook signature verification
-  OPENAI_API_KEY: z.string().min(1), // REQUIRED for gpt-image-1 model
+  OPENAI_API_KEY: z.string().min(1).optional(), // optional now; only required if using openai/* model
   PUBLIC_BASE_URL: z.string().url().optional(), // for webhook URLs
 });
 

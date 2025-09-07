@@ -56,11 +56,8 @@ export function useGenerationSubmit({ onSuccess, onError }: UseGenerationSubmitO
       // Create FormData for multipart upload
       const formData = new FormData();
       
-      // Add basic generation parameters
+      // Add basic generation parameters (simplified for google/nano-banana)
       formData.append('mode', state.mode);
-      formData.append('aspectRatio', state.aspectRatio);
-      formData.append('quality', state.quality);
-      formData.append('variants', state.variants.toString());
       
       // Add optional parameters
       if (state.roomType) {

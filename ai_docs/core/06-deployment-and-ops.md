@@ -5,11 +5,11 @@ Purpose
 
 Environments & Required Variables
 - Public (client‑exposed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- Server‑only: `OPENAI_API_KEY` (required), `REPLICATE_API_TOKEN` (required), `SUPABASE_SERVICE_ROLE_KEY` (webhooks only), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (billing), `PUBLIC_BASE_URL` (optional; if not set, base URL is inferred from request when creating webhooks).
+- Server-only: `REPLICATE_API_TOKEN` (required), `SUPABASE_SERVICE_ROLE_KEY` (webhooks only), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (billing), `PUBLIC_BASE_URL` (optional; if not set, base URL is inferred from request when creating webhooks). `OPENAI_API_KEY` is optional and only needed if using an openai/* model.
 - Recommended: `NEXT_PUBLIC_APP_URL` or `PUBLIC_BASE_URL` set to your HTTPS origin in prod (used to build absolute webhook URL).
 
 Local Development (Quickstart)
-- Copy `.env.example` → `.env.local`, then fill the variables above. Ensure `OPENAI_API_KEY` and `REPLICATE_API_TOKEN` are set, and Supabase URL/Anon are from your project.
+- Copy `.env.example` → `.env.local`, then fill the variables above. Ensure `REPLICATE_API_TOKEN` is set, and Supabase URL/Anon are from your project. `OPENAI_API_KEY` is optional and only needed if using an openai/* model.
 - Install and run:
   - `npm install`
   - `npm run dev`
@@ -41,7 +41,7 @@ Post‑Deploy Smoke Check
 - Sign in and run Imagine mode with a simple prompt; confirm results appear in My Renders. Try Save to Favorites; verify it shows in Collections. Confirm `/api/v1/health` returns ok and `/api/v1/status` reports Supabase connectivity.
 
 Common Pitfalls
-- Missing `OPENAI_API_KEY` or `REPLICATE_API_TOKEN` → generation submit fails with configuration error.
+- Missing `REPLICATE_API_TOKEN` → generation submit fails with configuration error.
 - Webhook not firing in dev → ensure `PUBLIC_BASE_URL` uses your ngrok URL and that `/api/v1/webhooks/replicate` is accessible.
 - Images not visible → verify outputs are written to `public` bucket and that URLs resolve under your Supabase storage domain.
 - Quota not enforced → ensure Stripe webhook updates `profiles.price_id`; runtime plans map that priceId to monthly caps.

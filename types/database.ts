@@ -7,9 +7,6 @@ export interface GenerationJob {
   mode: 'redesign' | 'staging' | 'compose' | 'imagine';
   room_type?: string;
   style?: string;
-  aspect_ratio: '1:1' | '3:2' | '2:3';
-  quality: 'auto' | 'low' | 'medium' | 'high';
-  variants: number;
   input1_path?: string;
   input2_path?: string;
   prompt?: string;
@@ -26,9 +23,6 @@ export interface NewGenerationJob {
   mode: 'redesign' | 'staging' | 'compose' | 'imagine';
   room_type?: string;
   style?: string;
-  aspect_ratio?: '1:1' | '3:2' | '2:3';
-  quality?: 'auto' | 'low' | 'medium' | 'high';
-  variants?: number;
   input1_path?: string;
   input2_path?: string;
   prompt?: string;
@@ -133,9 +127,6 @@ export interface CommunityItem {
     roomType?: string;
     style?: string;
     prompt?: string;
-    aspectRatio?: string;
-    quality?: string;
-    variants?: number;
   };
   order_index: number;
   created_at: string;
@@ -150,9 +141,6 @@ export interface NewCommunityItem {
     roomType?: string;
     style?: string;
     prompt?: string;
-    aspectRatio?: string;
-    quality?: string;
-    variants?: number;
   };
   order_index?: number;
 }

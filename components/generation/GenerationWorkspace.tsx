@@ -8,7 +8,6 @@ import { ModeSelector } from "./ModeSelector";
 import { ImageUpload } from "./ImageUpload";
 import { PresetSelectors } from "./PresetSelectors";
 import { PromptInput } from "./PromptInput";
-import { GenerationSettings } from "./GenerationSettings";
 import { GenerationProgress } from "./GenerationProgress";
 import { ResultsGrid } from "./ResultsGrid";
 import { useGeneration } from "@/contexts/GenerationContext";
@@ -27,9 +26,7 @@ export function GenerationWorkspace() {
     setRoomType,
     setStyle,
     setPrompt,
-    setAspectRatio,
-    setQuality,
-    setVariants,
+    // removed settings setters
     resetForm,
     // canGenerate,
     missingRequirements
@@ -163,16 +160,7 @@ export function GenerationWorkspace() {
         disabled={state.isGenerating}
       />
 
-      {/* Settings */}
-      <GenerationSettings
-        aspectRatio={state.aspectRatio}
-        quality={state.quality}
-        variants={state.variants}
-        onAspectRatioChange={setAspectRatio}
-        onQualityChange={setQuality}
-        onVariantsChange={setVariants}
-        disabled={state.isGenerating}
-      />
+      {/* Settings removed in nano-banana migration */}
 
       {/* Validation Errors */}
       {missingRequirements.length > 0 && !state.isGenerating && (

@@ -12,7 +12,7 @@ UI (Next.js App Router, Tailwind, shadcn)
 /migrations/** (SQL + RLS)
 /libs/storage/** (uploads + signed URLs)
 /libs/supabase/** (client wrappers for SSR/middleware)
-External: Replicate (OpenAI gpt-image-1), Stripe, Supabase Storage
+External: Replicate (Google nano-banana), Stripe, Supabase Storage
 Private pages: (app)/dashboard/* guarded in app/(app)/dashboard/layout.tsx by calling /api/v1/auth/me; unauth → redirect to /signin.
 
 No Server Actions. No direct DB from components.
@@ -35,7 +35,7 @@ File: config.ts (non‑secret)
 
 product.modesOrder, product.presets.roomTypes, product.presets.styles
 
-product.generation.defaults (aspect ratio, quality, variants)
+product.generation.defaults (mode only; simplified)
 
 product.generation.limits.maxVariantsUI, allowedAspectRatios
 
@@ -68,7 +68,7 @@ Storage paths (convention):
 
 inputs → private/${userId}/inputs/<uuid>.<ext>
 
-outputs → public/renders/${renderId}/${variantIndex}.webp
+outputs → public/renders/${renderId}/${variantIndex}.jpg (legacy .webp for historical renders)
 
 thumbs → public/renders/${renderId}/${variantIndex}_thumb.webp
 
@@ -169,17 +169,14 @@ Copy
     "mode": "redesign",
     "settings": {
       "roomType": "Living room",
-      "style": "Coastal AU",
-      "aspectRatio": "1:1",
-      "quality": "auto",
-      "variants": 2
+      "style": "Coastal AU"
     },
     "predictionId": "replicate_pred_123"
   }
 }
 Errors:
 
-400 VALIDATION_ERROR (missing files per mode, bad variants)
+400 VALIDATION_ERROR (missing files per mode)
 
 401 UNAUTHORIZED
 
@@ -209,8 +206,7 @@ Copy
     "mode": "redesign",
     "variants": [
       // present only when status = succeeded
-      { "index": 0, "url": "https://cdn/render/abc0.webp", "thumbUrl": "..." },
-      { "index": 1, "url": "https://cdn/render/abc1.webp", "thumbUrl": "..." }
+      { "index": 0, "url": "https://cdn/render/abc0.jpg", "thumbUrl": "..." }
     ],
     "error": null
   }
@@ -231,7 +227,7 @@ Copy
     "items": [
       {
         "id": "render_uuid",
-        "coverVariantUrl": "https://cdn/render/r1/0.webp",
+        "coverVariantUrl": "https://cdn/render/r1/0.jpg",
         "createdAt": "2025-08-09T10:10:00Z",
         "mode": "redesign",
         "roomType": "Living room",
@@ -348,7 +344,7 @@ Idempotency: webhook handler must be safe to repeat.
 Existing webhook continues to manage plan state (customer ids, plan mapping). No changes needed here.
 
 8) Replicate integration (brief guide)
-Model: openai/gpt-image-1 on Replicate
+Model: google/nano-banana on Replicate
 
 Create prediction:
 
@@ -358,7 +354,7 @@ prompt (composed: base + mode template + user prompt)
 
 image[] (signed URLs for input1/input2 where relevant)
 
-aspect_ratio, quality, num_outputs (map from settings)
+image_input, output_format='jpg' (default)
 
 Webhook: send webhook URL to /api/v1/webhooks/replicate
 
@@ -522,4 +518,3 @@ Staging: assume room may be empty; stage tasteful furniture set for {style}; avo
 Compose: apply palette/object characteristics of input2 to input1; keep input1 structure; harmonize lighting.
 
 Imagine: generate interior scene for {roomType} in {style}; photoreal; balanced composition.
-

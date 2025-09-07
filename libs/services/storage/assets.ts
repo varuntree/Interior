@@ -118,21 +118,23 @@ export async function downloadAndStoreAsset(
       const res = await fetch(sourceUrl, { signal: ac.signal })
       if (!res.ok) throw new Error(`download ${res.status} ${res.statusText}`)
       const buf = await res.arrayBuffer()
-      return new Blob([buf], { type: 'image/webp' })
+      // Target format: jpg only
+      const mime = 'image/jpeg'
+      return new Blob([buf], { type: mime })
     } finally {
       clearTimeout(t)
     }
   }, 3, 500)
 
-  // Storage paths following convention: public/renders/${renderId}/${index}.webp
-  const imagePath = `renders/${renderId}/${index}.webp`;
+  // Storage path: public/renders/${renderId}/${index}.<ext>
+  const imagePath = `renders/${renderId}/${index}.jpg`;
 
   // Upload main image to public bucket
   const uploadAttempt = async () => {
     const { error } = await supabase.storage
       .from('public')
       .upload(imagePath, imageBlob, {
-        contentType: 'image/webp',
+        contentType: 'image/jpeg',
         upsert: false
       });
     if (error) {

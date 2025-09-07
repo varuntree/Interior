@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useReducer, ReactNode, useCallback, useMemo } from "react";
-import runtimeConfig, { Mode, AspectRatio, Quality } from "@/libs/app-config/runtime";
+import runtimeConfig, { Mode } from "@/libs/app-config/runtime";
 
 // Types
 export interface GenerationState {
@@ -12,9 +12,6 @@ export interface GenerationState {
   roomType: string;
   style: string;
   prompt: string;
-  aspectRatio: AspectRatio;
-  quality: Quality;
-  variants: number;
   
   // Generation state
   isGenerating: boolean;
@@ -41,9 +38,6 @@ type GenerationAction =
   | { type: 'SET_ROOM_TYPE'; payload: string }
   | { type: 'SET_STYLE'; payload: string }
   | { type: 'SET_PROMPT'; payload: string }
-  | { type: 'SET_ASPECT_RATIO'; payload: AspectRatio }
-  | { type: 'SET_QUALITY'; payload: Quality }
-  | { type: 'SET_VARIANTS'; payload: number }
   | { type: 'START_GENERATION'; payload: string } // jobId
   | { type: 'UPDATE_STATUS'; payload: GenerationState['generationStatus'] }
   | { type: 'SET_RESULTS'; payload: GenerationResult[] }
@@ -59,9 +53,6 @@ const initialState: GenerationState = {
   roomType: '',
   style: '',
   prompt: '',
-  aspectRatio: runtimeConfig.defaults.aspectRatio,
-  quality: runtimeConfig.defaults.quality,
-  variants: runtimeConfig.defaults.variants,
   isGenerating: false,
   currentJobId: null,
   generationStatus: 'idle',
@@ -97,15 +88,6 @@ function generationReducer(state: GenerationState, action: GenerationAction): Ge
       
     case 'SET_PROMPT':
       return { ...state, prompt: action.payload, error: null };
-      
-    case 'SET_ASPECT_RATIO':
-      return { ...state, aspectRatio: action.payload };
-      
-    case 'SET_QUALITY':
-      return { ...state, quality: action.payload };
-      
-    case 'SET_VARIANTS':
-      return { ...state, variants: action.payload };
       
     case 'START_GENERATION':
       return {
@@ -174,9 +156,6 @@ interface GenerationContextValue {
   setRoomType: (roomType: string) => void;
   setStyle: (style: string) => void;
   setPrompt: (prompt: string) => void;
-  setAspectRatio: (ratio: AspectRatio) => void;
-  setQuality: (quality: Quality) => void;
-  setVariants: (variants: number) => void;
   startGeneration: (jobId: string) => void;
   updateStatus: (status: GenerationState['generationStatus']) => void;
   setResults: (results: GenerationResult[]) => void;
@@ -215,9 +194,6 @@ export function GenerationProvider({ children, initialValues }: GenerationProvid
   const setRoomType = useCallback((roomType: string) => dispatch({ type: 'SET_ROOM_TYPE', payload: roomType }), []);
   const setStyle = useCallback((style: string) => dispatch({ type: 'SET_STYLE', payload: style }), []);
   const setPrompt = useCallback((prompt: string) => dispatch({ type: 'SET_PROMPT', payload: prompt }), []);
-  const setAspectRatio = useCallback((ratio: AspectRatio) => dispatch({ type: 'SET_ASPECT_RATIO', payload: ratio }), []);
-  const setQuality = useCallback((quality: Quality) => dispatch({ type: 'SET_QUALITY', payload: quality }), []);
-  const setVariants = useCallback((variants: number) => dispatch({ type: 'SET_VARIANTS', payload: variants }), []);
   const startGeneration = useCallback((jobId: string) => dispatch({ type: 'START_GENERATION', payload: jobId }), []);
   const updateStatus = useCallback((status: GenerationState['generationStatus']) => dispatch({ type: 'UPDATE_STATUS', payload: status }), []);
   const setResults = useCallback((results: GenerationResult[]) => dispatch({ type: 'SET_RESULTS', payload: results }), []);
@@ -263,9 +239,6 @@ export function GenerationProvider({ children, initialValues }: GenerationProvid
     setRoomType,
     setStyle,
     setPrompt,
-    setAspectRatio,
-    setQuality,
-    setVariants,
     startGeneration,
     updateStatus,
     setResults,
@@ -283,9 +256,6 @@ export function GenerationProvider({ children, initialValues }: GenerationProvid
     setRoomType,
     setStyle,
     setPrompt,
-    setAspectRatio,
-    setQuality,
-    setVariants,
     startGeneration,
     updateStatus,
     setResults,

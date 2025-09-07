@@ -60,7 +60,7 @@ Make “Generate” obvious.
 
 Presets guide the user (Room Type, Style, Mode).
 
-Provide just‑enough controls: Aspect Ratio, Quality, Variants.
+Provide just‑enough controls: Mode, Presets (Room Type, Style), and Prompt.
 
 Support the 4 modes: Redesign, Staging, Compose, Imagine.
 
@@ -103,11 +103,7 @@ Helper: short examples, e.g., “light oak floors, linen sofa, coastal palette�
 
 Settings (disclosed accordion):
 
-Aspect Ratio: 1:1, 3:2, 2:3 (radio).
-
-Quality: Auto (default), Low, Medium, High.
-
-Variants: 1–3 (default 2).
+Settings: none required for the new model (keep UI minimal).
 
 Generate button (primary)
 
@@ -435,4 +431,3 @@ The application uses a comprehensive design token system defined in app/globals.
 - Mobile: 4px base unit (--spacing: 0.25rem)
 - Tablet/Desktop: can use larger spacing multipliers
 - Consistent padding: 16px on mobile, 24px on tablet+
-

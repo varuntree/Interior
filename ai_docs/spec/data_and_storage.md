@@ -38,11 +38,13 @@ private/${userId}/inputs/<uuid>.<ext>
 
 Outputs (final images visible in product):
 
-public/renders/${renderId}/${variantIndex}.webp
+public/renders/${renderId}/${variantIndex}.jpg (for google/nano‑banana)
+
+Legacy outputs remain .webp for older jobs.
 
 Thumbnails (optional, same folder):
 
-public/renders/${renderId}/${variantIndex}_thumb.webp
+public/renders/${renderId}/${variantIndex}_thumb.webp (if generated)
 
 MVP: store originals in public at target size. Thumbnails are optional; if omitted, UI requests the original with CSS‑scaled previews. (We can add server-side thumb generation later without contract changes.)
 
@@ -59,9 +61,7 @@ create table if not exists public.generation_jobs (
   mode text not null check (mode in ('redesign','staging','compose','imagine')),
   room_type text,
   style text,
-  aspect_ratio text not null default '1:1' check (aspect_ratio in ('1:1','3:2','2:3')),
-  quality text not null default 'auto' check (quality in ('auto','low','medium','high')),
-  variants int not null default 2 check (variants between 1 and 3),
+  -- legacy columns for aspect_ratio/quality/variants have been dropped in later migrations
 
   -- inputs (we keep references to storage paths, never raw blobs)
   input1_path text,                               -- required for redesign/staging/compose
@@ -421,4 +421,3 @@ Apply migrations in order; verify RLS policies exist.
 Confirm public & private buckets are present (already created in 004_storage_buckets.sql).
 
 Run a manual flow: create job → webhook success → renders & variants exist; paths point to public bucket; collection default exists.
-

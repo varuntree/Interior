@@ -3,7 +3,7 @@ import Replicate from 'replicate';
 import { env } from '@/libs/env';
 import runtimeConfig from '@/libs/app-config/runtime';
 import { REPLICATE_WEBHOOK_EVENTS } from '@/libs/services/providers/constants'
-import type { ReplicateInputs } from './replicateAdapter';
+// Model-specific input types are supplied by adapters; for google, use GoogleNanoBananaInputs
 
 let replicateClient: Replicate | null = null;
 

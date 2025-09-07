@@ -20,18 +20,16 @@ export const searchSchema = z.object({
 
 // Generation schemas
 export const generationModeSchema = z.enum(['redesign', 'staging', 'compose', 'imagine'])
-export const aspectRatioSchema = z.enum(['1:1', '3:2', '2:3'])
-export const qualitySchema = z.enum(['auto', 'low', 'medium', 'high'])
-export const variantsSchema = z.number().min(1).max(3)
+// Legacy knobs removed for new provider (kept here commented for history)
+// export const aspectRatioSchema = z.enum(['1:1', '3:2', '2:3'])
+// export const qualitySchema = z.enum(['auto', 'low', 'medium', 'high'])
+// export const variantsSchema = z.number().min(1).max(3)
 
 export const generationRequestSchema = z.object({
   mode: generationModeSchema,
   prompt: z.string().max(500).optional(),
   roomType: z.string().max(100).optional(),
   style: z.string().max(100).optional(),
-  aspectRatio: aspectRatioSchema.optional(),
-  quality: qualitySchema.optional(),
-  variants: variantsSchema.optional(),
   idempotencyKey: uuidSchema.optional(),
   input1Url: z.string().url().optional(),
   input2Url: z.string().url().optional()
@@ -42,15 +40,10 @@ export const generationFormDataSchema = z.object({
   prompt: z.string().optional(),
   roomType: z.string().optional(),
   style: z.string().optional(),
-  aspectRatio: z.string().optional(),
-  quality: z.string().optional(),
-  variants: z.number().optional(),
   idempotencyKey: z.string().optional()
 }).transform((data) => ({
   ...data,
   mode: data.mode as 'redesign' | 'staging' | 'compose' | 'imagine',
-  aspectRatio: data.aspectRatio as '1:1' | '3:2' | '2:3' | undefined,
-  quality: data.quality as 'auto' | 'low' | 'medium' | 'high' | undefined,
 }))
 
 // Collection schemas
@@ -112,7 +105,10 @@ export const fileValidationSchema = z.object({
 export const replicateWebhookSchema = z.object({
   id: z.string(),
   status: z.enum(['starting', 'processing', 'succeeded', 'failed', 'canceled']),
-  output: z.array(z.string().url()).nullable().optional(),
+  output: z.union([
+    z.array(z.string().url()),
+    z.string().url(),
+  ]).nullable().optional(),
   error: z.string().nullable().optional(),
   logs: z.string().optional(),
   created_at: z.string(),

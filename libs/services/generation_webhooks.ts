@@ -6,12 +6,18 @@ import { logger } from '@/libs/observability/logger'
 export interface ReplicateWebhookPayload {
   id: string
   status: 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled'
-  output?: string[] | null
+  output?: string[] | string | null
   error?: string | null
   logs?: string
   created_at: string
   started_at?: string
   completed_at?: string
+}
+
+// Exported for testing: normalize single-string or array output into array of URLs
+export function normalizeWebhookOutput(output?: string[] | string | null): string[] {
+  if (!output) return []
+  return Array.isArray(output) ? output : [output]
 }
 
 export async function handleReplicateWebhook(
@@ -29,7 +35,10 @@ export async function handleReplicateWebhook(
 
   switch (status) {
     case 'succeeded':
-      if (!output || output.length === 0) {
+      // Normalize output into an array of URLs
+      const outputs: string[] = normalizeWebhookOutput(output)
+
+      if (!outputs || outputs.length === 0) {
         await jobsRepo.updateJobStatus(supabase, job.id, {
           status: 'failed',
           error: 'No output generated',
@@ -41,13 +50,13 @@ export async function handleReplicateWebhook(
       await processGenerationAssets(supabase, {
         jobId: job.id,
         predictionId: predictionId,
-        outputUrls: output.filter((u) => u && typeof u === 'string')
+        outputUrls: outputs.filter((u) => u && typeof u === 'string')
       })
       try {
         const durationMs = Date.now() - new Date(job.created_at).getTime()
-        logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: output.length, durationMs })
+        logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: outputs.length, durationMs })
       } catch {
-        logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: output.length })
+        logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: outputs.length })
       }
       await jobsRepo.updateJobStatus(supabase, job.id, {
         status: 'succeeded',
