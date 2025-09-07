@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Upload, X, Image as ImageIcon, AlertCircle } from "lucide-react";

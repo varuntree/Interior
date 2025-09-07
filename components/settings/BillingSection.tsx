@@ -17,11 +17,7 @@ interface BillingData {
   isCanceled?: boolean;
 }
 
-interface BillingSectionProps {
-  userId?: string;
-}
-
-export function BillingSection({ userId }: BillingSectionProps) {
+export function BillingSection() {
   const [billingData, setBillingData] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

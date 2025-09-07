@@ -2,6 +2,7 @@
 import Replicate from 'replicate';
 import { env } from '@/libs/env';
 import runtimeConfig from '@/libs/app-config/runtime';
+import { REPLICATE_WEBHOOK_EVENTS } from '@/libs/services/providers/constants'
 import type { ReplicateInputs } from './replicateAdapter';
 
 let replicateClient: Replicate | null = null;
@@ -41,6 +42,15 @@ export interface PredictionResult {
   logs?: string;
 }
 
+/**
+ * Create a prediction on Replicate.
+ *
+ * Idempotency: If an idempotencyKey is provided, this function sends it as the
+ * HTTP header `Idempotency-Key` so that repeated create attempts (due to
+ * client/network retries) do not start multiple predictions upstream. We also
+ * maintain app‑side idempotency in our DB (per owner + key) — combining both
+ * avoids duplicate jobs and duplicate billing.
+ */
 export async function createPrediction(params: CreatePredictionParams): Promise<PredictionResult> {
   const client = getReplicateClient();
   const { inputs, webhookUrl, idempotencyKey } = params;
@@ -51,12 +61,34 @@ export async function createPrediction(params: CreatePredictionParams): Promise<
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const prediction = await client.predictions.create({
-        model: runtimeConfig.replicate.model,
-        input: inputs,
-        webhook: webhookUrl,
-        webhook_events_filter: ["start", "output", "logs", "completed"],
-      });
+      let prediction: any;
+
+      if (idempotencyKey) {
+        // Use low-level request to attach the Idempotency-Key header.
+        // We target the models route since we supply a model name.
+        const route = `/models/${runtimeConfig.replicate.model}/predictions`;
+        const response = await (client as any).request(route, {
+          method: 'POST',
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+          data: {
+            input: inputs,
+            webhook: webhookUrl,
+            // The low-level request path expects raw strings
+            webhook_events_filter: REPLICATE_WEBHOOK_EVENTS as unknown as string[],
+          },
+        });
+        prediction = await response.json();
+      } else {
+        // Fall back to the high-level SDK helper when no extra headers are needed
+        prediction = await client.predictions.create({
+          model: runtimeConfig.replicate.model,
+          input: inputs,
+          webhook: webhookUrl,
+          webhook_events_filter: REPLICATE_WEBHOOK_EVENTS as any,
+        });
+      }
 
       return {
         id: prediction.id,

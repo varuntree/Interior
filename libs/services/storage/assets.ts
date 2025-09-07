@@ -42,8 +42,9 @@ export async function processGenerationAssets(
     throw new Error(`Job not found for prediction ${predictionId}`);
   }
 
-  // Create render record
-  const render = await rendersRepo.createRender(supabase, {
+  // Idempotency: reuse existing render for this job if present
+  const existingRender = await rendersRepo.findRenderByJobId(supabase, jobId, job.owner_id)
+  const render = existingRender || await rendersRepo.createRender(supabase, {
     job_id: jobId,
     owner_id: job.owner_id,
     mode: job.mode,
@@ -59,20 +60,29 @@ export async function processGenerationAssets(
     const outputUrl = outputUrls[i];
     
     try {
-      const asset = await downloadAndStoreAsset(supabase, {
-        renderId: render.id,
-        index: i,
-        sourceUrl: outputUrl
-      });
-      
-      // Create variant record
-      await rendersRepo.addVariant(supabase, {
-        render_id: render.id,
-        owner_id: job.owner_id,
-        idx: i,
-        image_path: asset.imagePath,
-        thumb_path: asset.thumbPath
-      });
+      // If a variant already exists for this index, skip creating it (idempotent)
+      const existingVariant = await rendersRepo.findVariantByRenderAndIdx(supabase, render.id, i)
+      let asset: ProcessedAsset | null = null
+
+      if (!existingVariant) {
+        asset = await downloadAndStoreAsset(supabase, {
+          renderId: render.id,
+          index: i,
+          sourceUrl: outputUrl
+        });
+
+        // Create variant record
+        await rendersRepo.addVariant(supabase, {
+          render_id: render.id,
+          owner_id: job.owner_id,
+          idx: i,
+          image_path: asset.imagePath,
+          thumb_path: asset.thumbPath
+        });
+      } else {
+        // Already present; treat as processed
+        asset = { index: i, imagePath: existingVariant.image_path, thumbPath: existingVariant.thumb_path || undefined }
+      }
       
       processedAssets.push(asset);
     } catch (error) {
@@ -81,8 +91,12 @@ export async function processGenerationAssets(
     }
   }
 
+  // If no assets processed and no existing render variants, consider it a failure; otherwise be idempotent
   if (processedAssets.length === 0) {
-    throw new Error('No assets were successfully processed');
+    const existingVariants = await rendersRepo.getVariantsByRender(supabase, render.id)
+    if (!existingVariants || existingVariants.length === 0) {
+      throw new Error('No assets were successfully processed');
+    }
   }
 }
 
@@ -96,29 +110,40 @@ export async function downloadAndStoreAsset(
 ): Promise<ProcessedAsset> {
   const { renderId, index, sourceUrl } = params;
 
-  // Download the image from Replicate
-  const response = await fetch(sourceUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.statusText}`);
-  }
-
-  const imageBuffer = await response.arrayBuffer();
-  const imageBlob = new Blob([imageBuffer], { type: 'image/webp' });
+  // Download the image from Replicate with retry and timeout
+  const imageBlob = await withRetry(async () => {
+    const ac = new AbortController()
+    const t = setTimeout(() => ac.abort(), 20_000)
+    try {
+      const res = await fetch(sourceUrl, { signal: ac.signal })
+      if (!res.ok) throw new Error(`download ${res.status} ${res.statusText}`)
+      const buf = await res.arrayBuffer()
+      return new Blob([buf], { type: 'image/webp' })
+    } finally {
+      clearTimeout(t)
+    }
+  }, 3, 500)
 
   // Storage paths following convention: public/renders/${renderId}/${index}.webp
   const imagePath = `renders/${renderId}/${index}.webp`;
 
   // Upload main image to public bucket
-  const { error: uploadError } = await supabase.storage
-    .from('public')
-    .upload(imagePath, imageBlob, {
-      contentType: 'image/webp',
-      upsert: false
-    });
-
-  if (uploadError) {
-    throw new Error(`Failed to upload image: ${uploadError.message}`);
+  const uploadAttempt = async () => {
+    const { error } = await supabase.storage
+      .from('public')
+      .upload(imagePath, imageBlob, {
+        contentType: 'image/webp',
+        upsert: false
+      });
+    if (error) {
+      // Treat "already exists" as success for idempotency
+      const msg = String(error.message || '').toLowerCase()
+      if (msg.includes('already exists') || msg.includes('duplicate')) return
+      throw new Error(error.message)
+    }
   }
+
+  await withRetry(uploadAttempt, 3, 500)
 
   // For MVP, we'll skip thumbnail generation to keep it simple
   // Thumbnails can be generated on-demand via CSS or added later

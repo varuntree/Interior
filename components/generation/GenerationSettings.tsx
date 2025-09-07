@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import { cn } from "@/libs/utils";
 import { Button } from "@/components/ui/button";
@@ -18,9 +19,9 @@ interface GenerationSettingsProps {
   aspectRatio: AspectRatio;
   quality: Quality;
   variants: number;
-  onAspectRatioChange: (ratio: AspectRatio) => void;
-  onQualityChange: (quality: Quality) => void;
-  onVariantsChange: (variants: number) => void;
+  onAspectRatioChange: (value: AspectRatio) => void;
+  onQualityChange: (value: Quality) => void;
+  onVariantsChange: (value: number) => void;
   disabled?: boolean;
   className?: string;
 }

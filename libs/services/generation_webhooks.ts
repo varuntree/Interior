@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import * as jobsRepo from '@/libs/repositories/generation_jobs'
 import { processGenerationAssets } from '@/libs/services/storage/assets'
+import { logger } from '@/libs/observability/logger'
 
 export interface ReplicateWebhookPayload {
   id: string
@@ -22,6 +23,7 @@ export async function handleReplicateWebhook(
 
   const job = await jobsRepo.findJobByPredictionId(supabase, predictionId)
   if (!job) {
+    logger.warn('webhook_job_not_found', { predictionId, status })
     return { predictionId, status }
   }
 
@@ -33,6 +35,7 @@ export async function handleReplicateWebhook(
           error: 'No output generated',
           completed_at: new Date().toISOString()
         })
+        logger.warn('webhook_no_output', { jobId: job.id, predictionId })
         break
       }
       await processGenerationAssets(supabase, {
@@ -40,7 +43,12 @@ export async function handleReplicateWebhook(
         predictionId: predictionId,
         outputUrls: output.filter((u) => u && typeof u === 'string')
       })
-      console.log('[webhook:processed]', { jobId: job.id, predictionId, outputs: output.length })
+      try {
+        const durationMs = Date.now() - new Date(job.created_at).getTime()
+        logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: output.length, durationMs })
+      } catch {
+        logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: output.length })
+      }
       await jobsRepo.updateJobStatus(supabase, job.id, {
         status: 'succeeded',
         completed_at: new Date().toISOString()
@@ -52,18 +60,18 @@ export async function handleReplicateWebhook(
         error: (error || 'Generation failed').slice(0, 500),
         completed_at: new Date().toISOString()
       })
-      console.warn('[webhook:failed]', { jobId: job.id, predictionId })
+      logger.warn('webhook_failed', { jobId: job.id, predictionId, error })
       break
     case 'canceled':
       await jobsRepo.updateJobStatus(supabase, job.id, {
         status: 'canceled',
         completed_at: new Date().toISOString()
       })
-      console.log('[webhook:canceled]', { jobId: job.id, predictionId })
+      logger.info('webhook_canceled', { jobId: job.id, predictionId })
       break
     case 'processing':
       await jobsRepo.updateJobStatus(supabase, job.id, { status: 'processing' })
-      console.log('[webhook:processing]', { jobId: job.id, predictionId })
+      logger.info('webhook_processing', { jobId: job.id, predictionId })
       break
     default:
       // ignore

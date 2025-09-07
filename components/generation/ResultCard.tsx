@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import React, { memo, useState } from "react";
 import Image from "next/image";

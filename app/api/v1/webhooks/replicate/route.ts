@@ -1,11 +1,13 @@
 // app/api/v1/webhooks/replicate/route.ts
 import { NextRequest } from 'next/server';
-import { createHmac } from 'crypto';
 import { withMethods } from '@/libs/api-utils/methods';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { createAdminClient } from '@/libs/supabase/admin';
 import { handleReplicateWebhook } from '@/libs/services/generation_webhooks';
 import { env } from '@/libs/env';
+import { createHmac } from 'crypto';
+import { logger } from '@/libs/observability/logger'
+import { REPLICATE_SIGNATURE_HEADER } from '@/libs/services/providers/constants'
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +30,10 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     
     // Verify webhook signature if secret is configured
     if (env.server.REPLICATE_WEBHOOK_SECRET) {
-      const signature = req.headers.get('x-webhook-signature');
+      // Replicate uses header "X-Replicate-Signature" with value "sha256=<hex>"
+      const headerName = REPLICATE_SIGNATURE_HEADER;
+      const fallbackHeader = 'x-webhook-signature'; // backward-compat if needed
+      const signature = req.headers.get(headerName) || req.headers.get(fallbackHeader);
       if (!signature || !verifyWebhookSignature(body, signature, env.server.REPLICATE_WEBHOOK_SECRET)) {
         console.error('Invalid webhook signature');
         return fail(401, 'UNAUTHORIZED', 'Invalid webhook signature');
@@ -38,18 +43,19 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     const payload: ReplicateWebhookPayload = JSON.parse(body);
     const { id: predictionId, status } = payload;
 
-    console.log(`Webhook received for prediction ${predictionId}: ${status}`);
+    logger.info('webhook_received', { predictionId, status })
 
     const supabase = createAdminClient();
     await handleReplicateWebhook({ supabase }, payload)
 
-    return ok({ 
+    const res = ok({ 
       message: 'Webhook processed successfully',
       predictionId,
       status 
     });
+    return res
   } catch (error: any) {
-    console.error('Webhook processing error:', error);
+    logger.error('webhook_error', { message: error?.message })
     
     // Return 200 to prevent Replicate from retrying
     // Log the error but don't fail the webhook
@@ -63,25 +69,21 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
 // handling moved into services/generation_webhooks
 
 // Webhook signature verification
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   try {
-    // Replicate uses HMAC-SHA256 with the format "sha256=<hash>"
-    const expectedSignature = `sha256=${createHmac('sha256', secret)
-      .update(payload, 'utf8')
-      .digest('hex')}`;
-    
-    // Use constant-time comparison to prevent timing attacks
-    return signature.length === expectedSignature.length &&
-      createHmac('sha256', secret)
-        .update(signature)
-        .digest('hex') === 
-      createHmac('sha256', secret)
-        .update(expectedSignature)
-        .digest('hex');
+    // Expected format: "sha256=<hex>"
+    const [algo, providedHex] = signature.split('=');
+    if (algo !== 'sha256' || !providedHex) return false;
+
+    const expectedHex = createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
+
+    // Constant-time comparison on hex strings
+    if (providedHex.length !== expectedHex.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < providedHex.length; i++) {
+      mismatch |= providedHex.charCodeAt(i) ^ expectedHex.charCodeAt(i);
+    }
+    return mismatch === 0;
   } catch (error) {
     console.error('Signature verification error:', error);
     return false;

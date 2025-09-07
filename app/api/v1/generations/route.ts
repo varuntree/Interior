@@ -1,45 +1,16 @@
 // app/api/v1/generations/route.ts
 import { NextRequest } from 'next/server';
-import { z } from 'zod';
 import { withMethods } from '@/libs/api-utils/methods';
-import { fail } from '@/libs/api-utils/responses';
+import { accepted, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { getApplicationUrl } from '@/libs/api-utils/url-validation';
 import { submitGeneration } from '@/libs/services/generation';
 import { createClient } from '@/libs/supabase/server';
+import { generationRequestSchema, generationFormDataSchema } from '@/libs/api-utils/schemas';
 
 export const dynamic = 'force-dynamic';
 
-// Validation schemas
-const GenerationBodySchema = z.object({
-  mode: z.enum(['redesign', 'staging', 'compose', 'imagine']),
-  prompt: z.string().optional(),
-  roomType: z.string().optional(),
-  style: z.string().optional(),
-  aspectRatio: z.enum(['1:1', '3:2', '2:3']).optional(),
-  quality: z.enum(['auto', 'low', 'medium', 'high']).optional(),
-  variants: z.number().min(1).max(3).optional(),
-  idempotencyKey: z.string().uuid().optional(),
-  // For JSON requests with signed URLs
-  input1Url: z.string().url().optional(),
-  input2Url: z.string().url().optional()
-});
-
-const FormDataSchema = z.object({
-  mode: z.string(),
-  prompt: z.string().optional(),
-  roomType: z.string().optional(),
-  style: z.string().optional(),
-  aspectRatio: z.string().optional(),
-  quality: z.string().optional(),
-  variants: z.number().optional(),
-  idempotencyKey: z.string().optional()
-}).transform((data) => ({
-  ...data,
-  mode: data.mode as 'redesign' | 'staging' | 'compose' | 'imagine',
-  aspectRatio: data.aspectRatio as '1:1' | '3:2' | '2:3' | undefined,
-  quality: data.quality as 'auto' | 'low' | 'medium' | 'high' | undefined,
-}));
+// Validation schemas are sourced from libs/api-utils/schemas to avoid duplication
 
 export const POST = withMethods(['POST'], async (req: NextRequest) => {
   try {
@@ -51,7 +22,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     }
 
     const contentType = req.headers.get('content-type') || '';
-    let parsedData: z.infer<typeof GenerationBodySchema>;
+    let parsedData: ReturnType<typeof generationRequestSchema.parse>;
     let files: { input1?: File; input2?: File } = {};
 
     if (contentType.includes('multipart/form-data')) {
@@ -72,7 +43,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
 
       // Validate form data  
       try {
-        parsedData = FormDataSchema.parse(data);
+        parsedData = generationFormDataSchema.parse(data) as any;
       } catch (error: any) {
         return fail(400, 'VALIDATION_ERROR', 'Invalid form data', error.flatten?.());
       }
@@ -87,7 +58,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       // Handle JSON request
       const body = await req.json();
       try {
-        parsedData = GenerationBodySchema.parse(body);
+        parsedData = generationRequestSchema.parse(body);
       } catch (error: any) {
         return fail(400, 'VALIDATION_ERROR', 'Invalid JSON data', error.flatten?.());
       }
@@ -130,16 +101,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       submission
     );
 
-    return new Response(JSON.stringify({
-      success: true,
-      data: result
-    }), {
-      status: 202, // Accepted - processing will happen asynchronously
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'private, no-store'
-      }
-    });
+    return accepted(result);
 
   } catch (error: any) {
     console.error('Generation submission error:', error);

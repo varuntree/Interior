@@ -60,6 +60,13 @@ export function created<T>(data: T, init: ResponseInit = {}) {
   return Response.json({ success: true, data }, { status: 201, ...init });
 }
 
+export function accepted<T>(data: T, init: ResponseInit = {}) {
+  return Response.json(
+    { success: true, data } as const,
+    { status: 202, headers: { 'Cache-Control': 'private, no-store', ...(init.headers || {}) } }
+  );
+}
+
 export function badRequest(message = "Invalid request") {
   return Response.json({ success: false, error: message }, { status: 400 });
 }
