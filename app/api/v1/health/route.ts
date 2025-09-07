@@ -1,7 +1,6 @@
-import { NextRequest } from 'next/server';
 import { ok } from '@/libs/api-utils/responses';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   return ok({
     ok: true,
     time: new Date().toISOString(),

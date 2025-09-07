@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
@@ -23,7 +22,6 @@ export default function ProfilePage() {
       const data = await response.json();
       
       if (data.success) {
-        setProfile(data.data);
         setName(data.data.name || '');
       }
     } catch (error) {
@@ -42,10 +40,8 @@ export default function ProfilePage() {
         body: JSON.stringify({ name })
       });
       
-      const data = await response.json();
-      if (data.success) {
-        setProfile(data.data);
-      }
+      await response.json();
+      // no-op: name already bound to input; server state saved
     } catch (error) {
       console.error('Failed to save profile:', error);
     } finally {

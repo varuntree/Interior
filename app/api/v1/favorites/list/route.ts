@@ -1,5 +1,5 @@
 import { withMethods } from '@/libs/api-utils/handler';
-import { ok, unauthorized } from '@/libs/api-utils/responses';
+import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import * as favoritesService from '@/libs/services/favorites';
 
@@ -9,7 +9,7 @@ async function handleGET(req: Request) {
   // Get user session
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
-    return unauthorized('Authentication required');
+    return fail(401, 'UNAUTHORIZED', 'Authentication required');
   }
 
   const url = new URL(req.url);

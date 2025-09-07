@@ -1,12 +1,13 @@
 // app/api/v1/webhooks/replicate/route.ts
 import { NextRequest } from 'next/server';
-import { createHmac } from 'crypto';
 import { withMethods } from '@/libs/api-utils/methods';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { createAdminClient } from '@/libs/supabase/admin';
-import { processGenerationAssets } from '@/libs/services/storage/assets';
-import * as jobsRepo from '@/libs/repositories/generation_jobs';
+import { handleReplicateWebhook } from '@/libs/services/generation_webhooks';
 import { env } from '@/libs/env';
+import { createHmac } from 'crypto';
+import { logger } from '@/libs/observability/logger'
+import { REPLICATE_SIGNATURE_HEADER } from '@/libs/services/providers/constants'
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,10 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     
     // Verify webhook signature if secret is configured
     if (env.server.REPLICATE_WEBHOOK_SECRET) {
-      const signature = req.headers.get('x-webhook-signature');
+      // Replicate uses header "X-Replicate-Signature" with value "sha256=<hex>"
+      const headerName = REPLICATE_SIGNATURE_HEADER;
+      const fallbackHeader = 'x-webhook-signature'; // backward-compat if needed
+      const signature = req.headers.get(headerName) || req.headers.get(fallbackHeader);
       if (!signature || !verifyWebhookSignature(body, signature, env.server.REPLICATE_WEBHOOK_SECRET)) {
         console.error('Invalid webhook signature');
         return fail(401, 'UNAUTHORIZED', 'Invalid webhook signature');
@@ -37,51 +41,21 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     }
     
     const payload: ReplicateWebhookPayload = JSON.parse(body);
-    const { id: predictionId, status, output, error } = payload;
+    const { id: predictionId, status } = payload;
 
-    console.log(`Webhook received for prediction ${predictionId}: ${status}`);
+    logger.info('webhook_received', { predictionId, status })
 
-    // Use admin client for webhook operations
     const supabase = createAdminClient();
+    await handleReplicateWebhook({ supabase }, payload)
 
-    // Find the job by prediction ID
-    const job = await jobsRepo.findJobByPredictionId(supabase, predictionId);
-    if (!job) {
-      console.warn(`Job not found for prediction ${predictionId}`);
-      return ok({ message: 'Job not found, webhook ignored' });
-    }
-
-    // Handle different status updates
-    switch (status) {
-      case 'succeeded':
-        await handleSuccess(supabase, job, output || []);
-        break;
-        
-      case 'failed':
-        await handleFailure(supabase, job, error);
-        break;
-        
-      case 'canceled':
-        await handleCancellation(supabase, job);
-        break;
-        
-      case 'processing':
-        await jobsRepo.updateJobStatus(supabase, job.id, {
-          status: 'processing'
-        });
-        break;
-        
-      default:
-        console.log(`Unhandled status ${status} for prediction ${predictionId}`);
-    }
-
-    return ok({ 
+    const res = ok({ 
       message: 'Webhook processed successfully',
       predictionId,
       status 
     });
+    return res
   } catch (error: any) {
-    console.error('Webhook processing error:', error);
+    logger.error('webhook_error', { message: error?.message })
     
     // Return 200 to prevent Replicate from retrying
     // Log the error but don't fail the webhook
@@ -92,95 +66,24 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
   }
 });
 
-async function handleSuccess(
-  supabase: any,
-  job: any,
-  outputUrls: string[]
-): Promise<void> {
-  if (!outputUrls || outputUrls.length === 0) {
-    console.error(`No output URLs for successful job ${job.id}`);
-    await jobsRepo.updateJobStatus(supabase, job.id, {
-      status: 'failed',
-      error: 'No output generated',
-      completed_at: new Date().toISOString()
-    });
-    return;
-  }
-
-  try {
-    // Process and store assets
-    await processGenerationAssets(supabase, {
-      jobId: job.id,
-      predictionId: job.prediction_id,
-      outputUrls: outputUrls.filter(url => url && typeof url === 'string')
-    });
-
-    // Mark job as succeeded
-    await jobsRepo.updateJobStatus(supabase, job.id, {
-      status: 'succeeded',
-      completed_at: new Date().toISOString()
-    });
-
-    console.log(`Successfully processed assets for job ${job.id}`);
-  } catch (error: any) {
-    console.error(`Failed to process assets for job ${job.id}:`, error);
-    
-    await jobsRepo.updateJobStatus(supabase, job.id, {
-      status: 'failed',
-      error: `Asset processing failed: ${error.message}`,
-      completed_at: new Date().toISOString()
-    });
-  }
-}
-
-async function handleFailure(
-  supabase: any,
-  job: any,
-  errorMessage?: string | null
-): Promise<void> {
-  const normalizedError = errorMessage || 'Generation failed without specific error';
-  
-  await jobsRepo.updateJobStatus(supabase, job.id, {
-    status: 'failed',
-    error: normalizedError.slice(0, 500), // Truncate long errors
-    completed_at: new Date().toISOString()
-  });
-
-  console.log(`Job ${job.id} marked as failed: ${normalizedError}`);
-}
-
-async function handleCancellation(
-  supabase: any,
-  job: any
-): Promise<void> {
-  await jobsRepo.updateJobStatus(supabase, job.id, {
-    status: 'canceled',
-    completed_at: new Date().toISOString()
-  });
-
-  console.log(`Job ${job.id} marked as canceled`);
-}
+// handling moved into services/generation_webhooks
 
 // Webhook signature verification
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
   try {
-    // Replicate uses HMAC-SHA256 with the format "sha256=<hash>"
-    const expectedSignature = `sha256=${createHmac('sha256', secret)
-      .update(payload, 'utf8')
-      .digest('hex')}`;
-    
-    // Use constant-time comparison to prevent timing attacks
-    return signature.length === expectedSignature.length &&
-      createHmac('sha256', secret)
-        .update(signature)
-        .digest('hex') === 
-      createHmac('sha256', secret)
-        .update(expectedSignature)
-        .digest('hex');
+    // Expected format: "sha256=<hex>"
+    const [algo, providedHex] = signature.split('=');
+    if (algo !== 'sha256' || !providedHex) return false;
+
+    const expectedHex = createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
+
+    // Constant-time comparison on hex strings
+    if (providedHex.length !== expectedHex.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < providedHex.length; i++) {
+      mismatch |= providedHex.charCodeAt(i) ^ expectedHex.charCodeAt(i);
+    }
+    return mismatch === 0;
   } catch (error) {
     console.error('Signature verification error:', error);
     return false;

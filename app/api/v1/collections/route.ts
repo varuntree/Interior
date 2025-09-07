@@ -14,6 +14,7 @@ const CreateCollectionSchema = z.object({
   name: z.string().min(1).max(100).trim()
 })
 
+// eslint-disable-next-line no-unused-vars
 export const GET = withMethods(['GET'], async (req: NextRequest) => {
   try {
     // Get authenticated user

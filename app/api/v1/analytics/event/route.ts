@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { withMethods } from '@/libs/api-utils/handler';
 import { validateRequest } from '@/libs/api-utils/validate';
-import { ok, fail } from '@/libs/api-utils/responses';
+import { ok } from '@/libs/api-utils/responses';
+import { logEvent } from '@/libs/services/analytics'
 
 const EventSchema = z.object({
   type: z.enum(['page', 'generation_submit', 'generation_done', 'error']),
@@ -19,15 +19,7 @@ export const POST = withMethods({
       // Get user ID if authenticated, null if anonymous
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase
-        .from('logs_analytics')
-        .insert({
-          owner_id: user?.id || null,
-          type: body.type,
-          payload: body.payload || null
-        });
-        
-      if (error) throw error;
+      await logEvent({ supabase }, { userId: user?.id || null, type: body.type, payload: body.payload })
       
       return ok({ message: 'Event logged' });
     } catch (error) {

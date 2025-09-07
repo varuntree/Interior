@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Image, Search, Filter, Plus, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Search, Filter, Plus, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,7 @@ export default async function RendersPage() {
 
       {/* Empty State */}
       <EmptyState
-        icon={<Image className="h-12 w-12" />}
+        icon={<ImageIcon className="h-12 w-12" />}
         title="No renders yet"
         description="Start creating beautiful interior designs to see them here. Your generated designs will appear in a searchable grid with filtering options."
         action={{

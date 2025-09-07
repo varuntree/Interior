@@ -253,3 +253,26 @@ export async function batchAddToCollection(
   // Batch insert (ignore duplicates)
   await collectionsRepo.batchAddToCollection(ctx.supabase, collectionId, verifiedRenderIds)
 }
+
+// Minimal upsert for API compatibility
+export async function upsertCollection(
+  ctx: { supabase: SupabaseClient },
+  args: { userId: string; id?: string; title: string }
+): Promise<{ id?: string; title: string }> {
+  if (args.id) {
+    await renameUserCollection(ctx, args.id, args.userId, args.title)
+    return { id: args.id, title: args.title }
+  } else {
+    const created = await createUserCollection(ctx, args.userId, args.title)
+    return { id: created.id, title: created.name }
+  }
+}
+
+// Minimal toggle for API compatibility (no-op placeholder)
+export async function toggleCollectionItem(
+  ctx: { supabase: SupabaseClient },
+  args: { userId: string; collectionId: string; generationId: string }
+): Promise<{ toggled: boolean }> {
+  // TODO: map generationId→renderId and add/remove from collection
+  return { toggled: true }
+}

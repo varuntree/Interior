@@ -1,22 +1,6 @@
 // libs/services/external/replicateAdapter.ts
-import type { AspectRatio, Quality, Mode } from '@/libs/app-config/runtime';
 import runtimeConfig from '@/libs/app-config/runtime';
-
-export interface GenerationRequest {
-  ownerId: string;
-  mode: Mode;
-  prompt?: string;
-  roomType?: string;
-  style?: string;
-  settings: {
-    aspectRatio: AspectRatio;
-    quality: Quality;
-    variants: number;
-  };
-  input1Path?: string;
-  input2Path?: string;
-  idempotencyKey?: string;
-}
+import type { GenerationRequest } from '@/libs/services/generation/types'
 
 export interface ReplicateInputs {
   openai_api_key: string;           // REQUIRED for gpt-image-1
@@ -38,7 +22,7 @@ export function toReplicateInputs(
   const { settings } = req;
 
   // Map aspect ratio to Replicate format
-  const aspectRatioMapping: Record<AspectRatio, string> = {
+  const aspectRatioMapping: Record<GenerationRequest['settings']['aspectRatio'], string> = {
     '1:1': '1:1',
     '3:2': '3:2', 
     '2:3': '2:3'

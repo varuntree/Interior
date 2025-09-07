@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Wand2, Image, FolderHeart, BarChart3, Clock, Zap } from "lucide-react";
+import { Wand2, Image as ImageIcon, FolderHeart, BarChart3, Clock, Zap } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ export default async function Dashboard() {
             <CardHeader className="pb-3">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-accent rounded-lg">
-                  <Image className="h-5 w-5 text-accent-foreground" />
+                  <ImageIcon className="h-5 w-5 text-accent-foreground" />
                 </div>
                 <div>
                   <CardTitle className="text-lg">My Renders</CardTitle>

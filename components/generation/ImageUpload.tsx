@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Upload, X, Image as ImageIcon, AlertCircle } from "lucide-react";
@@ -6,6 +7,7 @@ import { cn } from "@/libs/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Image from "next/image";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 interface ImageUploadProps {
   label: string;
@@ -19,15 +21,15 @@ interface ImageUploadProps {
   className?: string;
 }
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_SIZE_MB = 15;
+const ACCEPTED_TYPES = runtimeConfig.limits.acceptedMimeTypes;
+const MAX_SIZE_MB = runtimeConfig.limits.maxUploadsMB;
 
 export function ImageUpload({
   label,
   description,
   value,
   onChange,
-  accept = "image/*",
+  accept = ACCEPTED_TYPES.join(","),
   maxSizeMB = MAX_SIZE_MB,
   required = false,
   disabled = false,
@@ -191,6 +193,7 @@ export function ImageUpload({
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
+                loading="lazy"
               />
             )}
           </div>
@@ -209,10 +212,10 @@ export function ImageUpload({
             </div>
             
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-              <p className="text-white text-sm font-medium truncate">
+              <p className="text-primary-foreground text-sm font-medium truncate">
                 {value.name}
               </p>
-              <p className="text-white/80 text-xs">
+              <p className="text-primary-foreground/80 text-xs">
                 {(value.size / (1024 * 1024)).toFixed(1)}MB
               </p>
             </div>

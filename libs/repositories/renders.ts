@@ -163,6 +163,23 @@ export async function getRenderById(
   return data || null
 }
 
+export async function findRenderByJobId(
+  supabase: SupabaseClient,
+  jobId: string,
+  ownerId: string
+): Promise<Render | null> {
+  const { data, error } = await supabase
+    .from('renders')
+    .select('*')
+    .eq('job_id', jobId)
+    .eq('owner_id', ownerId)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data || null
+}
+
 export async function getVariantsByRender(
   supabase: SupabaseClient,
   renderId: string
@@ -175,6 +192,23 @@ export async function getVariantsByRender(
   
   if (error) throw error
   return data || []
+}
+
+export async function findVariantByRenderAndIdx(
+  supabase: SupabaseClient,
+  renderId: string,
+  idx: number
+): Promise<RenderVariant | null> {
+  const { data, error } = await supabase
+    .from('render_variants')
+    .select('*')
+    .eq('render_id', renderId)
+    .eq('idx', idx)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data || null
 }
 
 export async function updateRenderCoverVariant(

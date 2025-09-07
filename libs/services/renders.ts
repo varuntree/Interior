@@ -129,6 +129,48 @@ export async function getRenderDetails(
   return await formatRenderWithVariants(result.render, result.variants)
 }
 
+export async function getVariantsForJob(
+  ctx: { supabase: SupabaseClient },
+  jobId: string,
+  ownerId: string
+): Promise<Array<{ index: number; url: string; thumbUrl?: string }>> {
+  // Find the render created by this job for this owner
+  const { data: renders, error } = await ctx.supabase
+    .from('renders')
+    .select('id')
+    .eq('job_id', jobId)
+    .eq('owner_id', ownerId)
+    .limit(1)
+
+  if (error) throw error
+  if (!renders || renders.length === 0) return []
+
+  const renderData = await rendersRepo.getRenderWithVariants(ctx.supabase, renders[0].id, ownerId)
+  if (!renderData) return []
+
+  const formatted = await formatRenderWithVariants(renderData.render, renderData.variants)
+  return formatted.variants.map(v => ({ index: v.idx, url: v.image_url, thumbUrl: v.thumb_url }))
+}
+
+export async function deleteRendersByJob(
+  ctx: { supabase: SupabaseClient },
+  jobId: string,
+  ownerId: string
+): Promise<void> {
+  const { data: renders, error } = await ctx.supabase
+    .from('renders')
+    .select('id')
+    .eq('job_id', jobId)
+    .eq('owner_id', ownerId)
+
+  if (error) throw error
+  if (!renders || renders.length === 0) return
+
+  for (const r of renders) {
+    await rendersRepo.deleteRender(ctx.supabase, r.id, ownerId)
+  }
+}
+
 export async function deleteUserRender(
   ctx: { supabase: SupabaseClient },
   renderId: string,

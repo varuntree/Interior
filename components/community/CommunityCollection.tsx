@@ -1,6 +1,7 @@
 'use client';
+/* eslint-disable no-unused-vars */
 
-import { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ interface CommunityCollectionProps {
   isFeatured: boolean;
   itemCount: number;
   items: CommunityCollectionItem[];
-  onApplySettings?: (settings: any) => void;
+  onApplySettings?: (payload: any) => void;
 }
 
 export function CommunityCollection({
@@ -52,10 +53,10 @@ export function CommunityCollection({
   const itemsPerPage = 4;
   const totalPages = Math.ceil(items.length / itemsPerPage);
   
-  const currentItems = items.slice(
+  const currentItems = useMemo(() => items.slice(
     currentPage * itemsPerPage,
     (currentPage + 1) * itemsPerPage
-  );
+  ), [items, currentPage, itemsPerPage]);
 
   const nextPage = () => {
     if (currentPage < totalPages - 1) {

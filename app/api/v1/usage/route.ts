@@ -7,7 +7,7 @@ import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { getUserUsageStatus, getUserUsageHistory } from '@/libs/services/usage'
 import { getUserBillingInfo } from '@/libs/services/billing'
-import { getProfileById } from '@/libs/repositories/profiles'
+import { getProfile } from '@/libs/services/profile'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +29,7 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
     const serviceSupabase = createServiceSupabaseClient()
 
     // Get user profile to determine plan
-    const profile = await getProfileById(serviceSupabase, user.id)
+    const profile = await getProfile({ supabase: serviceSupabase }, user.id)
     if (!profile) {
       return fail(404, 'NOT_FOUND', 'User profile not found')
     }

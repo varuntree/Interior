@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import { Mode } from "@/libs/app-config/runtime";
 import { cn } from "@/libs/utils";

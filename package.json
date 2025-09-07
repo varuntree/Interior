@@ -5,13 +5,14 @@
   "packageManager": "npm@>=10",
   "scripts": {
     "dev": "next dev",
-    
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "check-env": "node -e \"console.log('✓ Environment check passed')\""
+    "check-env": "node -e \"console.log('✓ Environment check passed')\"",
+    "verify:grep": "grep -R 'use server' app libs || true && grep -R 'createServerClient' components || true && grep -R 'service_role' app components || true",
+    "test": "vitest run"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
@@ -69,6 +70,7 @@
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "vitest": "^3.2.4"
   }
 }

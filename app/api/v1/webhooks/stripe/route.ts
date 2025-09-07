@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { withMethods } from "@/libs/api-utils/handler";
-import { serverError } from "@/libs/api-utils/responses";
+import { fail } from "@/libs/api-utils/responses";
 import { env } from "@/libs/env";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { handleStripeWebhookService } from "@/libs/services/billing";
@@ -29,7 +29,7 @@ export const POST = withMethods({
       return new Response(JSON.stringify({ received: true }), { status: 200 });
     } catch (e: any) {
       console.error("stripe webhook error:", e?.message || e);
-      return serverError("Webhook error");
+      return fail(500, 'INTERNAL_ERROR', 'Webhook error');
     }
   }
 });

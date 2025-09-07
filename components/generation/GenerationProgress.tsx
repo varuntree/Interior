@@ -65,14 +65,7 @@ export function GenerationProgress({
 
   // Calculate estimated total time and progress
   useEffect(() => {
-    const currentStepIndex = GENERATION_STEPS.findIndex(
-      step => step.id === state.generationStatus
-    );
-    
-    const total = GENERATION_STEPS.reduce((sum, step, index) => {
-      return sum + (step.duration || 0);
-    }, 0);
-    
+    const total = GENERATION_STEPS.reduce((sum, step) => sum + (step.duration || 0), 0);
     setEstimatedTotal(total);
   }, [state.generationStatus]);
 
@@ -125,12 +118,12 @@ export function GenerationProgress({
           <CardTitle className="flex items-center gap-2">
             {isCompleted ? (
               <>
-                <CheckCircle className="h-5 w-5 text-green-500" />
+                <CheckCircle className="h-5 w-5 text-primary" />
                 Generation Complete!
               </>
             ) : isFailed ? (
               <>
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
                 Generation Failed
               </>
             ) : (
@@ -179,14 +172,14 @@ export function GenerationProgress({
                 className={cn(
                   "flex items-center gap-4 p-3 rounded-lg transition-colors",
                   isCurrentStep && "bg-primary/5 border border-primary/20",
-                  isCompletedStep && "bg-green-50 border border-green-200",
+                  isCompletedStep && "bg-primary/5 border border-primary/20",
                   isPendingStep && "bg-muted/30"
                 )}
               >
                 <div className={cn(
                   "flex items-center justify-center w-8 h-8 rounded-full border-2",
                   isCurrentStep && "border-primary bg-primary text-primary-foreground",
-                  isCompletedStep && "border-green-500 bg-green-500 text-white",
+                  isCompletedStep && "border-primary bg-primary text-primary-foreground",
                   isPendingStep && "border-muted-foreground bg-background"
                 )}>
                   {isCompletedStep ? (
@@ -202,7 +195,7 @@ export function GenerationProgress({
                   <div className={cn(
                     "font-medium",
                     isCurrentStep && "text-primary",
-                    isCompletedStep && "text-green-700",
+                    isCompletedStep && "text-primary",
                     isPendingStep && "text-muted-foreground"
                   )}>
                     {step.label}
@@ -225,12 +218,12 @@ export function GenerationProgress({
 
         {/* Error Message */}
         {state.error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-2 text-red-700 font-medium mb-2">
+          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+            <div className="flex items-center gap-2 text-destructive font-medium mb-2">
               <XCircle className="h-4 w-4" />
               Generation Error
             </div>
-            <p className="text-sm text-red-600">{state.error}</p>
+            <p className="text-sm text-destructive">{state.error}</p>
           </div>
         )}
 

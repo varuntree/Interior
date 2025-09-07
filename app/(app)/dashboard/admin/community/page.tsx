@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,11 +28,20 @@ export default function AdminCommunityPage() {
     coverImageUrl: ''
   })
 
-  useEffect(() => {
-    checkAdminStatus()
+  const loadCollections = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/community/collections')
+      const result = await res.json()
+      
+      if (result.success) {
+        setCollections(result.data.collections)
+      }
+    } catch (error) {
+      console.error('Failed to load collections:', error)
+    }
   }, [])
 
-  const checkAdminStatus = async () => {
+  const checkAdminStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/v1/admin/ensure', { method: 'POST' })
       const result = await res.json()
@@ -45,20 +55,11 @@ export default function AdminCommunityPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [loadCollections])
 
-  const loadCollections = async () => {
-    try {
-      const res = await fetch('/api/v1/community/collections')
-      const result = await res.json()
-      
-      if (result.success) {
-        setCollections(result.data.collections)
-      }
-    } catch (error) {
-      console.error('Failed to load collections:', error)
-    }
-  }
+  useEffect(() => {
+    checkAdminStatus()
+  }, [checkAdminStatus])
 
   const handleEnsureAdmin = async () => {
     setIsLoading(true)
@@ -208,11 +209,14 @@ export default function AdminCommunityPage() {
             </CardHeader>
             {collection.cover_image_url && (
               <CardContent>
-                <img
-                  src={collection.cover_image_url}
-                  alt={collection.title}
-                  className="w-32 h-20 object-cover rounded"
-                />
+                <div className="relative w-32 h-20">
+                  <Image
+                    src={collection.cover_image_url}
+                    alt={collection.title}
+                    fill
+                    className="object-cover rounded"
+                  />
+                </div>
               </CardContent>
             )}
           </Card>
