@@ -1,6 +1,6 @@
 // app/api/v1/community/route.ts
 import { NextRequest } from 'next/server'
-import { withMethods } from '@/libs/api-utils/handler'
+import { withMethods } from '@/libs/api-utils/methods'
 import { ok, fail } from '@/libs/api-utils/responses'
 import { CACHE_CONFIGS } from '@/libs/api-utils/cache'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
@@ -8,8 +8,7 @@ import { getCommunityGallery, getFeaturedCollections } from '@/libs/services/com
 
 export const dynamic = 'force-dynamic'
 
-export const GET = withMethods({
-  GET: async (req: NextRequest) => {
+export const GET = withMethods(['GET'], async (req: NextRequest) => {
   try {
     // Parse query parameters
     const url = new URL(req.url)
@@ -118,6 +117,5 @@ export const GET = withMethods({
   } catch (error: any) {
     console.error('Community gallery error:', error)
     return fail(500, 'INTERNAL_ERROR', 'Failed to fetch community content')
-  }
   }
 })

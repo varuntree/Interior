@@ -183,7 +183,8 @@ export async function getFeaturedCollections(
 export async function listPublishedCollections(
   ctx: { supabase: SupabaseClient }
 ): Promise<communityRepo.CommunityCollection[]> {
-  return communityRepo.listCommunityCollections(ctx.supabase)
+  // Treat published as featured for MVP; return featured-only
+  return communityRepo.listCommunityCollections(ctx.supabase, true)
 }
 
 export async function listPublishedItems(
@@ -335,14 +336,29 @@ export async function addItemToCollection(
 export async function upsertCollection(
   ctx: { supabase: SupabaseClient },
   args: { id?: string; title: string; description?: string; coverImageUrl?: string; position?: number }
-): Promise<{ id?: string; title: string }> {
-  return { id: args.id, title: args.title }
+): Promise<{ id: string; title: string }> {
+  if (args.id) {
+    await communityRepo.updateCommunityCollection(ctx.supabase, args.id, {
+      title: args.title,
+      description: args.description,
+      order_index: args.position ?? 0,
+    })
+    return { id: args.id, title: args.title }
+  }
+  const created = await communityRepo.createCommunityCollection(ctx.supabase, {
+    title: args.title,
+    description: args.description,
+    is_featured: false,
+    order_index: args.position ?? 0,
+  } as any)
+  return { id: created.id, title: created.title }
 }
 
 export async function deleteCollection(
   ctx: { supabase: SupabaseClient },
   args: { id: string }
 ): Promise<{ deleted: boolean }> {
+  await communityRepo.deleteCommunityCollection(ctx.supabase, args.id)
   return { deleted: true }
 }
 
@@ -350,19 +366,34 @@ export async function togglePublished(
   ctx: { supabase: SupabaseClient },
   args: { id: string; isPublished: boolean }
 ): Promise<{ id: string; isPublished: boolean }> {
+  // Map publish state to is_featured flag for visibility
+  await communityRepo.updateCommunityCollection(ctx.supabase, args.id, { is_featured: args.isPublished } as any)
   return { id: args.id, isPublished: args.isPublished }
 }
 
 export async function upsertItem(
   ctx: { supabase: SupabaseClient },
   args: { id?: string; collectionId: string; title?: string; imageUrl: string; tags?: string[]; position?: number }
-): Promise<{ id?: string; collectionId: string }> {
-  return { id: args.id, collectionId: args.collectionId }
+): Promise<{ id: string; collectionId: string }> {
+  if (args.id) {
+    await communityRepo.updateCommunityItem(ctx.supabase, args.id, {
+      external_image_url: args.imageUrl,
+      order_index: args.position ?? 0,
+    } as any)
+    return { id: args.id, collectionId: args.collectionId }
+  }
+  const created = await communityRepo.createCommunityItem(ctx.supabase, {
+    collection_id: args.collectionId,
+    external_image_url: args.imageUrl,
+    order_index: args.position ?? 0,
+  } as any)
+  return { id: created.id, collectionId: args.collectionId }
 }
 
 export async function deleteItem(
   ctx: { supabase: SupabaseClient },
   args: { id: string }
 ): Promise<{ deleted: boolean }> {
+  await communityRepo.deleteCommunityItem(ctx.supabase, args.id)
   return { deleted: true }
 }

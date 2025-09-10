@@ -30,13 +30,17 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
 
     // Parse and validate query parameters
     const url = new URL(req.url)
+    const get = (key: string) => {
+      const v = url.searchParams.get(key)
+      return v === null ? undefined : v
+    }
     const queryParams = {
-      mode: url.searchParams.get('mode'),
-      roomType: url.searchParams.get('roomType'),
-      style: url.searchParams.get('style'),
-      limit: url.searchParams.get('limit'),
-      cursor: url.searchParams.get('cursor'),
-      search: url.searchParams.get('search')
+      mode: get('mode'),
+      roomType: get('roomType'),
+      style: get('style'),
+      limit: get('limit'),
+      cursor: get('cursor'),
+      search: get('search')
     }
 
     const parsedQuery = QuerySchema.safeParse(queryParams)

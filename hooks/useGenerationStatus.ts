@@ -86,6 +86,7 @@ export function useGenerationStatus({
               url: variant.url,
               thumbUrl: variant.thumbUrl,
               index: variant.index,
+              renderId: variant.renderId,
             }));
             
             setResults(results);

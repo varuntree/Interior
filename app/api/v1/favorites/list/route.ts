@@ -1,4 +1,4 @@
-import { withMethods } from '@/libs/api-utils/handler';
+import { withMethods } from '@/libs/api-utils/methods';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import * as favoritesService from '@/libs/services/favorites';
@@ -41,6 +41,4 @@ async function handleGET(req: Request) {
   }
 }
 
-export const GET = withMethods({
-  GET: handleGET
-});
+export const GET = withMethods(['GET'], handleGET as any);

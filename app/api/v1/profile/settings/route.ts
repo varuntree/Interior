@@ -1,7 +1,7 @@
 // no NextRequest/NextResponse imports needed
 import { z } from 'zod';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
-import { withMethods } from '@/libs/api-utils/handler';
+import { withMethods } from '@/libs/api-utils/methods';
 import { validateRequest } from '@/libs/api-utils/validate';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { getProfileSettingsService, updateProfileSettingsService } from '@/libs/services/profile';
@@ -11,8 +11,7 @@ const UpdateSettingsSchema = z.object({
   preferences: z.any().optional()
 });
 
-export const GET = withMethods({
-  GET: async () => {
+export const GET = withMethods(['GET'], async () => {
     try {
       const supabase = createServiceSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -30,11 +29,9 @@ export const GET = withMethods({
     } catch (error) {
       return fail('INTERNAL_ERROR', 'Failed to get profile settings', 500);
     }
-  }
 });
 
-export const PATCH = withMethods({
-  PATCH: async (req: Request) => {
+export const PATCH = withMethods(['PATCH'], async (req: Request) => {
     try {
       const body = await validateRequest(req, UpdateSettingsSchema);
       const supabase = createServiceSupabaseClient();
@@ -53,5 +50,4 @@ export const PATCH = withMethods({
     } catch (error) {
       return fail('INTERNAL_ERROR', 'Failed to update profile settings', 500);
     }
-  }
 });

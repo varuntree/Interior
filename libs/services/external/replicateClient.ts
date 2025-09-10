@@ -22,7 +22,7 @@ function getReplicateClient(): Replicate {
 }
 
 export interface CreatePredictionParams {
-  inputs: ReplicateInputs;
+  inputs: Record<string, any>;
   webhookUrl: string;
   idempotencyKey?: string;
 }

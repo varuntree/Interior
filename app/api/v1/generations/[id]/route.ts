@@ -43,7 +43,7 @@ export async function GET(req: NextRequest, { params }: Context) {
     }
 
     // If generation is succeeded, fetch variant URLs
-    let variants: Array<{ index: number; url: string; thumbUrl?: string }> = [];
+    let variants: Array<{ index: number; url: string; thumbUrl?: string; renderId: string }> = [];
     if (generation.status === 'succeeded') {
       try {
         variants = await rendersService.getVariantsForJob({ supabase: serviceSupabase }, jobId, user.id)

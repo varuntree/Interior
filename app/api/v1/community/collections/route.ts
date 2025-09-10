@@ -1,4 +1,4 @@
-import { withMethods } from '@/libs/api-utils/handler'
+import { withMethods } from '@/libs/api-utils/methods'
 import { ok } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { listPublishedCollections } from '@/libs/services/community'
@@ -16,6 +16,4 @@ async function handleGET() {
   }
 }
 
-export const GET = withMethods({
-  GET: handleGET
-})
+export const GET = withMethods(['GET'], handleGET as any)

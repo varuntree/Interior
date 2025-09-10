@@ -28,8 +28,8 @@ export interface Plans {
 }
 
 export interface ReplicateConfig {
-  // Supported models (kept as a union for potential toggling/rollback)
-  model: 'google/nano-banana' | 'openai/gpt-image-1'
+  // Provider model (we only support Google nano-banana in this app)
+  model: 'google/nano-banana'
   webhookEnabled: boolean        // MVP: true (cheap, reliable)
   webhookRelativePath: '/api/v1/webhooks/replicate'
   pollingIntervalMs: number      // if we also poll as a fallback (e.g., 2000)

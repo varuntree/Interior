@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { withMethods } from '@/libs/api-utils/handler';
+import { withMethods } from '@/libs/api-utils/methods';
 import { validate } from '@/libs/api-utils/validate';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
@@ -49,6 +49,4 @@ async function handlePOST(req: Request) {
   }
 }
 
-export const POST = withMethods({
-  POST: handlePOST
-});
+export const POST = withMethods(['POST'], handlePOST as any);

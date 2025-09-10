@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { withMethods } from "@/libs/api-utils/handler";
+import { withMethods } from "@/libs/api-utils/methods";
 import { fail } from "@/libs/api-utils/responses";
 import { env } from "@/libs/env";
 import { createAdminClient } from "@/libs/supabase/admin";
@@ -14,8 +14,7 @@ const stripe = new Stripe(env.server.STRIPE_SECRET_KEY || "", {
   typescript: true,
 });
 
-export const POST = withMethods({
-  POST: async (req: Request) => {
+export const POST = withMethods(['POST'], async (req: Request) => {
     try {
       const body = await req.text();
       const signature = headers().get("stripe-signature") || "";
@@ -31,5 +30,4 @@ export const POST = withMethods({
       console.error("stripe webhook error:", e?.message || e);
       return fail(500, 'INTERNAL_ERROR', 'Webhook error');
     }
-  }
 });

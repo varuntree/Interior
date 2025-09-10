@@ -16,7 +16,7 @@ interface ResultsGridProps {
   style?: string;
   prompt?: string;
   isLoading?: boolean;
-  onAddToFavorites?: (resultId: string) => Promise<void>;
+  onAddToFavorites?: (renderId: string) => Promise<void>;
   onAddToCollection?: (resultId: string) => void;
   onRerun?: () => void;
   onDownload?: (result: GenerationResult) => void;

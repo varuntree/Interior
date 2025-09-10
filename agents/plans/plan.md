@@ -29,16 +29,16 @@ Guiding Principles
       - API: renders and collections endpoints per spec
       - UI: wire My Renders and Collections flows (incl. “My Favorites”)
   -
-  Phase 3 — Usage & Plans
-      - Repo/Service: usage_ledger + monthly usage computation
-      - API: GET /api/v1/usage
-      - Enforce plan caps + “one in‑flight” on submit
-      - Verify Stripe bridges (checkout/portal) and plan mapping from profiles.price_id
+  Phase 3 — Community (Public Read + Admin)
+      - Public gallery endpoints and UI (search/featured)
+      - Admin curation flows (ensure, upsert, publish, delete)
+      - Cache headers for public content
   -
-  Phase 4 — Community (Public Read)
-      - Repos/Service: community_collections + community_items (public read)
-      - API: GET /api/v1/community
-      - UI: “Apply Settings” prefill in Create
+  Phase 4 — Quality & Hardening
+      - Minimal tests (prompt builder, adapter mapping)
+      - Smoke tests (submit + poll, renders, collections)
+      - Forbidden greps, typecheck, build
+      - Docs/readme touch-ups if needed
   -
   Phase 5 — Cleanup & Hardening
       - Prune dead routes/components/libs; align storage conventions
@@ -54,3 +54,31 @@ Guiding Principles
   - Community page loads curated sets and pre-fills Create.
   - All v1 routes return normalized JSON; no server actions; no direct DB calls from components.
   - Unused code removed; npm run build and greps pass.
+
+---
+
+Progress Update — Phase 1 and Phase 2 (complete)
+
+- Phase 1 — Core Generation E2E: COMPLETED
+  - Single provider: Google nano-banana only. Removed legacy OpenAI adapter and OPENAI_API_KEY.
+  - End-to-end wired: UI → API → services → repos → Replicate → webhook → storage → UI.
+  - Webhook idempotent; outputs persisted under public/renders; variants surfaced to UI.
+
+- Phase 2 — Renders & Collections: COMPLETED
+  - Favorites implemented via default "My Favorites" collection (toggle/list backed by collections).
+  - Generation results include renderId; UI can favorite and add to collections directly.
+  - Collections items return cover_image_url (resolved from cover variant).
+  - Renders page wired (list, open, delete); render details (set cover, delete).
+  - Collections page wired (list, create, rename, delete); detail page (list items, remove item).
+  - Unified API wrapper to use libs/api-utils/methods across routes; removed handler.ts.
+
+Verification so far
+
+- Forbidden greps pass (no Server Actions; no service_role in UI).
+- Admin client usage limited to webhooks.
+- RLS policies align with current flows (owner updates allowed for non-terminal job fields).
+
+Change: Defer Payments/Plans
+
+- Subscriptions, plan pricing, and strict usage gating are deferred to the final phase.
+- We will not integrate Stripe plan mapping or enforce plan limits until the app is otherwise complete.

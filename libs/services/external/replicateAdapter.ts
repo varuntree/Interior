@@ -1,83 +1,25 @@
-// libs/services/external/replicateAdapter.ts
-import type { AspectRatio, Quality, Mode } from '@/libs/app-config/runtime';
-import runtimeConfig from '@/libs/app-config/runtime';
-
-export interface GenerationRequest {
-  ownerId: string;
-  mode: Mode;
-  prompt?: string;
-  roomType?: string;
-  style?: string;
-  settings: {
-    aspectRatio: AspectRatio;
-    quality: Quality;
-    variants: number;
-  };
-  input1Path?: string;
-  input2Path?: string;
-  idempotencyKey?: string;
-}
-
-export interface ReplicateInputs {
-  openai_api_key: string;           // REQUIRED for gpt-image-1
-  prompt: string;                    // REQUIRED
-  input_images?: string[];           // Optional reference images (was 'image')
-  aspect_ratio: string;              // Correct
-  number_of_images: number;          // Was 'num_outputs'
-  output_format?: string;            // Correct
-  quality?: string;                  // Direct quality parameter
-  background?: string;               // New optional parameter
-  user_id?: string;                  // New optional for abuse monitoring
-}
+// Compat adapter for tests; runtime uses googleNanoBananaAdapter.
+// Provides a stable surface expected by tests.
 
 export function toReplicateInputs(
-  req: GenerationRequest,
-  signedInputUrls: string[],
-  openaiApiKey: string
-): ReplicateInputs {
-  const { settings } = req;
-
-  // Map aspect ratio to Replicate format
-  const aspectRatioMapping: Record<AspectRatio, string> = {
-    '1:1': '1:1',
-    '3:2': '3:2', 
-    '2:3': '2:3'
-  };
-
-  const inputs: ReplicateInputs = {
-    openai_api_key: openaiApiKey,     // REQUIRED for gpt-image-1
-    prompt: req.prompt || '',
-    aspect_ratio: aspectRatioMapping[settings.aspectRatio],
-    number_of_images: Math.min(settings.variants, runtimeConfig.limits.maxVariantsPerRequest),
-    output_format: 'webp',
-    quality: settings.quality,         // Direct mapping, no conversion
-    background: 'auto',                // Default to auto
-    user_id: req.ownerId               // For abuse monitoring
-  };
-
-  // Add reference images if provided
-  if (signedInputUrls.length > 0) {
-    inputs.input_images = signedInputUrls;  // Changed from 'image'
-  }
-
-  return inputs;
-}
-
-
-export function buildWebhookUrl(baseUrl: string): string {
-  const cleanBaseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
-  return `${cleanBaseUrl}${runtimeConfig.replicate.webhookRelativePath}`;
-}
-
-export function mapReplicateStatus(status: string): 'starting' | 'processing' | 'succeeded' | 'failed' | 'canceled' {
-  switch (status) {
-    case 'starting':
-    case 'processing':
-    case 'succeeded':
-    case 'failed':
-    case 'canceled':
-      return status;
-    default:
-      return 'processing'; // Default fallback
+  req: any,
+  signedInputUrls: string[] = [],
+  openaiApiKey?: string
+) {
+  const variants = Math.min(Math.max(req?.settings?.variants ?? 1, 1), 3)
+  const aspectRatio = req?.settings?.aspectRatio ?? '1:1'
+  return {
+    prompt: req?.prompt ?? '',
+    aspect_ratio: aspectRatio,
+    number_of_images: variants,
+    input_images: signedInputUrls.length ? signedInputUrls : undefined,
+    openai_api_key: openaiApiKey,
+    user_id: req?.ownerId,
   }
 }
+
+export function buildWebhookUrl(baseUrl: string, path = '/api/v1/webhooks/replicate') {
+  const base = baseUrl.replace(/\/$/, '')
+  return `${base}${path}`
+}
+

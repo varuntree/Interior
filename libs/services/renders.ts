@@ -115,7 +115,7 @@ export async function listUserRenders(
       style: render.style,
       cover_variant: render.cover_variant,
       created_at: render.created_at,
-      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
+      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
       cover_thumb_url: coverThumbUrl,
     })
   }
@@ -151,7 +151,7 @@ export async function getVariantsForJob(
   ctx: { supabase: SupabaseClient },
   jobId: string,
   ownerId: string
-): Promise<Array<{ index: number; url: string; thumbUrl?: string }>> {
+): Promise<Array<{ index: number; url: string; thumbUrl?: string; renderId: string }>> {
   // Find the render created by this job for this owner
   const { data: renders, error } = await ctx.supabase
     .from('renders')
@@ -167,7 +167,7 @@ export async function getVariantsForJob(
   if (!renderData) return []
 
   const formatted = await formatRenderWithVariants(renderData.render, renderData.variants)
-  return formatted.variants.map(v => ({ index: v.idx, url: v.image_url, thumbUrl: v.thumb_url }))
+  return formatted.variants.map(v => ({ index: v.idx, url: v.image_url, thumbUrl: v.thumb_url, renderId: formatted.id }))
 }
 
 export async function deleteRendersByJob(
@@ -248,7 +248,7 @@ export async function getRecentUserRenders(
       style: render.style,
       cover_variant: render.cover_variant,
       created_at: render.created_at,
-      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
+      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
       cover_thumb_url: coverThumbUrl,
     })
   }
@@ -393,7 +393,7 @@ export async function searchRenders(
       style: render.style,
       cover_variant: render.cover_variant,
       created_at: render.created_at,
-      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.webp`),
+      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
       cover_thumb_url: coverThumbUrl,
     })
   }

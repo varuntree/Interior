@@ -28,6 +28,7 @@ export interface GenerationResult {
   url: string;
   thumbUrl?: string;
   index: number;
+  renderId?: string;
 }
 
 // Actions

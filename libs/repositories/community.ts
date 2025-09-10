@@ -315,3 +315,15 @@ export async function deleteCommunityItem(
 
   if (error) throw error
 }
+
+export async function deleteCommunityCollection(
+  supabase: SupabaseClient,
+  collectionId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('community_collections')
+    .delete()
+    .eq('id', collectionId)
+
+  if (error) throw error
+}

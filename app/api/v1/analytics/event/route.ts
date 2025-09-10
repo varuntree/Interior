@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
-import { withMethods } from '@/libs/api-utils/handler';
+import { withMethods } from '@/libs/api-utils/methods';
 import { validateRequest } from '@/libs/api-utils/validate';
 import { ok } from '@/libs/api-utils/responses';
 import { logEvent } from '@/libs/services/analytics'
@@ -10,8 +10,7 @@ const EventSchema = z.object({
   payload: z.any().optional()
 });
 
-export const POST = withMethods({
-  POST: async (req: Request) => {
+export const POST = withMethods(['POST'], async (req: Request) => {
     try {
       const body = await validateRequest(req, EventSchema);
       const supabase = createServiceSupabaseClient();
@@ -27,5 +26,4 @@ export const POST = withMethods({
       console.warn('Analytics error:', error);
       return ok({ message: 'Event logged' }); // Always return success
     }
-  }
 });

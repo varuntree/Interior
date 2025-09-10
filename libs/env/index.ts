@@ -14,8 +14,8 @@ const serverSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   REPLICATE_API_TOKEN: z.string().min(1).optional(), // required for generation service
   REPLICATE_WEBHOOK_SECRET: z.string().min(1).optional(), // for webhook signature verification
-  OPENAI_API_KEY: z.string().min(1).optional(), // optional now; only required if using openai/* model
   PUBLIC_BASE_URL: z.string().url().optional(), // for webhook URLs
+  ADMIN_EMAILS: z.string().optional(), // comma-separated allowlist for admin access
 });
 
 export const env = {
@@ -30,7 +30,7 @@ export const env = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
     REPLICATE_WEBHOOK_SECRET: process.env.REPLICATE_WEBHOOK_SECRET,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL,
+    ADMIN_EMAILS: process.env.ADMIN_EMAILS,
   }),
 };

@@ -36,7 +36,7 @@ interface ResultCardProps {
   roomType?: string;
   style?: string;
   prompt?: string;
-  onAddToFavorites?: (resultId: string) => void;
+  onAddToFavorites?: (renderId: string) => void;
   onAddToCollection?: (resultId: string) => void;
   onRerun?: () => void;
   onDownload?: (result: GenerationResult) => void;
@@ -64,7 +64,9 @@ function ResultCardInner({
     
     setIsAddingToFavorites(true);
     try {
-      await onAddToFavorites(result.id);
+      const rid = result.renderId;
+      if (!rid) throw new Error('Missing render id');
+      await onAddToFavorites(rid);
       toast.success('Added to My Favorites');
     } catch (error) {
       toast.error('Failed to add to favorites');
@@ -201,7 +203,10 @@ function ResultCardInner({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onAddToCollection?.(result.id)}>
+                <DropdownMenuItem onClick={() => {
+                  const rid = result.renderId;
+                  if (rid) onAddToCollection?.(rid);
+                }}>
                   <FolderPlus className="h-4 w-4 mr-2" />
                   Add to Collection
                 </DropdownMenuItem>

@@ -16,6 +16,8 @@ import { useGenerationStatus } from "@/hooks/useGenerationStatus";
 import runtimeConfig from "@/libs/app-config/runtime";
 import { Wand2, AlertCircle, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
 
 export function GenerationWorkspace() {
   const {
@@ -59,16 +61,25 @@ export function GenerationWorkspace() {
   const showInput1 = state.mode !== 'imagine';
   const showInput2 = state.mode === 'compose';
 
-  const handleAddToFavorites = async (resultId: string) => {
-    // This would integrate with the collections API
-    console.log('Add to favorites:', resultId);
-    // Mock delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+  const handleAddToFavorites = async (renderId: string) => {
+    // Add to default favorites collection via API
+    const res = await fetch('/api/v1/collections/favorites/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ renderId })
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data?.error?.message || 'Failed to add to favorites')
+    }
   };
 
-  const handleAddToCollection = (resultId: string) => {
-    console.log('Add to collection:', resultId);
-    // This would open the collection selection modal
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRenderId, setPickerRenderId] = useState<string | null>(null);
+
+  const handleAddToCollection = (renderId: string) => {
+    setPickerRenderId(renderId);
+    setPickerOpen(true);
   };
 
   const handleRerun = () => {
@@ -253,6 +264,14 @@ export function GenerationWorkspace() {
           onRerun={handleRerun}
         />
       )}
+
+      {/* Collection Picker */}
+      <CollectionPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        renderId={pickerRenderId}
+        onAdded={() => toast.success('Added to collection')}
+      />
     </div>
   );
 }

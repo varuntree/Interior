@@ -24,6 +24,53 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
+### Run Locally with grok (public HTTPS + webhooks)
+
+Use grok to expose your local server so Replicate and Stripe webhooks can reach it.
+
+```bash
+# 0) Prereqs
+# - Node 18+, npm
+# - grok installed and on PATH
+# - Stripe CLI installed (for Stripe webhooks)
+
+# 1) Env setup
+cp .env.example .env.local
+$EDITOR .env.local   # Fill required vars:
+# NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# REPLICATE_API_TOKEN
+# STRIPE_SECRET_KEY (and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY if used)
+
+# 2) Start the app
+npm install
+npm run dev
+
+# 3) Start grok tunnel to your dev server
+grok http 3000
+# Copy the printed HTTPS URL (e.g., https://random.grok.dev)
+
+# 4) Point the app at your grok URL (enables proper webhook URLs)
+echo "PUBLIC_BASE_URL=https://random.grok.dev" >> .env.local
+echo "NEXT_PUBLIC_APP_URL=https://random.grok.dev" >> .env.local
+
+# Restart dev to pick up env changes
+^C && npm run dev
+
+# 5) Wire Stripe webhook (optional if not testing billing)
+stripe login
+stripe listen --forward-to https://random.grok.dev/api/v1/webhooks/stripe
+# Put the printed signing secret into STRIPE_WEBHOOK_SECRET in .env.local, then restart dev
+
+# 6) Health checks (confirm routing through grok)
+curl https://random.grok.dev/api/v1/health
+curl https://random.grok.dev/api/v1/status
+```
+
+Notes
+- Replicate webhook is built as `PUBLIC_BASE_URL + /api/v1/webhooks/replicate`, so setting `PUBLIC_BASE_URL` to your grok URL is sufficient.
+- If the grok URL changes, update `PUBLIC_BASE_URL` and `NEXT_PUBLIC_APP_URL` in `.env.local` and restart `npm run dev`.
+- You can skip Stripe wiring if you aren’t testing billing flows.
+
 ### Environment Variables
 
 Create `.env.local` from `.env.local.example` and configure:

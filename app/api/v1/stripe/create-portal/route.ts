@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { withMethods } from "@/libs/api-utils/handler";
+import { withMethods } from "@/libs/api-utils/methods";
 import { ok, fail } from "@/libs/api-utils/responses";
 import { validate } from "@/libs/api-utils/validate";
 import { createClient } from "@/libs/supabase/server";
@@ -11,8 +11,7 @@ const BodySchema = z.object({
   returnUrl: z.string().url(),
 });
 
-export const POST = withMethods({
-  POST: async (req: Request) => {
+export const POST = withMethods(['POST'], async (req: Request) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return fail(401, 'UNAUTHORIZED', 'You must be logged in to view billing information.');
@@ -26,5 +25,4 @@ export const POST = withMethods({
       returnUrl: v.data.returnUrl,
     });
     return ok(result);
-  }
 });

@@ -157,7 +157,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Billing Section */}
-        <BillingSection userId={userProfile?.id} />
+        <BillingSection />
       </div>
 
       {/* Usage Statistics */}
