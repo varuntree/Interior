@@ -11,6 +11,7 @@ export interface RenderListItem {
   cover_variant: number;
   created_at: string;
   cover_variant_url: string;
+  is_favorite?: boolean;
 }
 
 export function useRenders(params?: { mode?: string; roomType?: string; style?: string; search?: string }) {
@@ -48,4 +49,3 @@ export function useRenders(params?: { mode?: string; roomType?: string; style?: 
 
   return { items, loading, error, refetch: fetchRenders };
 }
-

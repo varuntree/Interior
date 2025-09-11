@@ -204,3 +204,34 @@ export async function verifyRenderIds(
   if (error) throw error
   return data?.map(r => r.id) || []
 }
+
+/**
+ * Returns a Set of render_ids that are present in the user's default
+ * favorites collection for the provided renderIds. If the user does
+ * not have a default favorites collection yet, returns an empty Set.
+ */
+export async function getFavoritesMembership(
+  supabase: SupabaseClient,
+  ownerId: string,
+  renderIds: string[]
+): Promise<Set<string>> {
+  if (renderIds.length === 0) return new Set()
+
+  // Find default favorites collection for this user
+  const favorites = await getDefaultFavorites(supabase, ownerId)
+  if (!favorites) return new Set()
+
+  const { data, error } = await supabase
+    .from('collection_items')
+    .select('render_id')
+    .eq('collection_id', favorites.id)
+    .in('render_id', renderIds)
+
+  if (error) throw error
+
+  const set = new Set<string>()
+  for (const row of data || []) {
+    if (row.render_id) set.add(row.render_id)
+  }
+  return set
+}

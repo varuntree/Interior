@@ -58,7 +58,14 @@ export default function CollectionsPage() {
                 <CardDescription>Your automatically saved favorite designs</CardDescription>
               </div>
             </div>
-            <Badge variant="secondary">{favorites?.itemCount ?? 0} items</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{favorites?.itemCount ?? 0} items</Badge>
+              {favorites && (
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={`/dashboard/collections/${favorites.id}`}>Open</Link>
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

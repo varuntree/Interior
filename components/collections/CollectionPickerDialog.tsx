@@ -37,7 +37,9 @@ export function CollectionPickerDialog({ open, onOpenChange, renderId, onAdded }
       if (res.success) {
         setCollections(res.data.collections || []);
       }
-    } catch {}
+    } catch (e) {
+      // no-op
+    }
   };
 
   useEffect(() => {
@@ -120,4 +122,3 @@ export function CollectionPickerDialog({ open, onOpenChange, renderId, onAdded }
     </Dialog>
   );
 }
-

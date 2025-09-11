@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import * as rendersRepo from '@/libs/repositories/renders'
+import * as collectionsRepo from '@/libs/repositories/collections'
 
 export interface RenderWithVariants {
   id: string
@@ -34,6 +35,7 @@ export interface RenderListItem {
   created_at: string
   cover_variant_url: string
   cover_thumb_url?: string
+  is_favorite?: boolean
 }
 
 export interface RenderFilters {
@@ -93,6 +95,11 @@ export async function listUserRenders(
 
   // Fetch cover variant image paths to avoid extension assumptions
   const renderListItems: RenderListItem[] = []
+  const renderIds: string[] = items.map(r => r.id)
+  let favoriteSet: Set<string> = new Set()
+  try {
+    favoriteSet = await collectionsRepo.getFavoritesMembership(ctx.supabase, ownerId, renderIds)
+  } catch {}
   for (const render of items) {
     let coverUrl: string | undefined
     let coverThumbUrl: string | undefined
@@ -117,6 +124,7 @@ export async function listUserRenders(
       created_at: render.created_at,
       cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
       cover_thumb_url: coverThumbUrl,
+      is_favorite: favoriteSet.has(render.id),
     })
   }
 
@@ -230,6 +238,10 @@ export async function getRecentUserRenders(
   const renders = await rendersRepo.getRecentRenders(ctx.supabase, ownerId, limit)
 
   const items: RenderListItem[] = []
+  let favoriteSet: Set<string> = new Set()
+  try {
+    favoriteSet = await collectionsRepo.getFavoritesMembership(ctx.supabase, ownerId, renders.map(r => r.id))
+  } catch {}
   for (const render of renders) {
     let coverUrl: string | undefined
     let coverThumbUrl: string | undefined
@@ -250,6 +262,7 @@ export async function getRecentUserRenders(
       created_at: render.created_at,
       cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
       cover_thumb_url: coverThumbUrl,
+      is_favorite: favoriteSet.has(render.id),
     })
   }
 
@@ -375,6 +388,10 @@ export async function searchRenders(
   const paginatedItems = filteredItems.slice(0, limit)
 
   const renderListItems: RenderListItem[] = []
+  let favoriteSet: Set<string> = new Set()
+  try {
+    favoriteSet = await collectionsRepo.getFavoritesMembership(ctx.supabase, ownerId, paginatedItems.map(r => r.id))
+  } catch {}
   for (const render of paginatedItems) {
     let coverUrl: string | undefined
     let coverThumbUrl: string | undefined
@@ -395,6 +412,7 @@ export async function searchRenders(
       created_at: render.created_at,
       cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
       cover_thumb_url: coverThumbUrl,
+      is_favorite: favoriteSet.has(render.id),
     })
   }
 
