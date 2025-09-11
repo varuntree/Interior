@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { MobileNav } from "@/components/dashboard/MobileNav";
+import { SidebarDesktop } from "@/components/layout/SidebarDesktop";
+import { SidebarMobile } from "@/components/layout/SidebarMobile";
 
 export default async function LayoutPrivate({ children }: { children: ReactNode }) {
   // Use the same pattern as the /api/v1/auth/me route
@@ -13,15 +13,13 @@ export default async function LayoutPrivate({ children }: { children: ReactNode 
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex">
-        <Sidebar />
-      </aside>
+      <SidebarDesktop />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <MobileNav />
+          <SidebarMobile />
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-semibold text-sm">IA</span>
