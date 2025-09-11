@@ -1,7 +1,7 @@
 import { withMethods } from '@/libs/api-utils/methods'
 import { ok, fail } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
-import { bootstrapAdmin } from '@/libs/services/admin'
+import { env } from '@/libs/env'
 
 async function handlePOST() {
   try {
@@ -12,18 +12,13 @@ async function handlePOST() {
       return fail(401, 'UNAUTHORIZED', 'Authentication required')
     }
 
-    const allowlistEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || []
-    
-    const result = await bootstrapAdmin(
-      { supabase },
-      { 
-        allowlistEmails,
-        userEmail: user.email || '',
-        userId: user.id
-      }
-    )
+    const allow = (env.server.ADMIN_EMAILS || '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+    const isAdmin = user.email ? allow.includes(user.email.toLowerCase()) : false
 
-    return ok(result)
+    return ok({ isAdmin })
   } catch (err: any) {
     return Response.json(
       { success: false, error: { code: 'INTERNAL_ERROR', message: err?.message ?? 'Unexpected error' } },

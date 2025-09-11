@@ -11,8 +11,8 @@ profiles (existing)
   └─< collections
          └─< collection_items  ──► renders
 
-community_collections (public read)
-  └─< community_items ──► renders (or external asset URL)
+community_images (public read)
+  - flat table of published images (either an internal storage path or an external URL)
 
 usage_ledger (per user debits/credits; read-only to user)
 Notes
@@ -21,7 +21,7 @@ One render groups a set of render_variants created by a single generation job.
 
 My Favorites is a system collection auto-created per user.
 
-Community is admin-managed; users can only read.
+Community is admin-managed; users can only read. Admin uses a temporary allowlist to upload/delete images.
 
 2) Storage (Supabase Storage)
 Buckets (already provisioned via 004_storage_buckets.sql):
@@ -33,18 +33,13 @@ private — owner-only via RLS.
 Paths
 
 Inputs (user uploads):
-
 private/${userId}/inputs/<uuid>.<ext>
 
 Outputs (final images visible in product):
+public/renders/${renderId}/${variantIndex}.jpg
 
-public/renders/${renderId}/${variantIndex}.jpg (for google/nano‑banana)
-
-Legacy outputs remain .webp for older jobs.
-
-Thumbnails (optional, same folder):
-
-public/renders/${renderId}/${variantIndex}_thumb.webp (if generated)
+Community images (admin uploads):
+public/community/<uuid>.<ext>
 
 MVP: store originals in public at target size. Thumbnails are optional; if omitted, UI requests the original with CSS‑scaled previews. (We can add server-side thumb generation later without contract changes.)
 
@@ -247,50 +242,36 @@ create policy "coll_items_owner_delete"
 
 -- Index
 create index if not exists idx_coll_items_coll on public.collection_items (collection_id);
-3.4 migrations/phase2/008_community.sql
+3.4 Community images (current)
 sql
 Copy
--- Admin-curated, public read
-create table if not exists public.community_collections (
+-- Flat public gallery with allowlist-based admin writes
+create table if not exists public.community_images (
   id uuid primary key default gen_random_uuid(),
-  title text not null,
-  description text,
-  is_featured boolean not null default false,
-  order_index int not null default 0,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.community_items (
-  id uuid primary key default gen_random_uuid(),
-  collection_id uuid not null references public.community_collections(id) on delete cascade,
-  -- references an internal render OR an external asset (one of the two)
-  render_id uuid,
-  external_image_url text,
-  apply_settings jsonb,     -- prefill settings { mode, roomType, style, prompt, aspectRatio, quality, variants }
+  image_path text,
+  thumb_path text,
+  external_url text,
+  title text,
+  tags text[],
+  apply_settings jsonb,
+  is_published boolean not null default true,
   order_index int not null default 0,
   created_at timestamptz not null default now(),
-  constraint community_item_src check (
-    (render_id is not null) <> (external_image_url is not null)
-  )
+  constraint community_image_src check ((image_path is not null) <> (external_url is not null))
 );
 
--- Public read, admin write enforced at API layer (service-role bypasses RLS on writes if needed)
-alter table public.community_collections enable row level security;
-alter table public.community_items enable row level security;
+alter table public.community_images enable row level security;
 
-drop policy if exists "comm_read" on public.community_collections;
-create policy "comm_read"
-  on public.community_collections for select
-  using (true);
+drop policy if exists "comm_images_public_read" on public.community_images;
+create policy "comm_images_public_read" on public.community_images for select
+  using (is_published = true);
 
-drop policy if exists "comm_items_read" on public.community_items;
-create policy "comm_items_read"
-  on public.community_items for select
-  using (true);
+-- Admin writes are performed from server-only endpoints using service role; no RLS policy for public writes.
 
--- Indexes
-create index if not exists idx_comm_collections_order on public.community_collections (is_featured desc, order_index asc, created_at desc);
-create index if not exists idx_comm_items_coll_order on public.community_items (collection_id, order_index asc);
+create index if not exists idx_comm_images_pub_order
+  on public.community_images (is_published, order_index asc, created_at desc);
+create index if not exists idx_comm_images_tags_gin
+  on public.community_images using gin (tags);
 3.5 migrations/phase2/009_usage_ledger.sql
 sql
 Copy

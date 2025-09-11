@@ -37,6 +37,9 @@ REPLICATE_API_TOKEN=r8_your-api-token
 
 # Security (generate random strings)
 WEBHOOK_SECRET=your-webhook-secret
+
+# Admin (temporary allowlist for admin UI)
+ADMIN_EMAILS=alice@example.com,bob@company.com
 ```
 
 ### Optional Environment Variables
@@ -357,3 +360,11 @@ For deployment issues:
 - Review environment configuration
 - Verify external service connectivity
 - Contact support with error details and environment information
+### 3. Admin UI (temporary, allowlist-based)
+
+- Set `ADMIN_EMAILS` to a comma-separated list of admin emails.
+- Admin endpoints are server-only and guarded by the allowlist. No admin state is stored in the database.
+- Admin can upload/delete community images through:
+  - `POST /api/v1/admin/community/images/upload` (multipart/form-data)
+  - `POST /api/v1/admin/community/images/delete` (JSON body { ids: string[] })
+- Uploaded images appear immediately in the public Community feed.

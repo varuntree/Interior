@@ -1,43 +1,34 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 
-interface CommunityCollection {
-  id: string
-  title: string
-  description?: string
-  cover_image_url?: string
-  is_published: boolean
-  position: number
-}
+type AdminItem = { id: string; image_url: string; title?: string }
 
 export default function AdminCommunityPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [collections, setCollections] = useState<CommunityCollection[]>([])
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    coverImageUrl: ''
-  })
+  const [items, setItems] = useState<AdminItem[]>([])
+  const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const [uploading, setUploading] = useState(false)
+  const [uploadStatus, setUploadStatus] = useState<string>('')
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const loadCollections = useCallback(async () => {
+  const loadItems = useCallback(async () => {
     try {
-      const res = await fetch('/api/v1/community/collections')
+      const res = await fetch('/api/v1/community/collections/community/items')
       const result = await res.json()
       
       if (result.success) {
-        setCollections(result.data.collections)
+        const mapped: AdminItem[] = (result.data.items || []).map((i: any) => ({ id: i.id, image_url: i.image_url, title: i.title }))
+        setItems(mapped)
+        setSelected({})
       }
     } catch (error) {
-      console.error('Failed to load collections:', error)
+      console.error('Failed to load items:', error)
     }
   }, [])
 
@@ -48,14 +39,14 @@ export default function AdminCommunityPage() {
       
       if (result.success && result.data.isAdmin) {
         setIsAdmin(true)
-        loadCollections()
+        loadItems()
       }
     } catch (error) {
       console.error('Admin check failed:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [loadCollections])
+  }, [loadItems])
 
   useEffect(() => {
     checkAdminStatus()
@@ -66,39 +57,47 @@ export default function AdminCommunityPage() {
     await checkAdminStatus()
   }
 
-  const handleCreateCollection = async () => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    const form = new FormData()
+    const filesArray = Array.from(files)
+    filesArray.forEach((f) => form.append('files', f))
+    setUploading(true)
+    setUploadError(null)
+    setUploadStatus(`Uploading ${filesArray.length} file${filesArray.length > 1 ? 's' : ''}…`)
     try {
-      const res = await fetch('/api/v1/admin/community/collections/upsert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-      
+      const res = await fetch('/api/v1/admin/community/images/upload', { method: 'POST', body: form })
       const result = await res.json()
-      
       if (result.success) {
-        setShowCreateForm(false)
-        setFormData({ title: '', description: '', coverImageUrl: '' })
-        loadCollections()
+        setUploadStatus(`Uploaded ${result.data.items?.length ?? filesArray.length} file${filesArray.length > 1 ? 's' : ''}`)
+        await loadItems()
       }
-    } catch (error) {
-      console.error('Failed to create collection:', error)
+    } catch (err) {
+      console.error('Upload failed', err)
+      setUploadError('Upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+      setTimeout(() => setUploadStatus(''), 1200)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
-  const togglePublished = async (id: string, isPublished: boolean) => {
+  const handleDelete = async () => {
+    const ids = Object.entries(selected).filter(([, v]) => v).map(([id]) => id)
+    if (ids.length === 0) return
     try {
-      const res = await fetch('/api/v1/admin/community/collections/publish', {
+      const res = await fetch('/api/v1/admin/community/images/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, isPublished: !isPublished })
+        body: JSON.stringify({ ids })
       })
-      
-      if (res.ok) {
-        loadCollections()
+      const result = await res.json()
+      if (result.success) {
+        await loadItems()
       }
-    } catch (error) {
-      console.error('Failed to toggle published:', error)
+    } catch (err) {
+      console.error('Delete failed', err)
     }
   }
 
@@ -135,97 +134,43 @@ export default function AdminCommunityPage() {
             Manage collections and curated content for the community gallery.
           </p>
         </div>
-        <Button onClick={() => setShowCreateForm(true)}>
-          Create Collection
-        </Button>
+        <div className="flex gap-2 items-center">
+          <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={handleUpload} disabled={uploading} />
+          <Button variant="destructive" onClick={handleDelete} disabled={Object.values(selected).every(v => !v)}>
+            Delete Selected
+          </Button>
+        </div>
       </div>
 
-      {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Collection</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Collection title"
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Collection description"
-              />
-            </div>
-            <div>
-              <Label htmlFor="coverImageUrl">Cover Image URL</Label>
-              <Input
-                id="coverImageUrl"
-                value={formData.coverImageUrl}
-                onChange={(e) => setFormData({ ...formData, coverImageUrl: e.target.value })}
-                placeholder="https://..."
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleCreateCollection} disabled={!formData.title}>
-                Create
-              </Button>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Upload feedback */}
+      {(uploading || uploadStatus || uploadError) && (
+        <div className="text-sm text-muted-foreground px-1">
+          {uploading && <span>{uploadStatus}</span>}
+          {!uploading && uploadStatus && <span>{uploadStatus}</span>}
+          {uploadError && <span className="text-destructive ml-2">{uploadError}</span>}
+        </div>
       )}
-
-      <div className="grid gap-4">
-        {collections.map((collection) => (
-          <Card key={collection.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{collection.title}</CardTitle>
-                  {collection.description && (
-                    <CardDescription>{collection.description}</CardDescription>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant={collection.is_published ? "default" : "outline"}
-                    onClick={() => togglePublished(collection.id, collection.is_published)}
-                  >
-                    {collection.is_published ? 'Published' : 'Unpublished'}
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            {collection.cover_image_url && (
-              <CardContent>
-                <div className="relative w-32 h-20">
-                  <Image
-                    src={collection.cover_image_url}
-                    alt={collection.title}
-                    fill
-                    className="object-cover rounded"
-                  />
-                </div>
-              </CardContent>
-            )}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {items.map((it) => (
+          <Card key={it.id} className="overflow-hidden">
+            <div className="relative w-full aspect-square">
+              <Image src={it.image_url} alt={it.title || 'Image'} fill className="object-cover" />
+            </div>
+            <CardContent className="flex items-center justify-between p-3">
+              <div className="text-xs truncate max-w-[70%]">{it.title || it.id}</div>
+              <input
+                type="checkbox"
+                checked={!!selected[it.id]}
+                onChange={(e) => setSelected((s) => ({ ...s, [it.id]: e.target.checked }))}
+              />
+            </CardContent>
           </Card>
         ))}
       </div>
 
-      {collections.length === 0 && (
+      {items.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No collections created yet.</p>
+          <p className="text-muted-foreground">No images uploaded yet.</p>
         </div>
       )}
     </div>

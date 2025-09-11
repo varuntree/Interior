@@ -10,13 +10,13 @@ System Topology (Layering)
 Clients & Secrets (Usage Model)
 - Browser: may use Supabase Auth UI flows only; never touches app data directly—use API.
 - SSR (server): `libs/supabase/server.createClient()` for auth checks/guards in layouts and routes; never embed secrets.
-- Admin (service‑role): `libs/supabase/admin.createAdminClient()` is used only in webhooks (Stripe/Replicate) or trusted server tasks. Service‑role keys are server‑only and never imported into components or general routes.
+- Admin (service‑role): service role is server‑only. Primary use is webhooks (Stripe/Replicate). A temporary exception is allowed for admin-only endpoints under `/app/api/v1/admin/**`, strictly gated by an allowlist in `ADMIN_EMAILS` and never exposed to the client. Remove this exception when the admin UI is retired.
 - Middleware: `middleware.ts` calls `libs/supabase/middleware.updateSession` to refresh session cookies on navigation.
 
 Configuration (Single Sources of Truth)
 - Product/runtime knobs live in `libs/app-config/runtime.ts`: presets (Room Types, Styles), defaults (mode, aspect ratio, quality, variants), enforcement limits (max variants, accepted mime types, max upload size), plan caps keyed by Stripe priceId, and Replicate settings (webhook path, timeouts, polling). The UI renders from this file; services enforce from it; avoid hardcoding copies in components.
 - Brand/marketing and plan metadata live in `config.ts` (app name, domain, Stripe plan list used by marketing pages). Do not duplicate runtime product logic here.
-- Environment variables are validated in `libs/env/index.ts` (public vs server‑only). Required keys include Supabase URL/Anon key (public), and server keys like `OPENAI_API_KEY`, `REPLICATE_API_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` (optional except for webhooks), `PUBLIC_BASE_URL` (optional for webhook URL construction).
+- Environment variables are validated in `libs/env/index.ts` (public vs server‑only). Required keys include Supabase URL/Anon key (public), and server keys like `OPENAI_API_KEY`, `REPLICATE_API_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` (optional except for webhooks), `PUBLIC_BASE_URL` (optional for webhook URL construction), and `ADMIN_EMAILS` (comma-separated allowlist for temporary admin endpoints).
 
 API Layer (Route Handlers)
 - Location: `app/api/v1/<domain>/<action>/route.ts`. Responsibilities: enforce method (`withMethods`), validate input (Zod), create a standard server client (non‑admin), call a service, and return normalized JSON via helpers.

@@ -58,7 +58,7 @@ renders, render_variants
 
 collections, collection_items (default “My Favorites”)
 
-community_collections, community_items
+community_images
 
 usage_ledger
 
@@ -268,18 +268,19 @@ Body: { "renderId": "render_uuid" } → adds to collection (idempotent)
 DELETE /api/v1/collections/:id/items/:renderId
 Removes from collection
 
-6.5 Community (admin)
-GET /api/v1/community
-Public, returns list of curated sets + items (public read)
+6.5 Community
+Public feed (images)
+- GET /api/v1/community — returns public gallery (synthesized collection of published images)
+- GET /api/v1/community/collections — returns one synthesized collection (Inspiration)
+- GET /api/v1/community/collections/community/items — returns published images (id, image_url, tags?, title?)
 
-POST /api/v1/community/collections (admin)
-Create curated collection: { title, description, isFeatured, orderIndex }
-
-PATCH /api/v1/community/collections/:id (admin)
-Update
-
-POST /api/v1/community/collections/:id/items (admin)
-Add a render by id; orderIndex optional
+Admin (temporary, allowlist-based)
+- POST /api/v1/admin/community/images/upload (multipart/form-data: files[])
+  - Auth required; email must be in ADMIN_EMAILS.
+  - Uploads to public bucket and inserts rows in community_images.
+- POST /api/v1/admin/community/images/delete (JSON: { ids: string[] })
+  - Auth required; email must be in ADMIN_EMAILS.
+  - Deletes storage objects and DB rows for selected images.
 
 6.6 Usage & plans
 GET /api/v1/usage
@@ -342,6 +343,9 @@ Idempotency: webhook handler must be safe to repeat.
 
 7.2 Stripe
 Existing webhook continues to manage plan state (customer ids, plan mapping). No changes needed here.
+
+7.3 Admin endpoints (temporary exception)
+Admin endpoints under /api/v1/admin/** are server-only, allowlist-gated via ADMIN_EMAILS, and may use the service-role client to write to DB/storage. Keys are never exposed to clients. Remove these endpoints when an alternative admin workflow is established.
 
 8) Replicate integration (brief guide)
 Model: google/nano-banana on Replicate

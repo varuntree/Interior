@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import * as communityRepo from '@/libs/repositories/community'
+import * as imagesRepo from '@/libs/repositories/community_images'
 import * as rendersRepo from '@/libs/repositories/renders'
 
 export interface CommunityCollectionForUI {
@@ -36,87 +36,56 @@ export async function getCommunityGallery(
   featuredOnly = false,
   itemsPerCollection = 10
 ): Promise<CommunityCollectionForUI[]> {
-  const collectionsWithItems = await communityRepo.getAllCommunityCollectionsWithItems(
-    ctx.supabase,
-    featuredOnly,
-    itemsPerCollection
-  )
-
-  const result: CommunityCollectionForUI[] = []
-  for (const { collection, items } of collectionsWithItems) {
-    const baseItems = items.map(formatCommunityItemForUI)
-    const hydrated: CommunityItemForUI[] = []
-    for (let i = 0; i < baseItems.length; i++) {
-      hydrated.push(await hydrateCommunityItemUrls(ctx.supabase, baseItems[i], items[i]))
-    }
-    result.push({
-      id: collection.id,
-      title: collection.title,
-      description: collection.description,
-      is_featured: collection.is_featured,
-      order_index: collection.order_index,
-      created_at: collection.created_at,
-      items: hydrated,
-    })
-  }
-  return result
+  // Using community_images (flat). Synthesize a single collection.
+  const images = await imagesRepo.listPublishedImages(ctx.supabase, itemsPerCollection)
+  const items = images.map(formatImageRowToUI)
+  return [
+    {
+      id: 'community',
+      title: featuredOnly ? 'Featured' : 'Inspiration',
+      description: undefined,
+      is_featured: true,
+      order_index: 0,
+      created_at: new Date().toISOString(),
+      items,
+    },
+  ]
 }
 
 export async function getCommunityCollectionDetails(
   ctx: { supabase: SupabaseClient },
-  collectionId: string
+  _collectionId: string
 ): Promise<CommunityCollectionForUI | null> {
-  const result = await communityRepo.getCommunityCollectionWithItems(ctx.supabase, collectionId)
-  
-  if (!result) {
-    return null
-  }
-
-  const { collection, items } = result
-  const base = items.map(formatCommunityItemForUI)
-  const hydrated: CommunityItemForUI[] = []
-  for (let i = 0; i < base.length; i++) {
-    hydrated.push(await hydrateCommunityItemUrls(ctx.supabase, base[i], items[i]))
-  }
-
+  const images = await imagesRepo.listPublishedImages(ctx.supabase, 50)
+  const items = images.map(formatImageRowToUI)
   return {
-    id: collection.id,
-    title: collection.title,
-    description: collection.description,
-    is_featured: collection.is_featured,
-    order_index: collection.order_index,
-    created_at: collection.created_at,
-    items: hydrated
+    id: 'community',
+    title: 'Inspiration',
+    description: undefined,
+    is_featured: true,
+    order_index: 0,
+    created_at: new Date().toISOString(),
+    items,
   }
 }
 
-export function formatCommunityItemForUI(item: communityRepo.CommunityItemWithRender): CommunityItemForUI {
-  if (item.render_id && item.render) {
-    return {
-      id: item.id,
-      collection_id: item.collection_id,
-      order_index: item.order_index,
-      created_at: item.created_at,
-      image_url: '', // hydrated later
-      thumb_url: undefined,
-      apply_settings: item.apply_settings,
-      source_type: 'internal',
-      render_id: item.render_id
-    }
-  }
-
-  // External or fallback
-  const url = item.external_image_url || '/placeholder-image.jpg'
+export function formatImageRowToUI(img: imagesRepo.CommunityImageRow): CommunityItemForUI {
+  const imageUrl = img.external_url
+    ? img.external_url
+    : img.image_path
+    ? buildPublicUrl(img.image_path)
+    : '/placeholder-image.jpg'
+  const thumbUrl = img.thumb_path ? buildPublicUrl(img.thumb_path) : undefined
   return {
-    id: item.id,
-    collection_id: item.collection_id,
-    order_index: item.order_index,
-    created_at: item.created_at,
-    image_url: url,
-    thumb_url: item.external_image_url || undefined,
-    apply_settings: item.apply_settings,
-    source_type: 'external',
-    render_id: item.render_id
+    id: img.id,
+    collection_id: 'community',
+    order_index: img.order_index,
+    created_at: img.created_at,
+    image_url: imageUrl,
+    thumb_url: thumbUrl,
+    apply_settings: img.apply_settings ?? undefined,
+    source_type: img.external_url ? 'external' : 'internal',
+    render_id: undefined,
   }
 }
 
@@ -127,9 +96,9 @@ function buildPublicUrl(path: string) {
 async function hydrateCommunityItemUrls(
   supabase: SupabaseClient,
   item: CommunityItemForUI,
-  raw: communityRepo.CommunityItemWithRender
+  raw: any
 ): Promise<CommunityItemForUI> {
-  if (item.source_type === 'internal' && raw.render_id && raw.render) {
+  if (item.source_type === 'internal' && raw?.render_id && raw?.render) {
     try {
       const variant = await rendersRepo.findVariantByRenderAndIdx(supabase, raw.render_id, raw.render.cover_variant)
       if (variant) {
@@ -167,9 +136,8 @@ export async function searchCommunityContent(
   query: string,
   limit = 20
 ): Promise<CommunityItemForUI[]> {
-  const items = await communityRepo.searchCommunityItems(ctx.supabase, query, limit)
-  
-  return items.map(formatCommunityItemForUI)
+  const rows = await imagesRepo.searchImages(ctx.supabase, query, limit)
+  return rows.map(formatImageRowToUI)
 }
 
 export async function getFeaturedCollections(
@@ -181,17 +149,26 @@ export async function getFeaturedCollections(
 
 // Public read helpers for API routes
 export async function listPublishedCollections(
-  ctx: { supabase: SupabaseClient }
-): Promise<communityRepo.CommunityCollection[]> {
-  // Treat published as featured for MVP; return featured-only
-  return communityRepo.listCommunityCollections(ctx.supabase, true)
+  _ctx: { supabase: SupabaseClient }
+): Promise<any[]> {
+  // With community_images there are no collections; return empty list
+  return []
 }
 
 export async function listPublishedItems(
   ctx: { supabase: SupabaseClient },
-  args: { collectionId: string }
-): Promise<communityRepo.CommunityItemWithRender[]> {
-  return communityRepo.listCommunityItems(ctx.supabase, args.collectionId)
+  _args: { collectionId: string }
+): Promise<any[]> {
+  const rows = await imagesRepo.listPublishedImages(ctx.supabase, 50)
+  return rows.map(r => ({
+    id: r.id,
+    collection_id: 'community',
+    image_url: r.external_url || (r.image_path ? buildPublicUrl(r.image_path) : ''),
+    thumb_url: r.thumb_path ? buildPublicUrl(r.thumb_path) : undefined,
+    apply_settings: r.apply_settings,
+    order_index: r.order_index,
+    created_at: r.created_at,
+  }))
 }
 
 export async function getInspiration(
@@ -288,112 +265,4 @@ export function urlParamsToSettings(params: URLSearchParams): GenerationSettings
 }
 
 // Admin functions for future admin interface
-export async function createCommunityCollection(
-  ctx: { supabase: SupabaseClient },
-  title: string,
-  description?: string,
-  isFeatured = false,
-  orderIndex = 0
-): Promise<communityRepo.CommunityCollection> {
-  return await communityRepo.createCommunityCollection(ctx.supabase, {
-    title,
-    description,
-    is_featured: isFeatured,
-    order_index: orderIndex
-  })
-}
-
-export async function addItemToCollection(
-  ctx: { supabase: SupabaseClient },
-  collectionId: string,
-  renderId?: string,
-  externalImageUrl?: string,
-  applySettings?: GenerationSettings,
-  orderIndex = 0
-): Promise<communityRepo.CommunityItem> {
-  // Validate that we have either a render ID or external URL
-  if (!renderId && !externalImageUrl) {
-    throw new Error('Either render_id or external_image_url must be provided')
-  }
-
-  if (renderId && externalImageUrl) {
-    throw new Error('Cannot specify both render_id and external_image_url')
-  }
-
-  // Validate apply_settings if provided
-  const validatedSettings = applySettings ? validateApplySettings(applySettings) : undefined
-
-  return await communityRepo.createCommunityItem(ctx.supabase, {
-    collection_id: collectionId,
-    render_id: renderId,
-    external_image_url: externalImageUrl,
-    apply_settings: validatedSettings,
-    order_index: orderIndex
-  })
-}
-
-// --- Admin compatibility stubs (to satisfy API handlers) ---
-export async function upsertCollection(
-  ctx: { supabase: SupabaseClient },
-  args: { id?: string; title: string; description?: string; coverImageUrl?: string; position?: number }
-): Promise<{ id: string; title: string }> {
-  if (args.id) {
-    await communityRepo.updateCommunityCollection(ctx.supabase, args.id, {
-      title: args.title,
-      description: args.description,
-      order_index: args.position ?? 0,
-    })
-    return { id: args.id, title: args.title }
-  }
-  const created = await communityRepo.createCommunityCollection(ctx.supabase, {
-    title: args.title,
-    description: args.description,
-    is_featured: false,
-    order_index: args.position ?? 0,
-  } as any)
-  return { id: created.id, title: created.title }
-}
-
-export async function deleteCollection(
-  ctx: { supabase: SupabaseClient },
-  args: { id: string }
-): Promise<{ deleted: boolean }> {
-  await communityRepo.deleteCommunityCollection(ctx.supabase, args.id)
-  return { deleted: true }
-}
-
-export async function togglePublished(
-  ctx: { supabase: SupabaseClient },
-  args: { id: string; isPublished: boolean }
-): Promise<{ id: string; isPublished: boolean }> {
-  // Map publish state to is_featured flag for visibility
-  await communityRepo.updateCommunityCollection(ctx.supabase, args.id, { is_featured: args.isPublished } as any)
-  return { id: args.id, isPublished: args.isPublished }
-}
-
-export async function upsertItem(
-  ctx: { supabase: SupabaseClient },
-  args: { id?: string; collectionId: string; title?: string; imageUrl: string; tags?: string[]; position?: number }
-): Promise<{ id: string; collectionId: string }> {
-  if (args.id) {
-    await communityRepo.updateCommunityItem(ctx.supabase, args.id, {
-      external_image_url: args.imageUrl,
-      order_index: args.position ?? 0,
-    } as any)
-    return { id: args.id, collectionId: args.collectionId }
-  }
-  const created = await communityRepo.createCommunityItem(ctx.supabase, {
-    collection_id: args.collectionId,
-    external_image_url: args.imageUrl,
-    order_index: args.position ?? 0,
-  } as any)
-  return { id: created.id, collectionId: args.collectionId }
-}
-
-export async function deleteItem(
-  ctx: { supabase: SupabaseClient },
-  args: { id: string }
-): Promise<{ deleted: boolean }> {
-  await communityRepo.deleteCommunityItem(ctx.supabase, args.id)
-  return { deleted: true }
-}
+// (Legacy admin collection helpers removed in favor of community_images-only flow)

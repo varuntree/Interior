@@ -14,6 +14,7 @@ import { cn } from "@/libs/utils";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   className?: string;
@@ -58,6 +59,17 @@ const secondaryNavigation = [
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+
+  useEffect(() => {
+    let mounted = true
+    // Check admin status in background; ignore errors
+    fetch('/api/v1/admin/ensure', { method: 'POST' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => { if (mounted && json?.success && json?.data?.isAdmin) setIsAdmin(true) })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [])
 
   return (
     <div className={cn("flex h-full w-64 flex-col bg-sidebar border-r border-sidebar-border", className)}>
@@ -103,6 +115,21 @@ export function Sidebar({ className }: SidebarProps) {
         })}
 
         <Separator className="my-4" />
+
+        {isAdmin && (
+          <Link
+            href="/dashboard/admin/community"
+            className={cn(
+              "flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+              pathname === '/dashboard/admin/community'
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Users className="h-5 w-5" />
+            <span>Admin</span>
+          </Link>
+        )}
 
         {secondaryNavigation.map((item) => {
           const isActive = pathname === item.href;

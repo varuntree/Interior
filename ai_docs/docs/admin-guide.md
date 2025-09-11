@@ -5,105 +5,31 @@ This guide covers administrative tasks and management of the Interior AI Design 
 ## Overview
 
 As an admin, you can:
-- Manage community collections and content
-- Monitor user activity and generation usage
-- Handle customer support requests
+- Upload and delete community images (simple, continuous feed)
+- Monitor application health and usages
 - Manage system configuration
-- Monitor application health
 
 ## Admin Access
 
-### Database Access
+### Allowlist-based Admin (temporary)
 
-Admin operations typically require direct database access through Supabase:
-
-1. **Access Supabase Dashboard**
-   - Navigate to your Supabase project dashboard
-   - Use the SQL Editor for direct queries
-   - Access the Table Editor for visual data management
-
-2. **Admin User Setup**
-   ```sql
-   -- Grant admin privileges to a user
-   UPDATE profiles 
-   SET role = 'admin' 
-   WHERE id = 'user-uuid-here';
-   ```
+- Set `ADMIN_EMAILS` (comma-separated emails) in the environment.
+- The admin UI and admin API endpoints check this allowlist server-side. No admin state is stored in the database.
 
 ## Community Content Management
 
-### Managing Collections
+### Admin UI (upload/delete images)
 
-Community collections are curated galleries displayed on the community page.
+- Navigate to `/dashboard/admin/community` (visible only to allowlisted admins).
+- Upload multiple images at once (jpg/png/webp). Items appear immediately in Community.
+- Select multiple images and delete them; they are removed from storage and from public feed.
 
-#### Creating a Collection
-```sql
--- Create a new community collection
-INSERT INTO community_collections (
-  title,
-  description,
-  is_featured,
-  is_published,
-  order_index
-) VALUES (
-  'Modern Minimalist Homes',
-  'Clean lines and simple elegance',
-  true,
-  true,
-  1
-);
-```
+### API Endpoints (server-only)
 
-#### Adding Items to Collections
-```sql
--- Add a render to a community collection
-INSERT INTO community_collection_items (
-  collection_id,
-  render_id,
-  apply_settings,
-  order_index
-) VALUES (
-  'collection-uuid',
-  'render-uuid',
-  '{"mode": "redesign", "style": "Modern", "roomType": "Living Room", "prompt": "minimalist modern living room"}',
-  1
-);
+- `POST /api/v1/admin/community/images/upload` (multipart/form-data: files[])
+- `POST /api/v1/admin/community/images/delete` (JSON: { ids: string[] })
 
--- Add an external image to a collection
-INSERT INTO community_collection_items (
-  collection_id,
-  image_url,
-  thumb_url,
-  apply_settings,
-  order_index,
-  source_type
-) VALUES (
-  'collection-uuid',
-  'https://example.com/image.jpg',
-  'https://example.com/thumb.jpg',
-  '{"mode": "imagine", "style": "Coastal AU", "roomType": "Bedroom", "prompt": "coastal bedroom with natural light"}',
-  2,
-  'external'
-);
-```
-
-#### Managing Collection Visibility
-```sql
--- Feature a collection (show in featured section)
-UPDATE community_collections 
-SET is_featured = true 
-WHERE id = 'collection-uuid';
-
--- Publish/unpublish a collection
-UPDATE community_collections 
-SET is_published = true 
-WHERE id = 'collection-uuid';
-
--- Reorder collections
-UPDATE community_collections 
-SET order_index = 1 
-WHERE id = 'collection-uuid';
-```
+Both endpoints are guarded by `ADMIN_EMAILS` and use the server-side service role; keys are never exposed to the client.
 
 ### Content Moderation
 

@@ -4,7 +4,7 @@ Purpose
 - Define the data model, RLS intent, indexes, and storage conventions so routes/services remain simple and predictable. This is the single reference for entities, relationships, and how assets are laid out in Supabase Storage.
 
 Entity Model (ER Overview)
-- Users have Profiles (id == auth.users.id). A Generation Job is created per submit and results in exactly one Render grouping one or more Render Variants; users organize Renders into Collections via Collection Items; Community Collections and Items are admin‑curated and public‑read; Usage Ledger records debits/credits that power plan caps. Core tables: profiles, generation_jobs, renders, render_variants, collections, collection_items, community_collections, community_items, usage_ledger (plus optional analytics tables added later).
+- Users have Profiles (id == auth.users.id). A Generation Job is created per submit and results in exactly one Render grouping one or more Render Variants; users organize Renders into Collections via Collection Items; Community images are admin-curated and public-read; Usage Ledger records debits/credits that power plan caps. Core tables: profiles, generation_jobs, renders, render_variants, collections, collection_items, community_images, usage_ledger (plus optional analytics tables added later).
 
 Table Summaries & RLS (Intent)
 - profiles: basic account and billing linkage (email, price_id, customer_id). RLS: self select/update (owner id == auth.uid()).
@@ -13,8 +13,7 @@ Table Summaries & RLS (Intent)
 - render_variants: render_id, owner_id, idx (0..N‑1), image_path, thumb_path?, created_at. RLS: owner select/insert/delete. Index: (render_id, idx).
 - collections: owner_id, name, is_default_favorites. RLS: owner select/insert/update/delete (delete disallowed for default favorites). Unique partial index: one default favorites per owner.
 - collection_items: (collection_id, render_id) PK, added_at. RLS: owner of the collection controls select/insert/delete via EXISTS policy.
-- community_collections: title, description, is_featured, order_index, created_at. RLS: public select; admin writes handled in API/webhooks. Index: feature/order for display.
-- community_items: collection_id, render_id XOR external_image_url, apply_settings jsonb, order_index, created_at; check constraint enforces mutual exclusivity. RLS: public select; admin writes via API. Index: (collection_id, order_index).
+- community_images: image_path or external_url (XOR), title?, tags?, apply_settings?, is_published, order_index, created_at. RLS: public select (is_published=true); admin writes via server-only endpoints.
 - usage_ledger: owner_id, kind ('generation_debit'|'credit_adjustment'), amount, meta, created_at. RLS: owner select/insert (inserts performed by API); Index: (owner_id, created_at desc).
 
 Storage Model (Buckets, Paths, URLs)
