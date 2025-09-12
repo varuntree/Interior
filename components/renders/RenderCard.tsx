@@ -12,10 +12,10 @@ interface RenderCardProps {
   title?: string;
   meta?: string;
   isFavorite?: boolean;
-  onToggleFavorite: (id: string) => Promise<void> | void;
-  onAddToCollection: (id: string) => void;
-  onOpen: (id: string) => void;
-  onDelete: (id: string) => Promise<void> | void;
+  onToggleFavorite: (_: string) => Promise<void> | void;
+  onAddToCollection: (_: string) => void;
+  onOpen: (_: string) => void;
+  onDelete: (_: string) => Promise<void> | void;
   className?: string;
 }
 

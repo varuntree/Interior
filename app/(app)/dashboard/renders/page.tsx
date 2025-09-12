@@ -16,7 +16,7 @@ import { CollectionPickerDialog } from "@/components/collections/CollectionPicke
 
 export default function RendersPage() {
   const router = useRouter();
-  const { items, loading, refetch } = useRenders();
+  const { items, loading, loadingMore, hasMore, fetchMore, refetch } = useRenders();
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerRenderId, setPickerRenderId] = React.useState<string | null>(null);
 
@@ -105,6 +105,14 @@ export default function RendersPage() {
               onDelete={onDelete}
             />
           ))}
+        </div>
+      )}
+
+      {items.length > 0 && hasMore && (
+        <div className="flex justify-center py-6">
+          <Button onClick={() => fetchMore()} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load more'}
+          </Button>
         </div>
       )}
 

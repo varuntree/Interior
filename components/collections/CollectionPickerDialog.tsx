@@ -20,7 +20,7 @@ interface CollectionItem {
 
 interface Props {
   open: boolean;
-  onOpenChange: (v: boolean) => void;
+  onOpenChange: (_: boolean) => void;
   renderId: string | null;
   onAdded?: () => void;
 }

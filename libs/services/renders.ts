@@ -93,40 +93,39 @@ export async function listUserRenders(
     pagination
   )
 
-  // Fetch cover variant image paths to avoid extension assumptions
-  const renderListItems: RenderListItem[] = []
+  // Batch cover variant lookup to avoid N+1
   const renderIds: string[] = items.map(r => r.id)
+  const allVariants = await rendersRepo.getVariantsByRenderIds(ctx.supabase, renderIds)
+  const variantsByRender = new Map<string, rendersRepo.RenderVariant[]>()
+  for (const v of allVariants) {
+    const arr = variantsByRender.get(v.render_id) || []
+    arr.push(v)
+    variantsByRender.set(v.render_id, arr)
+  }
+
+  // Favorites membership in one call
   let favoriteSet: Set<string> = new Set()
   try {
     favoriteSet = await collectionsRepo.getFavoritesMembership(ctx.supabase, ownerId, renderIds)
   } catch {}
-  for (const render of items) {
-    let coverUrl: string | undefined
-    let coverThumbUrl: string | undefined
-    try {
-      const variant = await rendersRepo.findVariantByRenderAndIdx(ctx.supabase, render.id, render.cover_variant)
-      if (variant) {
-        coverUrl = buildImageUrl(variant.image_path)
-        if (variant.thumb_path) {
-          coverThumbUrl = buildImageUrl(variant.thumb_path)
-        }
-      }
-    } catch {
-      // fall through; URLs remain undefined
-    }
 
-    renderListItems.push({
+  const renderListItems: RenderListItem[] = items.map(render => {
+    const variants = variantsByRender.get(render.id) || []
+    const cover = variants.find(v => v.idx === render.cover_variant)
+    const coverUrl = cover ? buildImageUrl(cover.image_path) : buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`)
+    const coverThumbUrl = cover?.thumb_path ? buildImageUrl(cover.thumb_path) : undefined
+    return {
       id: render.id,
       mode: render.mode,
       room_type: render.room_type,
       style: render.style,
       cover_variant: render.cover_variant,
       created_at: render.created_at,
-      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
+      cover_variant_url: coverUrl,
       cover_thumb_url: coverThumbUrl,
       is_favorite: favoriteSet.has(render.id),
-    })
-  }
+    }
+  })
 
   // Get total count if this is the first page
   let totalCount: number | undefined
@@ -357,67 +356,45 @@ export async function searchRenders(
   query: string,
   pagination?: RenderPagination
 ): Promise<RenderListResponse> {
-  // For now, implement a simple search that looks for matches in style and room_type
-  // In the future, this could be enhanced with full-text search
-  const filters: RenderFilters = {}
-  
-  // Simple matching - in a real app you might use full-text search
-  const normalizedQuery = query.toLowerCase().trim()
-  
-  // Get all renders and filter client-side for now
-  // In production, you'd want to implement proper database search
-  const { items, nextCursor } = await rendersRepo.listRenders(
+  // Server-side search via repository (ilike), then batch cover variants + favorites
+  const { items, nextCursor } = await rendersRepo.searchRenders(
     ctx.supabase,
     ownerId,
-    filters,
-    { limit: (pagination?.limit || 24) * 2 } // Get more to filter
+    query,
+    { limit: pagination?.limit }
   )
 
-  const filteredItems = items.filter(render => {
-    const searchableText = [
-      render.mode,
-      render.room_type,
-      render.style
-    ].filter(Boolean).join(' ').toLowerCase()
-    
-    return searchableText.includes(normalizedQuery)
-  })
+  const renderIds = items.map(r => r.id)
+  const allVariants = await rendersRepo.getVariantsByRenderIds(ctx.supabase, renderIds)
+  const variantsByRender = new Map<string, rendersRepo.RenderVariant[]>()
+  for (const v of allVariants) {
+    const arr = variantsByRender.get(v.render_id) || []
+    arr.push(v)
+    variantsByRender.set(v.render_id, arr)
+  }
 
-  // Apply pagination to filtered results
-  const limit = pagination?.limit || 24
-  const paginatedItems = filteredItems.slice(0, limit)
-
-  const renderListItems: RenderListItem[] = []
   let favoriteSet: Set<string> = new Set()
   try {
-    favoriteSet = await collectionsRepo.getFavoritesMembership(ctx.supabase, ownerId, paginatedItems.map(r => r.id))
+    favoriteSet = await collectionsRepo.getFavoritesMembership(ctx.supabase, ownerId, renderIds)
   } catch {}
-  for (const render of paginatedItems) {
-    let coverUrl: string | undefined
-    let coverThumbUrl: string | undefined
-    try {
-      const variant = await rendersRepo.findVariantByRenderAndIdx(ctx.supabase, render.id, render.cover_variant)
-      if (variant) {
-        coverUrl = buildImageUrl(variant.image_path)
-        if (variant.thumb_path) coverThumbUrl = buildImageUrl(variant.thumb_path)
-      }
-    } catch {}
 
-    renderListItems.push({
+  const renderListItems: RenderListItem[] = items.map(render => {
+    const variants = variantsByRender.get(render.id) || []
+    const cover = variants.find(v => v.idx === render.cover_variant)
+    const coverUrl = cover ? buildImageUrl(cover.image_path) : buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`)
+    const coverThumbUrl = cover?.thumb_path ? buildImageUrl(cover.thumb_path) : undefined
+    return {
       id: render.id,
       mode: render.mode,
       room_type: render.room_type,
       style: render.style,
       cover_variant: render.cover_variant,
       created_at: render.created_at,
-      cover_variant_url: coverUrl ?? buildImageUrl(`renders/${render.id}/${render.cover_variant}.jpg`),
+      cover_variant_url: coverUrl,
       cover_thumb_url: coverThumbUrl,
       is_favorite: favoriteSet.has(render.id),
-    })
-  }
+    }
+  })
 
-  return {
-    items: renderListItems,
-    nextCursor: filteredItems.length > limit ? nextCursor : undefined
-  }
+  return { items: renderListItems, nextCursor }
 }

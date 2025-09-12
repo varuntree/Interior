@@ -116,12 +116,16 @@ Mark progress with `[ ]` → `[x]`. Include date and brief notes.
     - Added migrations/0002_webhook_events.sql for persistent de‑dup store
     - Implemented event de‑dup check in billing webhook service using repo helper
 
-- [ ] Phase 5 — Renders (Vertical Slice 2)
-  - [ ] List and detail via API; pagination/filters in place
-  - [ ] No N+1; indexes (`owner+created_at`, `render_id+idx`) confirmed
-  - [ ] Storage paths `public/renders/${renderId}/${variantIndex}.jpg`
-  - [ ] Frontend uses image wrapper and lazy load
+- [x] Phase 5 — Renders (Vertical Slice 2)
+  - [x] List and detail via API; pagination/filters in place
+  - [x] No N+1; indexes (`owner+created_at`, `render_id+idx`) confirmed
+  - [x] Storage paths `public/renders/${renderId}/${variantIndex}.jpg`
+  - [x] Frontend uses image wrapper and lazy load
   - Notes:
+    - Added repo batch helper `getVariantsByRenderIds` and server-side `searchRenders` (ilike)
+    - Refactored `services/renders.listUserRenders` and `searchRenders` to batch cover lookups and favorites membership
+    - API contract unchanged; route already supported cursor/filters; search now server-side
+    - UI: added pagination (Load more) via `useRenders` and renders page; lazy images unchanged
 
 - [ ] Phase 6 — Collections (Vertical Slice 3)
   - [ ] CRUD endpoints normalized; default “My Favorites” semantics enforced

@@ -89,6 +89,72 @@ export async function listRenders(
   return { items, nextCursor }
 }
 
+/**
+ * Batch fetch variants for multiple renders to avoid N+1 queries in services.
+ */
+export async function getVariantsByRenderIds(
+  supabase: SupabaseClient,
+  renderIds: string[]
+): Promise<RenderVariant[]> {
+  if (renderIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('render_variants')
+    .select('*')
+    .in('render_id', renderIds)
+    .order('render_id', { ascending: true })
+    .order('idx', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+/**
+ * Server-side search with simple ilike on mode, room_type, style.
+ * Mirrors listRenders pagination semantics.
+ */
+export async function searchRenders(
+  supabase: SupabaseClient,
+  ownerId: string,
+  query: string,
+  pagination?: { limit?: number; cursor?: string }
+): Promise<{ items: Render[]; nextCursor?: string }> {
+  let q = supabase
+    .from('renders')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: false })
+
+  const limit = pagination?.limit || 24
+  q = q.limit(limit + 1)
+
+  // Apply cursor if provided
+  if (pagination?.cursor) {
+    q = q.lt('created_at', pagination.cursor)
+  }
+
+  const needle = query.trim()
+  if (needle) {
+    // Simple ilike across a couple of text columns
+    // PostgREST or() applies OR across provided conditions
+    q = q.or(
+      [
+        `mode.ilike.%${needle}%`,
+        `room_type.ilike.%${needle}%`,
+        `style.ilike.%${needle}%`,
+      ].join(',')
+    )
+  }
+
+  const { data, error } = await q
+  if (error) throw error
+
+  const hasMore = (data?.length || 0) > limit
+  const items = hasMore ? data!.slice(0, -1) : (data || [])
+  const nextCursor = hasMore ? items[items.length - 1].created_at : undefined
+
+  return { items, nextCursor }
+}
+
 export async function getRenderWithVariants(
   supabase: SupabaseClient,
   id: string,
