@@ -3,6 +3,8 @@ import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import * as favoritesService from '@/libs/services/favorites';
 
+export const dynamic = 'force-dynamic';
+
 async function handleGET(req: Request) {
   const supabase = createServiceSupabaseClient();
   
@@ -31,13 +33,9 @@ async function handleGET(req: Request) {
       headers: { 'Cache-Control': 'private, no-store' }
     });
   } catch (error: any) {
-    const status = error.status || 500;
-    const message = error.message || 'Internal server error';
-
-    return Response.json(
-      { success: false, error: { code: 'INTERNAL_ERROR', message } },
-      { status, headers: { 'Cache-Control': 'private, no-store' } }
-    );
+    const status = error?.status || 500;
+    const message = error?.message || 'Internal server error';
+    return fail(status, 'INTERNAL_ERROR', message);
   }
 }
 

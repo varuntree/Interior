@@ -216,6 +216,24 @@ export async function getGeneration(
   const job = await jobsRepo.getJobById(supabase, jobId, userId);
   if (!job) return null;
 
+  // Stuck protection: flip to failed if non-terminal beyond overall timeout
+  try {
+    if (job.status === 'starting' || job.status === 'processing') {
+      const overallMs = (runtimeConfig.replicate?.timeouts?.overallMs ?? 10 * 60 * 1000);
+      const ageMs = Date.now() - new Date(job.created_at).getTime();
+      if (ageMs > overallMs) {
+        await jobsRepo.updateJobStatus(supabase, job.id, {
+          status: 'failed',
+          error: 'Timeout - generation took too long',
+          completed_at: new Date().toISOString(),
+        });
+        job.status = 'failed' as any;
+        job.error = 'Timeout - generation took too long';
+        job.completed_at = new Date().toISOString();
+      }
+    }
+  } catch {}
+
   // If job is non-terminal and stale (>5s), poll Replicate once
   if (shouldPollReplicate(job)) {
     try {

@@ -11,6 +11,8 @@ const UpdateSettingsSchema = z.object({
   preferences: z.any().optional()
 });
 
+export const dynamic = 'force-dynamic'
+
 export const GET = withMethods(['GET'], async () => {
     try {
       const supabase = createServiceSupabaseClient();

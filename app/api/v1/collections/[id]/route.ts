@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { ok, fail } from '@/libs/api-utils/responses'
+import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { 
@@ -21,7 +22,7 @@ const RenameCollectionSchema = z.object({
   name: z.string().min(1).max(100).trim()
 })
 
-export async function GET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, { params }: Context) {
   try {
     const { id: collectionId } = params
 
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: Context) {
+async function handlePATCH(req: NextRequest, { params }: Context) {
   try {
     const { id: collectionId } = params
 
@@ -146,7 +147,7 @@ export async function PATCH(req: NextRequest, { params }: Context) {
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, { params }: Context) {
   try {
     const { id: collectionId } = params
 
@@ -188,3 +189,7 @@ export async function DELETE(req: NextRequest, { params }: Context) {
     return fail(500, 'INTERNAL_ERROR', 'Failed to delete collection')
   }
 }
+
+export const GET = withMethodsCtx(['GET'], handleGET as any)
+export const PATCH = withMethodsCtx(['PATCH'], handlePATCH as any)
+export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)

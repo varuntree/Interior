@@ -13,3 +13,16 @@ export function withMethods(
     return handler(req)
   }
 }
+
+// Variant that supports Next.js context parameter for dynamic routes
+export function withMethodsCtx(
+  methods: Array<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>,
+  handler: (req: NextRequest, ctx?: any) => Promise<Response>
+) {
+  return async (req: NextRequest, ctx?: any) => {
+    if (!methods.includes(req.method as any)) {
+      return fail(405, 'METHOD_NOT_ALLOWED', `Use ${methods.join(', ')}`)
+    }
+    return handler(req, ctx)
+  }
+}

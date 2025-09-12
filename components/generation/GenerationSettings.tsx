@@ -13,7 +13,6 @@ import {
 type AspectRatio = '1:1' | '3:2' | '2:3'
 type Quality = 'auto' | 'low' | 'medium' | 'high'
 import { Settings2, Square, RectangleHorizontal, RectangleVertical, Minus, Plus } from "lucide-react";
-import runtimeConfig from "@/libs/app-config/runtime";
 
 interface GenerationSettingsProps {
   aspectRatio: AspectRatio;

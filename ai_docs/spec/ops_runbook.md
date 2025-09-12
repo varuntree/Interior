@@ -51,15 +51,13 @@ Create a Supabase project and copy URL/keys into .env.local.
 4.2 Apply migrations
 Use the Supabase SQL editor to run, in order:
 
-migrations/phase1/001_create_profiles.sql
+# Baseline (fresh environments only)
+migrations/0001_baseline.sql
 
-migrations/phase1/002_profiles_policies.sql
+# Forward-only changes (apply on dev/prod as needed)
+migrations/0002_webhook_events.sql  -- persistent de-dup store for webhook events
 
-migrations/phase1/003_profiles_trigger.sql
-
-migrations/phase1/004_storage_buckets.sql
-
-These are idempotent. Ensure RLS is enabled.
+These are idempotent where possible. Ensure RLS is enabled.
 
 4.3 Buckets
 public (read‑anyone, auth write)

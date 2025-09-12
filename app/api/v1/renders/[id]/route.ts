@@ -1,6 +1,7 @@
 // app/api/v1/renders/[id]/route.ts
 import { NextRequest } from 'next/server'
 import { ok, fail } from '@/libs/api-utils/responses'
+import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { getRenderDetails, deleteUserRender } from '@/libs/services/renders'
@@ -11,7 +12,7 @@ interface Context {
   params: { id: string }
 }
 
-export async function GET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, { params }: Context) {
   try {
     const { id: renderId } = params
 
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, { params }: Context) {
   try {
     const { id: renderId } = params
 
@@ -111,6 +112,9 @@ export async function DELETE(req: NextRequest, { params }: Context) {
     return fail(500, 'INTERNAL_ERROR', 'Failed to delete render')
   }
 }
+
+export const GET = withMethodsCtx(['GET'], handleGET as any)
+export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)
 
 export async function PATCH(req: NextRequest, { params }: Context) {
   try {

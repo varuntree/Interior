@@ -8,5 +8,66 @@
   "rules": {
     // Your specific rules.
     "no-unused-vars": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["components/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              { "name": "@supabase/supabase-js", "message": "Do not import Supabase SDK directly in components. Use API routes." },
+              { "name": "@/libs/supabase/server", "message": "Do not use server client in components." },
+              { "name": "@/libs/supabase/admin", "message": "Admin client is server-only (webhooks/admin)." }
+            ],
+            "patterns": [
+              { "group": ["@/libs/repositories", "@/libs/repositories/*"], "message": "Components must not import repositories; use API." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["app/api/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              { "group": ["@/libs/repositories", "@/libs/repositories/*"], "message": "Routes must call services, not repositories." },
+              { "group": ["@/libs/supabase/admin"], "message": "Admin client only allowed in webhooks/admin routes." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["app/api/v1/webhooks/**/*.ts", "app/api/v1/admin/**/*.ts"],
+      "rules": {
+        // Allow admin client in webhooks and admin endpoints
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              { "group": ["@/libs/repositories", "@/libs/repositories/*"], "message": "Routes must call services, not repositories." }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["libs/services/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              { "name": "@/libs/supabase/admin", "message": "Services must not use the admin client." }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

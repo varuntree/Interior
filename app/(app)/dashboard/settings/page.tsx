@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Clock
 } from "lucide-react";
+import { apiFetch } from "@/libs/api/http";
 
 interface UserProfile {
   id: string;
@@ -49,17 +50,9 @@ export default function SettingsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/v1/auth/me');
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to load profile');
-      }
-
-      setUserProfile(result.data);
+      const result = await apiFetch('/api/v1/auth/me');
+      if (!result.success) throw new Error(result.error?.message || 'Failed to load profile');
+      setUserProfile(result.data as UserProfile);
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -1,4 +1,5 @@
 import Image from 'next/image'
+export const dynamic = 'force-dynamic'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 

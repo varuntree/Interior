@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { apiFetch } from "@/libs/api/http";
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<any[]>([]);
@@ -23,12 +24,8 @@ export default function HistoryPage() {
         if (value) params.append(key, value);
       });
       
-      const response = await fetch(`/api/v1/generations/history?${params}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setHistory(data.data.items || []);
-      }
+      const data = await apiFetch(`/api/v1/generations/history?${params}`);
+      if (data.success) setHistory((data.data as any)?.items || []);
     } catch (error) {
       console.error('Failed to fetch history:', error);
     } finally {

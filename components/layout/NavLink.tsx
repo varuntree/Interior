@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/libs/utils";
 
@@ -11,7 +12,7 @@ export function NavLink({
   onClick,
 }: {
   href: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   onClick?: () => void;
 }) {
@@ -34,4 +35,3 @@ export function NavLink({
     </Link>
   );
 }
-

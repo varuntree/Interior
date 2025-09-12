@@ -7,7 +7,7 @@ import { cn } from "@/libs/utils"
 
 type RadioGroupProps = React.HTMLAttributes<HTMLDivElement> & {
   value?: string
-  onValueChange?: (val: string) => void
+  onValueChange?: (value: string) => void
 }
 
 const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(

@@ -341,6 +341,9 @@ Return 200 { success: true }
 
 Idempotency: webhook handler must be safe to repeat.
 
+7.2 Stripe idempotency (event store)
+Stripe delivers events at-least-once. The app persists a record per event in `public.webhook_events` with a unique `(provider, event_id)` constraint. The webhook handler inserts the event before processing and early-exits on duplicates. This guarantees replay-safety across retries or multiple instances.
+
 7.2 Stripe
 Existing webhook continues to manage plan state (customer ids, plan mapping). No changes needed here.
 

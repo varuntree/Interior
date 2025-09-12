@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { ok, fail } from '@/libs/api-utils/responses'
+import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { 
@@ -25,7 +26,7 @@ const BatchAddItemsSchema = z.object({
   renderIds: z.array(z.string().uuid()).min(1).max(50)
 })
 
-export async function GET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, { params }: Context) {
   try {
     const { id: collectionId } = params
 
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 }
 
-export async function POST(req: NextRequest, { params }: Context) {
+async function handlePOST(req: NextRequest, { params }: Context) {
   try {
     const { id: collectionId } = params
 
@@ -179,3 +180,6 @@ export async function POST(req: NextRequest, { params }: Context) {
     return fail(500, 'INTERNAL_ERROR', 'Failed to add render(s) to collection')
   }
 }
+
+export const GET = withMethodsCtx(['GET'], handleGET as any)
+export const POST = withMethodsCtx(['POST'], handlePOST as any)

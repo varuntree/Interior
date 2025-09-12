@@ -15,7 +15,8 @@ import { useGenerationSubmit } from "@/hooks/useGenerationSubmit";
 import { useGenerationStatus } from "@/hooks/useGenerationStatus";
 import runtimeConfig from "@/libs/app-config/runtime";
 import { Wand2, AlertCircle, Zap } from "lucide-react";
-import { toast } from "sonner";
+import { toastSuccess, toastError } from "@/components/shared/Toast";
+import { apiFetch } from "@/libs/api/http";
 import { useState } from "react";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
 
@@ -46,13 +47,13 @@ export function GenerationWorkspace() {
   // Set up status polling
   useGenerationStatus({
     onComplete: (results) => {
-      toast.success(`Generated ${results.length} design variant${results.length !== 1 ? 's' : ''}!`);
+      toastSuccess(`Generated ${results.length} design variant${results.length !== 1 ? 's' : ''}!`);
     },
     onError: (error) => {
-      toast.error(`Generation failed: ${error}`);
+      toastError(`Generation failed: ${error}`);
     },
     onTimeout: () => {
-      toast.error('Generation is taking longer than expected. Please try again.');
+      toastError('Generation is taking longer than expected. Please try again.');
     }
   });
 
@@ -62,16 +63,11 @@ export function GenerationWorkspace() {
   const showInput2 = state.mode === 'compose';
 
   const handleAddToFavorites = async (renderId: string) => {
-    // Add to default favorites collection via API
-    const res = await fetch('/api/v1/collections/favorites/items', {
+    await apiFetch('/api/v1/collections/favorites/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ renderId })
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data?.error?.message || 'Failed to add to favorites')
-    }
+    });
   };
 
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -270,7 +266,7 @@ export function GenerationWorkspace() {
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         renderId={pickerRenderId}
-        onAdded={() => toast.success('Added to collection')}
+        onAdded={() => toastSuccess('Added to collection')}
       />
     </div>
   );

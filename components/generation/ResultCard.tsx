@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 
 import React, { memo, useState } from "react";
-import Image from "next/image";
+import AppImage from "@/components/shared/Image";
 import { cn } from "@/libs/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +28,7 @@ import {
   Loader2
 } from "lucide-react";
 import { GenerationResult } from "@/contexts/GenerationContext";
-import { toast } from "sonner";
+import { toastSuccess, toastError } from "@/components/shared/Toast";
 
 interface ResultCardProps {
   result: GenerationResult;
@@ -67,9 +67,9 @@ function ResultCardInner({
       const rid = result.renderId;
       if (!rid) throw new Error('Missing render id');
       await onAddToFavorites(rid);
-      toast.success('Added to My Favorites');
+      toastSuccess('Added to My Favorites');
     } catch (error) {
-      toast.error('Failed to add to favorites');
+      toastError('Failed to add to favorites');
     } finally {
       setIsAddingToFavorites(false);
     }
@@ -78,7 +78,7 @@ function ResultCardInner({
   const handleCopyPrompt = () => {
     if (prompt) {
       navigator.clipboard.writeText(prompt);
-      toast.success('Prompt copied to clipboard');
+      toastSuccess('Prompt copied to clipboard');
     }
   };
 
@@ -104,14 +104,13 @@ function ResultCardInner({
         {/* Image Container */}
         <div className="relative aspect-square bg-muted">
           {!imageError ? (
-            <Image
+            <AppImage
               src={result.thumbUrl || result.url}
               alt={`Generated design variant ${result.index + 1}`}
               fill
               className={cn(
-                "object-cover transition-all duration-300",
-                "group-hover:scale-105",
-                imageLoading && "blur-sm"
+                "object-cover",
+                "group-hover:scale-105"
               )}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               loading="lazy"
@@ -148,7 +147,7 @@ function ResultCardInner({
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl p-0">
                   <div className="relative aspect-square">
-                    <Image
+                    <AppImage
                       src={result.url}
                       alt={`Generated design variant ${result.index + 1}`}
                       fill

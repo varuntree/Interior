@@ -1,7 +1,7 @@
 // app/api/v1/generations/[id]/route.ts
 import { NextRequest } from 'next/server';
-// Removed unused withMethods import
 import { ok, fail } from '@/libs/api-utils/responses';
+import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { CACHE_CONFIGS } from '@/libs/api-utils/cache';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { createClient } from '@/libs/supabase/server';
@@ -15,7 +15,7 @@ interface Context {
   params: { id: string };
 }
 
-export async function GET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, { params }: Context) {
   try {
     const { id: jobId } = params;
 
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, { params }: Context) {
   try {
     const { id: jobId } = params;
 
@@ -128,7 +128,7 @@ export async function DELETE(req: NextRequest, { params }: Context) {
 }
 
 // PATCH method for updating generation (e.g., canceling)
-export async function PATCH(req: NextRequest, { params }: Context) {
+async function handlePATCH(req: NextRequest, { params }: Context) {
   try {
     const { id: jobId } = params;
 
@@ -172,3 +172,7 @@ export async function PATCH(req: NextRequest, { params }: Context) {
     return fail(500, 'INTERNAL_ERROR', 'Failed to update generation');
   }
 }
+
+export const GET = withMethodsCtx(['GET'], handleGET as any)
+export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)
+export const PATCH = withMethodsCtx(['PATCH'], handlePATCH as any)

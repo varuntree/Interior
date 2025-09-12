@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import AppImage from "@/components/shared/Image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, FolderPlus, Eye, Trash2 } from "lucide-react";
@@ -38,7 +38,7 @@ export function RenderCard({
           "relative aspect-square bg-muted",
           isFavorite && "ring-2 ring-primary/50"
         )}>
-          <Image
+          <AppImage
             src={imageUrl}
             alt={title || "Render"}
             fill
@@ -113,4 +113,3 @@ export function RenderCard({
     </Card>
   );
 }
-

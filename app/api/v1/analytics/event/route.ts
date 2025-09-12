@@ -10,6 +10,8 @@ const EventSchema = z.object({
   payload: z.any().optional()
 });
 
+export const dynamic = 'force-dynamic'
+
 export const POST = withMethods(['POST'], async (req: Request) => {
     try {
       const body = await validateRequest(req, EventSchema);

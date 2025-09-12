@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { CommunityCollection, CommunityItem, useApplySettings } from "@/components/community";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Users, Star, Palette, Sparkles, Search, RefreshCw } from "lucide-react";
+import { apiFetch } from "@/libs/api/http";
 
 interface CommunityData {
   type: 'gallery' | 'featured' | 'search';
@@ -53,17 +54,9 @@ export default function CommunityPage() {
       if (search) params.set('search', search);
       params.set('itemsPerCollection', '8');
 
-      const response = await fetch(`/api/v1/community?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch community data');
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to load community content');
-      }
-
-      setData(result.data);
+      const result = await apiFetch(`/api/v1/community?${params.toString()}`);
+      if (!result.success) throw new Error(result.error?.message || 'Failed to load community content');
+      setData(result.data as CommunityData);
     } catch (err: any) {
       setError(err.message);
     } finally {

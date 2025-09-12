@@ -6,7 +6,7 @@ import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import { getApplicationUrl } from '@/libs/api-utils/url-validation';
 import { submitGeneration } from '@/libs/services/generation';
 import { createClient } from '@/libs/supabase/server';
-import { generationRequestSchema, generationFormDataSchema } from '@/libs/api-utils/schemas';
+import { generationRequestSchema, generationFormDataSchema, validateFile } from '@/libs/api-utils/schemas';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,8 +49,19 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       const input1File = formData.get('input1') as File | null;
       const input2File = formData.get('input2') as File | null;
       
-      if (input1File) files.input1 = input1File;
-      if (input2File) files.input2 = input2File;
+      // Server-side file validation (type/size) when provided
+      try {
+        if (input1File) {
+          validateFile(input1File);
+          files.input1 = input1File;
+        }
+        if (input2File) {
+          validateFile(input2File);
+          files.input2 = input2File;
+        }
+      } catch (err: any) {
+        return fail(400, 'VALIDATION_ERROR', err?.message || 'Invalid file upload');
+      }
     } else {
       // Handle JSON request
       const body = await req.json();

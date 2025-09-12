@@ -76,6 +76,10 @@ Create new collection, add/remove an item via the respective endpoints (as speci
 
 If we don’t want curl, we can add a tiny Node script later (optional) that runs these calls and exits non‑zero on failure.
 
+3.3 Webhooks idempotency
+- Replicate: send the same successful webhook payload twice; expect a single render with variants and a stable terminal job status. No duplicate variants are created and storage uploads treat "already exists" as success.
+- Stripe: resend the same event (same `event.id`) via Stripe CLI; the webhook inserts a record into `public.webhook_events` on first receipt and early‑exits on duplicates. Plan/access updates remain consistent with no duplicate side effects.
+
 4) UI smoke checklist (manual, <5 minutes)
 Run locally after a change:
 

@@ -3,6 +3,7 @@ import runtimeConfig from "@/libs/app-config/runtime";
 import { createCheckout, createCustomerPortal, findCheckoutSession } from "@/libs/stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProfileById, getProfileByEmail, setBillingByUserId, setAccessByCustomerId } from "@/libs/repositories/profiles";
+import { recordWebhookEventIfNew } from "@/libs/repositories/webhook_events";
 
 export async function startCheckoutService(db: SupabaseClient, args: {
   userId: string;
@@ -204,6 +205,15 @@ export function getCurrentBillingPeriod(): { start: Date; end: Date } {
  * This function updates profiles and access flags according to the event.
  */
 export async function handleStripeWebhookService(adminDb: SupabaseClient, event: any) {
+  // Idempotency: de-duplicate by event.id
+  try {
+    const isNew = await recordWebhookEventIfNew(adminDb, 'stripe', event?.id as string, event)
+    if (!isNew) {
+      return
+    }
+  } catch (e) {
+    // If de-dup check fails, proceed cautiously (better to process once than drop)
+  }
   switch (event.type) {
     case "checkout.session.completed": {
       const stripeObject = event.data.object;

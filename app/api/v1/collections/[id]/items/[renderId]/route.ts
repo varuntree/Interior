@@ -1,6 +1,7 @@
 // app/api/v1/collections/[id]/items/[renderId]/route.ts
 import { NextRequest } from 'next/server'
 import { ok, fail } from '@/libs/api-utils/responses'
+import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { removeRenderFromCollection } from '@/libs/services/collections'
@@ -14,7 +15,7 @@ interface Context {
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, { params }: Context) {
   try {
     const { id: collectionId, renderId } = params
 
@@ -57,3 +58,5 @@ export async function DELETE(req: NextRequest, { params }: Context) {
     return fail(500, 'INTERNAL_ERROR', 'Failed to remove render from collection')
   }
 }
+
+export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)

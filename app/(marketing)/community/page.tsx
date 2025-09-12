@@ -1,4 +1,5 @@
 import Image from 'next/image'
+export const dynamic = 'force-dynamic'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface CommunityCollection {

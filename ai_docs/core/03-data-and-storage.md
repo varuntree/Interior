@@ -5,6 +5,7 @@ Purpose
 
 Entity Model (ER Overview)
 - Users have Profiles (id == auth.users.id). A Generation Job is created per submit and results in exactly one Render grouping one or more Render Variants; users organize Renders into Collections via Collection Items; Community images are admin-curated and public-read; Usage Ledger records debits/credits that power plan caps. Core tables: profiles, generation_jobs, renders, render_variants, collections, collection_items, community_images, usage_ledger (plus optional analytics tables added later).
+ - Webhook events are persisted to ensure idempotent processing. Core tables now also include webhook_events for de-duplication of inbound provider events.
 
 Table Summaries & RLS (Intent)
 - profiles: basic account and billing linkage (email, price_id, customer_id). RLS: self select/update (owner id == auth.uid()).
@@ -15,6 +16,7 @@ Table Summaries & RLS (Intent)
 - collection_items: (collection_id, render_id) PK, added_at. RLS: owner of the collection controls select/insert/delete via EXISTS policy.
 - community_images: image_path or external_url (XOR), title?, tags?, apply_settings?, is_published, order_index, created_at. RLS: public select (is_published=true); admin writes via server-only endpoints.
 - usage_ledger: owner_id, kind ('generation_debit'|'credit_adjustment'), amount, meta, created_at. RLS: owner select/insert (inserts performed by API); Index: (owner_id, created_at desc).
+ - webhook_events: provider ('stripe'|'replicate'), event_id (unique per provider), received_at, payload jsonb. RLS enabled; only server-side webhooks (service-role) write. Used to de-duplicate provider events safely across retries and multiple app instances.
 
 Storage Model (Buckets, Paths, URLs)
 - Buckets: `public` (public read, authenticated write) and `private` (RLS‑scoped to owner). Inputs upload to `private/${userId}/inputs/<uuid>.<ext>` and never leave the private bucket; short‑lived signed URLs (≈300s) are created server‑side for Replicate. Outputs upload to `public/renders/${renderId}/${variantIndex}.webp` (optionally `.../${variantIndex}_thumb.webp` later); client displays via public URLs from Supabase Storage. Never expose service‑role keys in UI; all signing happens in server context.

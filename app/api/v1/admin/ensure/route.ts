@@ -20,11 +20,10 @@ async function handlePOST() {
 
     return ok({ isAdmin })
   } catch (err: any) {
-    return Response.json(
-      { success: false, error: { code: 'INTERNAL_ERROR', message: err?.message ?? 'Unexpected error' } },
-      { status: 500, headers: { 'Cache-Control': 'private, no-store' } }
-    )
+    return fail(500, 'INTERNAL_ERROR', err?.message ?? 'Unexpected error')
   }
 }
+
+export const dynamic = 'force-dynamic'
 
 export const POST = withMethods(['POST'], handlePOST as any)
