@@ -1,19 +1,23 @@
 "use client";
 
-import Image from "next/image";
+import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useCollectionDetail } from "@/hooks/useCollectionDetail";
 import { toast } from "sonner";
+import { RenderCard } from "@/components/renders/RenderCard";
+import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
+import { apiFetch } from "@/libs/api/http";
 
 export default function CollectionDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { data, loading, error, removeItem } = useCollectionDetail(params?.id);
+  const { data, items, loading, error, hasMore, loadingMore, fetchMore, refetch, removeItem } = useCollectionDetail(params?.id);
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [pickerRenderId, setPickerRenderId] = React.useState<string | null>(null);
 
   const onRemove = async (renderId: string) => {
     try {
@@ -33,7 +37,7 @@ export default function CollectionDetailPage() {
         >
           <Badge variant="secondary" className="flex items-center gap-1">
             <Sparkles className="h-3 w-3" />
-            {data?.items.length ?? 0} items
+            {items.length} items
           </Badge>
         </DashboardHeader>
         <Button variant="outline" onClick={() => router.push('/dashboard/collections')}>
@@ -45,34 +49,49 @@ export default function CollectionDetailPage() {
       {error && <div className="text-destructive">{error}</div>}
 
       {data && (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {data.items.map((it) => (
-            <Card key={`${it.renderId}-${it.addedAt}`} className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="relative aspect-square bg-muted">
-                  {it.render?.coverImageUrl ? (
-                    <Image src={it.render.coverImageUrl} alt={it.render?.mode || 'Render'} fill className="object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">No image</div>
-                  )}
-                </div>
-                <div className="p-3 border-t flex items-center justify-between text-sm">
-                  <span className="truncate">{it.render?.mode}{it.render?.roomType ? ` • ${it.render.roomType}` : ''}{it.render?.style ? ` • ${it.render.style}` : ''}</span>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={`/dashboard/renders/${it.render?.id}`}>Open</a>
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => onRemove(it.renderId)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {items.map((it) => (
+              <RenderCard
+                key={`${it.renderId}-${it.addedAt}`}
+                id={it.render?.id || it.renderId}
+                imageUrl={it.render?.coverImageUrl || "/placeholder.png"}
+                title={`${it.render?.mode || ''}${it.render?.roomType ? ` • ${it.render.roomType}` : ''}${it.render?.style ? ` • ${it.render.style}` : ''}`}
+                isFavorite={undefined}
+                onToggleFavorite={async (id) => {
+                  try {
+                    await apiFetch('/api/v1/favorites/toggle', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ generationId: id })
+                    });
+                  } catch (e: any) {
+                    toast.error(e?.message || 'Failed to toggle favorite');
+                  }
+                }}
+                onAddToCollection={(id) => { setPickerRenderId(id); setPickerOpen(true); }}
+                onOpen={(id) => router.push(`/dashboard/renders/${id}`)}
+                onDelete={async () => { await onRemove(it.renderId); }}
+              />
+            ))}
+          </div>
+
+          {items.length > 0 && hasMore && (
+            <div className="flex justify-center py-6">
+              <Button onClick={() => fetchMore()} disabled={loadingMore}>
+                {loadingMore ? 'Loading…' : 'Load more'}
+              </Button>
+            </div>
+          )}
+
+          <CollectionPickerDialog
+            open={pickerOpen}
+            onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerRenderId(null); }}
+            renderId={pickerRenderId}
+            onAdded={() => { toast.success('Added to collection'); refetch(); }}
+          />
+        </>
       )}
     </div>
   );
 }
-

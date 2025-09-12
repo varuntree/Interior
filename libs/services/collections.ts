@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import * as collectionsRepo from '@/libs/repositories/collections'
+import * as rendersRepo from '@/libs/repositories/renders'
 
 export interface CollectionWithCount {
   id: string
@@ -180,7 +181,7 @@ export async function getCollectionWithItems(
     throw new Error('Collection not found or access denied')
   }
   
-  // Get items with render details
+  // Get items with render details (basic fields)
   const { data: items, error } = await ctx.supabase
     .from('collection_items')
     .select(`
@@ -201,27 +202,24 @@ export async function getCollectionWithItems(
     .limit(limit)
   
   if (error) throw error
-  
-  // Format the response
-  const formattedItems: CollectionItemWithRender[] = []
-  for (const item of (items || [])) {
-    const renderData = Array.isArray(item.renders) ? item.renders[0] : item.renders
-    let coverUrl: string | undefined
-    try {
-      // fetch cover variant for URL
-      const variant = await ctx.supabase
-        .from('render_variants')
-        .select('image_path, thumb_path')
-        .eq('render_id', renderData.id)
-        .eq('idx', renderData.cover_variant)
-        .maybeSingle()
-      if (variant.data?.image_path) {
-        const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-        coverUrl = `${base}/storage/v1/object/public/public/${variant.data.image_path}`
-      }
-    } catch {}
+  // Batch fetch variants for all renders to avoid N+1
+  const renderIds = (items || []).map((it: any) => (Array.isArray(it.renders) ? it.renders[0]?.id : it.renders?.id)).filter(Boolean)
+  const allVariants = await rendersRepo.getVariantsByRenderIds(ctx.supabase, renderIds)
+  const variantsByRender = new Map<string, rendersRepo.RenderVariant[]>()
+  for (const v of allVariants) {
+    const arr = variantsByRender.get(v.render_id) || []
+    arr.push(v)
+    variantsByRender.set(v.render_id, arr)
+  }
 
-    formattedItems.push({
+  // Format the response (with cover image url using public bucket)
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const formattedItems: CollectionItemWithRender[] = (items || []).map((item: any) => {
+    const renderData = Array.isArray(item.renders) ? item.renders[0] : item.renders
+    const variants = variantsByRender.get(renderData.id) || []
+    const cover = variants.find(v => v.idx === renderData.cover_variant)
+    const coverUrl = cover ? `${base}/storage/v1/object/public/public/${cover.image_path}` : undefined
+    return {
       collection_id: item.collection_id,
       render_id: item.render_id,
       added_at: item.added_at,
@@ -232,10 +230,10 @@ export async function getCollectionWithItems(
         style: renderData.style,
         cover_variant: renderData.cover_variant,
         created_at: renderData.created_at,
-        cover_image_url: coverUrl
+        cover_image_url: coverUrl,
       }
-    })
-  }
+    }
+  })
   
   return {
     collection,

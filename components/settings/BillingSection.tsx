@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LoadingStates } from '@/components/dashboard/LoadingStates';
 import { CreditCard, ExternalLink, Crown, Loader2 } from 'lucide-react';
+import config from '@/config';
 
 interface BillingData {
   planId: string;
@@ -33,26 +34,22 @@ export function BillingSection() {
       setLoading(true);
       setError(null);
 
-      // Fetch current user profile to get billing info
-      const authResponse = await fetch('/api/v1/auth/me');
-      if (!authResponse.ok) {
-        throw new Error('Failed to get user info');
-      }
+      // Fetch usage/billing summary (authoritative)
+      const usageRes = await fetch('/api/v1/usage');
+      if (!usageRes.ok) throw new Error('Failed to fetch usage/billing');
+      const usageJson = await usageRes.json();
+      if (!usageJson.success) throw new Error(usageJson.error?.message || 'Failed to fetch usage/billing');
 
-      const authResult = await authResponse.json();
-      if (!authResult.success) {
-        throw new Error('Not authenticated');
-      }
+      const plan = usageJson.data.plan;
+      const billingPeriod = usageJson.data.billingPeriod;
 
-      // Mock billing data for now - in production this would come from Stripe
-      // TODO: Replace with actual Stripe integration
       setBillingData({
-        planId: 'starter',
-        planName: 'Starter',
-        monthlyGenerations: 150,
-        priceAudPerMonth: 19,
-        nextBillingDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
-        isCanceled: false
+        planId: plan.id,
+        planName: plan.label,
+        monthlyGenerations: plan.monthlyGenerations,
+        priceAudPerMonth: plan.pricePerMonth,
+        nextBillingDate: billingPeriod?.end,
+        isCanceled: usageJson.data.billing?.subscriptionStatus === 'canceled'
       });
 
     } catch (err: any) {
@@ -99,17 +96,22 @@ export function BillingSection() {
   const handleUpgradePlan = async () => {
     try {
       setCheckoutLoading(true);
-      
+      // Choose upgrade target plan from config (prefer featured, else last defined)
+      const plans = config.stripe.plans || [];
+      const featured = plans.find(p => (p as any).isFeatured) || plans[plans.length - 1] || plans[0];
+      const targetPriceId = featured?.priceId;
+      if (!targetPriceId) throw new Error('No plan available');
+
       const response = await fetch('/api/v1/stripe/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId: 'price_pro_plan', // This should come from config
+          priceId: targetPriceId,
           mode: 'subscription',
-          successUrl: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/dashboard/settings?success=true`,
-          cancelUrl: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings` : window.location.href
+          successUrl: `${(process.env.NEXT_PUBLIC_APP_URL || window.location.origin)}/dashboard/settings?success=true`,
+          cancelUrl: `${(process.env.NEXT_PUBLIC_APP_URL || window.location.origin)}/dashboard/settings`
         })
       });
 

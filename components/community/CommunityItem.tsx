@@ -1,8 +1,8 @@
 'use client';
 /* eslint-disable no-unused-vars */
 
-import React, { memo, useState } from 'react';
-import Image from 'next/image';
+import React, { memo } from 'react';
+import AppImage from '@/components/shared/Image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +36,6 @@ interface CommunityItemProps {
 }
 
 function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleApplySettings = () => {
     if (item.applySettings && onApplySettings) {
@@ -56,20 +55,14 @@ function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
       <CardContent className="p-0">
         {/* Image Container */}
         <div className="relative aspect-square overflow-hidden bg-muted">
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-muted animate-pulse" />
-          )}
-          
-          <Image
+          <AppImage
             src={item.thumbUrl || item.imageUrl}
             alt={`Community design ${item.id}`}
             fill
-            className={`object-cover transition-all duration-300 group-hover:scale-105 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             loading="lazy"
-            onLoad={() => setImageLoaded(true)}
+            showLoader
           />
 
           {/* Overlay with Actions */}

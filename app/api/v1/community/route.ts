@@ -14,14 +14,15 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
     const url = new URL(req.url)
     const featuredOnly = url.searchParams.get('featured') === 'true'
     const itemsPerCollection = parseInt(url.searchParams.get('itemsPerCollection') || '10')
-    const search = url.searchParams.get('search')
+    const rawSearch = url.searchParams.get('search')
+    const search = rawSearch ? rawSearch.slice(0, 100).trim() : null
 
     // Get service client (no auth required for community endpoint)
     const serviceSupabase = createServiceSupabaseClient()
 
     let response
 
-    if (search) {
+    if (search && search.length > 0) {
       // Search community content
       const { searchCommunityContent } = await import('@/libs/services/community')
       const items = await searchCommunityContent(

@@ -128,20 +128,33 @@ Mark progress with `[ ]` → `[x]`. Include date and brief notes.
     - UI: added pagination (Load more) via `useRenders` and renders page; lazy images unchanged
 
 - [ ] Phase 6 — Collections (Vertical Slice 3)
-  - [ ] CRUD endpoints normalized; default “My Favorites” semantics enforced
-  - [ ] Idempotent add/remove; rely on RLS for owner checks
-  - [ ] Optimistic UI wired with normalized errors
+  - [x] CRUD endpoints normalized; default “My Favorites” semantics enforced
+  - [x] Idempotent add/remove; rely on RLS for owner checks
+  - [x] Optimistic UI wired with normalized errors
+  - [x] Collections detail reuses centralized RenderCard/AppImage
+  - [x] Removed N+1 in getCollectionWithItems via batch variant fetch
+  - [x] Added optional items pagination (Load more)
   - Notes:
+    - Service now batches cover variant lookup using renders.getVariantsByRenderIds
+    - UI detail grid replaced with RenderCard; added CollectionPickerDialog and favorite toggle wiring
+    - useCollectionDetail supports Load more via /collections/:id/items with limit/offset
 
-- [ ] Phase 7 — Community (Vertical Slice 4)
-  - [ ] Read‑only user endpoints; admin out of UI
-  - [ ] Public storage `public/community/*` + cache headers
+- [x] Phase 7 — Community (Vertical Slice 4)
+  - [x] Read‑only user endpoints; admin out of UI
+  - [x] Public storage `public/community/*` + cache headers
+  - [x] Community UI uses centralized AppImage; lazy images
   - Notes:
+    - CommunityItem now uses components/shared/Image (AppImage) instead of next/image
+    - Public API keeps CACHE_CONFIGS.PUBLIC; added search length clamp
+    - Admin endpoints remain allowlist‑gated and server‑only
 
-- [ ] Phase 8 — Payments & Legacy Delegation (Vertical Slice 5)
-  - [ ] Legacy routes delegate to v1 services cleanly
-  - [ ] Usage ledger side effects centralized; Generations continues gating
+- [x] Phase 8 — Payments & Legacy Delegation (Vertical Slice 5)
+  - [x] Legacy routes delegate to v1 services cleanly
+  - [x] Usage ledger side effects centralized; Generations continues gating
+  - [x] BillingSection uses config-driven priceId (no hard-coded IDs)
   - Notes:
+    - UI now selects featured plan from config.stripe.plans for checkout
+    - Stripe webhook remains idempotent via event store; legacy paths re-export v1
 
 - [ ] Phase 9 — Performance & Build Health
   - [ ] Zero Next build warnings

@@ -28,19 +28,28 @@ export interface CollectionDetail {
   items: CollectionItem[];
 }
 
-export function useCollectionDetail(collectionId: string | undefined) {
+export function useCollectionDetail(collectionId: string | undefined, pageSize: number = 24) {
   const [data, setData] = useState<CollectionDetail | null>(null);
+  const [items, setItems] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
   const fetchDetail = async () => {
     if (!collectionId) return;
     try {
       setLoading(true);
       setError(null);
-      const res = await apiFetch(`/api/v1/collections/${collectionId}`);
-      if (res.success) setData(res.data);
-      else setError(res.error?.message || 'Failed to load collection');
+      // Fetch collection metadata and initial page of items in one request
+      const res = await apiFetch(`/api/v1/collections/${collectionId}?limit=${pageSize}`);
+      if (!res.success) throw new Error(res.error?.message || 'Failed to load collection');
+      setData(res.data);
+      const initialItems: CollectionItem[] = res.data.items || [];
+      setItems(initialItems);
+      setOffset(initialItems.length);
+      setHasMore(initialItems.length === pageSize);
     } catch (e: any) {
       setError(e?.message || 'Failed to load collection');
     } finally {
@@ -48,14 +57,38 @@ export function useCollectionDetail(collectionId: string | undefined) {
     }
   };
 
-  useEffect(() => { fetchDetail(); }, [collectionId]);
+  const fetchMore = async () => {
+    if (!collectionId || !hasMore) return;
+    try {
+      setLoadingMore(true);
+      const res = await apiFetch(`/api/v1/collections/${collectionId}/items?limit=${pageSize}&offset=${offset}`);
+      if (!res.success) throw new Error(res.error?.message || 'Failed to load items');
+      const pageItems: CollectionItem[] = res.data.items || [];
+      setItems(prev => [...prev, ...pageItems]);
+      const pg = res.data.pagination || {};
+      setHasMore(!!pg.hasMore);
+      setOffset(offset + pageSize);
+    } catch (e: any) {
+      // noop; keep prior list
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    setItems([]);
+    setOffset(0);
+    setHasMore(false);
+    fetchDetail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionId, pageSize]);
 
   const removeItem = async (renderId: string) => {
     if (!collectionId) return;
     await apiFetch(`/api/v1/collections/${collectionId}/items/${renderId}`, { method: 'DELETE' });
+    // refetch from start to keep pagination accurate
     await fetchDetail();
   };
 
-  return { data, loading, error, refetch: fetchDetail, removeItem };
+  return { data, items, loading, loadingMore, error, hasMore, fetchMore, refetch: fetchDetail, removeItem };
 }
-
