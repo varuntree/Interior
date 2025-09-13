@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { GenerationProvider } from "@/contexts/GenerationContext";
-import { GenerationWorkspace } from "@/components/generation/GenerationWorkspace";
+import { GenerationWorkspaceFinal } from "@/components/generation/GenerationWorkspaceFinal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Info } from "lucide-react";
@@ -68,7 +68,7 @@ export default function CreatePage() {
           </Alert>
         )}
 
-        <GenerationWorkspace />
+        <GenerationWorkspaceFinal />
       </div>
     </GenerationProvider>
   );
