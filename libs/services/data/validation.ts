@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { logger } from '@/libs/observability/logger'
 
 export interface ValidationResult {
   valid: boolean
@@ -337,7 +338,7 @@ export async function validateUsageLedgerAccuracy(
 
     if (duplicatesError && !duplicatesError.message.includes('does not exist')) {
       // Function might not exist, which is okay
-      console.warn('Usage deduplication check skipped: function not available')
+      logger.warn('validation.usage_dedup_check_skipped')
     } else if (duplicateDebits) {
       duplicateDebits.forEach((dup: any) => {
         issues.push({

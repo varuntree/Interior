@@ -6,6 +6,7 @@ import { ok, fail } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { listUserRenders } from '@/libs/services/renders'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,7 @@ const QuerySchema = z.object({
   search: z.string().optional()
 })
 
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
+export const GET = withMethods(['GET'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Get authenticated user
     const supabase = createClient()
@@ -103,10 +104,11 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
       }
     }
 
+    ctx?.logger.info('renders.list', { userId: user.id, count: result.items.length })
     return ok(response)
 
   } catch (error: any) {
-    console.error('List renders error:', error)
+    ctx?.logger.error('renders.list_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to fetch renders')
   }
-})
+}))

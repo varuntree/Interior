@@ -1,5 +1,6 @@
 // libs/services/storage/uploads.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { logger } from '@/libs/observability/logger'
 import { randomUUID } from 'crypto';
 
 export interface UploadResult {
@@ -154,7 +155,7 @@ export async function deleteUploadedFile(
     .remove([path]);
 
   if (error) {
-    console.warn(`Failed to delete file ${path} from ${bucket}: ${error.message}`);
+    logger.warn('storage.delete_warning', { bucket, path, message: error.message });
     // Don't throw error for cleanup operations
   }
 }

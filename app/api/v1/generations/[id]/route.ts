@@ -8,6 +8,7 @@ import { createClient } from '@/libs/supabase/server';
 import { getGeneration } from '@/libs/services/generation';
 import * as rendersService from '@/libs/services/renders';
 import { cancelGeneration } from '@/libs/services/generation';
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +16,9 @@ interface Context {
   params: { id: string };
 }
 
-async function handleGET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: jobId } = params;
+    const { id: jobId } = ctx.params;
 
     // Get authenticated user
     const supabase = createClient();
@@ -47,8 +48,8 @@ async function handleGET(req: NextRequest, { params }: Context) {
     if (generation.status === 'succeeded') {
       try {
         variants = await rendersService.getVariantsForJob({ supabase: serviceSupabase }, jobId, user.id)
-      } catch (error) {
-        console.error(`Failed to fetch variants for job ${jobId}:`, error);
+      } catch (error: any) {
+        ctx?.logger?.warn?.('generation.variants_error', { jobId, message: error?.message })
       }
     }
 
@@ -71,10 +72,11 @@ async function handleGET(req: NextRequest, { params }: Context) {
       ? CACHE_CONFIGS.MEDIUM 
       : CACHE_CONFIGS.SHORT;
     
+    ctx?.logger?.info?.('generation.status', { userId: user.id, jobId, status: generation.status })
     return ok(response, undefined, cacheConfig);
 
   } catch (error: any) {
-    console.error('Generation status error:', error);
+    ctx?.logger?.error?.('generation.status_error', { message: error?.message })
     
     if (error.message === 'Generation not found' || error.code === 'PGRST116') {
       return fail(404, 'NOT_FOUND', 'Generation not found');
@@ -84,9 +86,9 @@ async function handleGET(req: NextRequest, { params }: Context) {
   }
 }
 
-async function handleDELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: jobId } = params;
+    const { id: jobId } = ctx.params;
 
     // Get authenticated user
     const supabase = createClient();
@@ -118,19 +120,19 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
     }
 
     await rendersService.deleteRendersByJob({ supabase: serviceSupabase }, jobId, user.id)
-
+    ctx?.logger?.info?.('generation.delete', { userId: user.id, jobId })
     return ok({ message: 'Generation deleted successfully' });
 
   } catch (error: any) {
-    console.error('Generation deletion error:', error);
+    ctx?.logger?.error?.('generation.delete_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to delete generation');
   }
 }
 
 // PATCH method for updating generation (e.g., canceling)
-async function handlePATCH(req: NextRequest, { params }: Context) {
+async function handlePATCH(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: jobId } = params;
+    const { id: jobId } = ctx.params;
 
     // Get authenticated user
     const supabase = createClient();
@@ -161,18 +163,18 @@ async function handlePATCH(req: NextRequest, { params }: Context) {
       }
 
       await cancelGeneration({ supabase: serviceSupabase, userId: user.id }, jobId)
-
+      ctx?.logger?.info?.('generation.cancel', { userId: user.id, jobId })
       return ok({ message: 'Generation canceled successfully' });
     }
 
     return fail(400, 'VALIDATION_ERROR', 'Unsupported action');
 
   } catch (error: any) {
-    console.error('Generation update error:', error);
+    ctx?.logger?.error?.('generation.update_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to update generation');
   }
 }
 
-export const GET = withMethodsCtx(['GET'], handleGET as any)
-export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)
-export const PATCH = withMethodsCtx(['PATCH'], handlePATCH as any)
+export const GET = withMethodsCtx(['GET'], withRequestContext(handleGET) as any)
+export const DELETE = withMethodsCtx(['DELETE'], withRequestContext(handleDELETE) as any)
+export const PATCH = withMethodsCtx(['PATCH'], withRequestContext(handlePATCH) as any)

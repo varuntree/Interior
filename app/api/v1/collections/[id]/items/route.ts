@@ -10,6 +10,7 @@ import {
   addRenderToCollection,
   addToFavorites
 } from '@/libs/services/collections'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,9 +27,9 @@ const BatchAddItemsSchema = z.object({
   renderIds: z.array(z.string().uuid()).min(1).max(50)
 })
 
-async function handleGET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: collectionId } = params
+    const { id: collectionId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -84,10 +85,11 @@ async function handleGET(req: NextRequest, { params }: Context) {
       }
     }
 
+    ctx?.logger?.info?.('collections.items.list', { userId: user.id, collectionId, count: response.items.length })
     return ok(response)
 
   } catch (error: any) {
-    console.error('Get collection items error:', error)
+    ctx?.logger?.error?.('collections.items.list_error', { message: error?.message })
     
     if (error.message === 'Collection not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Collection not found or access denied')
@@ -97,9 +99,9 @@ async function handleGET(req: NextRequest, { params }: Context) {
   }
 }
 
-async function handlePOST(req: NextRequest, { params }: Context) {
+async function handlePOST(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: collectionId } = params
+    const { id: collectionId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -135,6 +137,7 @@ async function handlePOST(req: NextRequest, { params }: Context) {
         parsed.data.renderIds
       )
 
+      ctx?.logger?.info?.('collections.items.batch_add', { userId: user.id, collectionId, count: parsed.data.renderIds.length })
       return ok({ 
         message: `${parsed.data.renderIds.length} render(s) added to collection successfully`,
         addedCount: parsed.data.renderIds.length
@@ -163,11 +166,12 @@ async function handlePOST(req: NextRequest, { params }: Context) {
         )
       }
 
+      ctx?.logger?.info?.('collections.items.add', { userId: user.id, collectionId })
       return ok({ message: 'Render added to collection successfully' })
     }
 
   } catch (error: any) {
-    console.error('Add to collection error:', error)
+    ctx?.logger?.error?.('collections.items.add_error', { message: error?.message })
     
     if (error.message === 'Collection not found or access denied' || error.message === 'Render not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Collection or render not found or access denied')
@@ -181,5 +185,5 @@ async function handlePOST(req: NextRequest, { params }: Context) {
   }
 }
 
-export const GET = withMethodsCtx(['GET'], handleGET as any)
-export const POST = withMethodsCtx(['POST'], handlePOST as any)
+export const GET = withMethodsCtx(['GET'], withRequestContext(handleGET) as any)
+export const POST = withMethodsCtx(['POST'], withRequestContext(handlePOST) as any)

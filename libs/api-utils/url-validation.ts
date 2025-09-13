@@ -1,5 +1,6 @@
 // libs/api-utils/url-validation.ts
 import { NextRequest } from 'next/server';
+import { logger } from '@/libs/observability/logger'
 
 /**
  * Gets the application's public URL in order of priority:
@@ -49,9 +50,7 @@ export function getApplicationUrl(req?: NextRequest): string {
   
   // Priority 3: Development fallback only
   if (process.env.NODE_ENV === 'development') {
-    console.warn(
-      '⚠️  NEXT_PUBLIC_APP_URL is not set. Using http://localhost:3000 for development.'
-    );
+    logger.warn('url.dev_default_used', { url: 'http://localhost:3000' })
     return 'http://localhost:3000';
   }
   

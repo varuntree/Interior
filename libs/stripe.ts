@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { env } from "@/libs/env";
+import { logger } from '@/libs/observability/logger'
 
 interface CreateCheckoutParams {
   priceId: string;
@@ -85,7 +86,7 @@ export const createCheckout = async ({
 
     return stripeSession.url;
   } catch (e) {
-    console.error(e);
+    logger.error('billing.create_checkout_error', { message: (e as any)?.message || String(e) })
     return null;
   }
 };
@@ -126,7 +127,7 @@ export const findCheckoutSession = async (sessionId: string) => {
 
     return session;
   } catch (e) {
-    console.error(e);
+    logger.error('billing.find_checkout_session_error', { message: (e as any)?.message || String(e) })
     return null;
   }
 };

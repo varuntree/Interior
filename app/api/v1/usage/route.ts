@@ -1,7 +1,7 @@
 // app/api/v1/usage/route.ts
 import { NextRequest } from 'next/server'
 import { withMethods } from '@/libs/api-utils/methods'
-import { withRequestId } from '@/libs/api-utils/with-request'
+import { withRequestContext } from '@/libs/observability/request'
 import { ok, fail } from '@/libs/api-utils/responses'
 import { CACHE_CONFIGS } from '@/libs/api-utils/cache'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
@@ -12,7 +12,7 @@ import { getProfile } from '@/libs/services/profile'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = withMethods(['GET'], withRequestId(async (req: NextRequest) => {
+export const GET = withMethods(['GET'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Get authenticated user
     const supabase = createClient()
@@ -116,10 +116,11 @@ export const GET = withMethods(['GET'], withRequestId(async (req: NextRequest) =
         : 0
     }
 
+    ctx?.logger.info('usage.summary', { userId: user.id })
     return ok(response, undefined, CACHE_CONFIGS.AUTH)
 
   } catch (error: any) {
-    console.error('Usage status error:', error)
+    ctx?.logger.error('usage.summary_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to fetch usage information')
   }
 }))

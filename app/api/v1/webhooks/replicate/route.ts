@@ -8,6 +8,7 @@ import { env } from '@/libs/env';
 import { createHmac } from 'crypto';
 import { logger } from '@/libs/observability/logger'
 import { REPLICATE_SIGNATURE_HEADER } from '@/libs/services/providers/constants'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ interface ReplicateWebhookPayload {
   completed_at?: string;
 }
 
-export const POST = withMethods(['POST'], async (req: NextRequest) => {
+export const POST = withMethods(['POST'], withRequestContext(async (req: NextRequest, ctx?: { logger?: any }) => {
   try {
     // Get raw body for signature verification
     const body = await req.text();
@@ -36,7 +37,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       const fallbackHeader = 'x-webhook-signature'; // backward-compat if needed
       const signature = req.headers.get(headerName) || req.headers.get(fallbackHeader);
       if (!signature || !verifyWebhookSignature(body, signature, env.server.REPLICATE_WEBHOOK_SECRET)) {
-        console.error('Invalid webhook signature');
+        ctx?.logger?.error?.('webhook.signature_invalid')
         return fail(401, 'UNAUTHORIZED', 'Invalid webhook signature');
       }
     }
@@ -44,10 +45,11 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     const payload: ReplicateWebhookPayload = JSON.parse(body);
     const { id: predictionId, status } = payload;
 
-    logger.info('webhook_received', { predictionId, status })
+    ctx?.logger?.info?.('webhook.received', { predictionId, status })
 
     const supabase = createAdminClient();
     await handleReplicateWebhook({ supabase }, payload)
+    ctx?.logger?.info?.('webhook.processed', { predictionId, status })
 
     const res = ok({ 
       message: 'Webhook processed successfully',
@@ -56,7 +58,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     });
     return res
   } catch (error: any) {
-    logger.error('webhook_error', { message: error?.message })
+    ctx?.logger?.error?.('webhook.error', { message: error?.message })
     
     // Return 200 to prevent Replicate from retrying
     // Log the error but don't fail the webhook
@@ -65,7 +67,7 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       error: error.message 
     });
   }
-});
+}));
 
 // handling moved into services/generation_webhooks
 
@@ -85,8 +87,8 @@ function verifyWebhookSignature(payload: string, signature: string, secret: stri
       mismatch |= providedHex.charCodeAt(i) ^ expectedHex.charCodeAt(i);
     }
     return mismatch === 0;
-  } catch (error) {
-    console.error('Signature verification error:', error);
+  } catch (error: any) {
+    logger.error('webhook.signature_error', { message: error?.message })
     return false;
   }
 }

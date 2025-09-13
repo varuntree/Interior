@@ -54,6 +54,13 @@ Security Checklist (Essentials Only)
 - Service‑role keys are server‑only and limited to webhooks; never import them in general routes or UI. RLS is enabled on all user‑owned tables; public read is explicit for community tables. Inputs live in the private bucket; outputs in public.
 - Validate and sanitize all inputs with Zod; normalize errors; never echo raw upstream errors to clients. Keep secrets in env and validated by `libs/env`.
 
+Observability (Simple & Standard)
+- All v1 routes are wrapped with a small request wrapper that:
+  - generates a `requestId`, adds `x-request-id` to responses,
+  - logs `http.request.start` and `http.request.end` with `status` and `durationMs`.
+- Logs are single‑line JSON via `logger.info|warn|error(event, fields)`.
+- Services emit domain events (e.g., `generation.submit`, `renders.list`) and never log PII; IDs only (userId/jobId/predictionId).
+
 Minimal Dependency Policy (When to Add a Library)
 - Add only if: (1) it replaces custom code that is complex or bug‑prone, (2) improves performance measurably, or (3) meaningfully improves UX. It must be compatible with Next.js App Router, small, tree‑shakeable, and not duplicate existing utilities. Otherwise, prefer reuse.
 

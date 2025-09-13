@@ -167,10 +167,17 @@ Mark progress with `[ ]` → `[x]`. Include date and brief notes.
     - Removed Crisp entirely (config block, dependency, code references)
     - Cleaned comments in layout files to reflect removal
 
-- [ ] Phase 10 — Observability & Logging (Finalize)
-  - [ ] Standard log fields everywhere (trace/request, user, job, prediction)
-  - [ ] Upstream errors redacted for clients; details server‑only
+- [x] Phase 10 — Observability & Logging (Finalize)
+  - [x] Standard log fields everywhere (trace/request, user, job, prediction)
+  - [x] Upstream errors redacted for clients; details server‑only
   - Notes:
+    - Added request wrapper `withRequestContext` logging `http.request.start/end` + `x-request-id` header on all v1 routes (ex‑admin)
+    - Replaced console.* with structured logs in routes and services; domain events added (generation/renders/collections/favorites/community/billing/webhooks)
+    - Webhooks instrumented; signature errors logged; idempotency events visible
+    - Analytics route hardened (payload clamp) and instrumented; still non‑blocking
+    - Verification guard `verify:phase10` ensures no console.* in server code and confirms route wrapper adoption
+    - Logger supports `createLogger().child().time()` and shallow redaction
+    - Docs added at `ai_docs/spec/observability.md` (standards + usage)
 
 - [ ] Phase 11 — Docs & Final Sweep
   - [ ] `ai_docs` PRD/API/Data updated if deltas

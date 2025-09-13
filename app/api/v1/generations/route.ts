@@ -7,12 +7,13 @@ import { getApplicationUrl } from '@/libs/api-utils/url-validation';
 import { submitGeneration } from '@/libs/services/generation';
 import { createClient } from '@/libs/supabase/server';
 import { generationRequestSchema, generationFormDataSchema, validateFile } from '@/libs/api-utils/schemas';
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic';
 
 // Validation schemas are sourced from libs/api-utils/schemas to avoid duplication
 
-export const POST = withMethods(['POST'], async (req: NextRequest) => {
+export const POST = withMethods(['POST'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Get authenticated user
     const supabase = createClient();
@@ -103,11 +104,11 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       },
       submission
     );
-
+    ctx?.logger?.info?.('generation.submit', { userId: user.id, mode: submission.mode })
     return accepted(result);
 
   } catch (error: any) {
-    console.error('Generation submission error:', error);
+    ctx?.logger?.error?.('generation.submit_error', { message: error?.message })
 
     // Handle known error types
     if (error.message === 'TOO_MANY_INFLIGHT') {
@@ -132,11 +133,11 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     // Generic server error
     return fail(500, 'INTERNAL_ERROR', 'An unexpected error occurred during generation submission.');
   }
-});
+}));
 
 // GET method to list generations (optional for this route)
 // eslint-disable-next-line no-unused-vars
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
+export const GET = withMethods(['GET'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Get authenticated user
     const supabase = createClient();
@@ -147,9 +148,11 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
 
     // This could list recent generations for the user
     // For now, redirect to dedicated renders endpoint
+    ctx?.logger?.info?.('generation.index_redirect', { userId: user.id })
     return fail(404, 'NOT_FOUND', 'Use /api/v1/renders to list generations');
 
   } catch (error: any) {
+    ctx?.logger?.error?.('generation.index_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to process request');
   }
-});
+}));

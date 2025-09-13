@@ -2,10 +2,11 @@ import { withMethods } from '@/libs/api-utils/methods';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import * as favoritesService from '@/libs/services/favorites';
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic';
 
-async function handleGET(req: Request) {
+async function handleGET(req: Request, ctx?: { logger?: any }) {
   const supabase = createServiceSupabaseClient();
   
   // Get user session
@@ -29,14 +30,16 @@ async function handleGET(req: Request) {
       }
     );
 
+    ctx?.logger?.info?.('favorites.list', { userId: user.id, count: (result as any)?.items?.length })
     return ok(result, {
       headers: { 'Cache-Control': 'private, no-store' }
     });
   } catch (error: any) {
     const status = error?.status || 500;
     const message = error?.message || 'Internal server error';
+    ctx?.logger?.error?.('favorites.list_error', { message })
     return fail(status, 'INTERNAL_ERROR', message);
   }
 }
 
-export const GET = withMethods(['GET'], handleGET as any);
+export const GET = withMethods(['GET'], withRequestContext(handleGET as any));

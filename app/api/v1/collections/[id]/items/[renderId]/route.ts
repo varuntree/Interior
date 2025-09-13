@@ -5,6 +5,7 @@ import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { removeRenderFromCollection } from '@/libs/services/collections'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,9 +16,9 @@ interface Context {
   }
 }
 
-async function handleDELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: collectionId, renderId } = params
+    const { id: collectionId, renderId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -46,10 +47,11 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
       renderId
     )
 
+    ctx?.logger?.info?.('collections.items.remove', { userId: user.id, collectionId, renderId })
     return ok({ message: 'Render removed from collection successfully' })
 
   } catch (error: any) {
-    console.error('Remove from collection error:', error)
+    ctx?.logger?.error?.('collections.items.remove_error', { message: error?.message })
     
     if (error.message === 'Collection not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Collection not found or access denied')
@@ -59,4 +61,4 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
   }
 }
 
-export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)
+export const DELETE = withMethodsCtx(['DELETE'], withRequestContext(handleDELETE) as any)

@@ -10,6 +10,7 @@ npm run typecheck      // tsc --noEmit
 npm run lint           // eslint .
 npm run build          // next build
 npm run verify:grep    // forbidden pattern scan (see below)
+npm run verify:phase10 // observability guards (no console.* in server, routes wrapped)
 1.1 Grep checks (from our Handbook)
 Run these; all must return 0 matches:
 
@@ -19,6 +20,12 @@ grep -R "use server" app libs || true
 grep -R "createServerClient" components || true
 grep -R "service_role" app components || true
 (We expect no occurrences in those folders; service‑role is only in /app/api/webhook/**.)
+
+Observability checks (Phase 10)
+- `npm run verify:phase10` ensures:
+  - No `console.*` usage in server code paths (routes/services/repos/infra)
+  - All v1 routes are wrapped with `withRequestContext` and add `x-request-id`
+  - No raw error JSON returned; use `fail()` helpers
 
 2) Minimal automated tests (MVP)
 We keep this scoped to two tiny areas that give maximum signal:
@@ -63,6 +70,11 @@ curl -X POST http://localhost:3000/api/v1/generations \
   -F "prompt=A bright coastal living room with light oak and linen" \
   # simplified: no aspect ratio, quality, or variants
 Expect: 202 { success: true, data: { id, predictionId, status } }.
+
+Check `x-request-id` header on responses and confirm logs show:
+- `http.request.start` on entry
+- A domain event (e.g., `generation.submit`)
+- `http.request.end` with `status` and `durationMs`
 
 Poll:
 

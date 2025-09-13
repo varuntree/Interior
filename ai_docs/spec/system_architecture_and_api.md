@@ -415,6 +415,8 @@ responses.ts (ok, fail)
 
 errors.ts (normalize known errors)
 
+observability/request.ts (withRequestContext): adds `requestId`, `x-request-id` header, and logs start/end for each request
+
 All routes enforce methods explicitly (e.g., switch on req.method or a small withMethods helper if present)
 
 11) Security notes

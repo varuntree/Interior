@@ -327,7 +327,7 @@ async function getUserPlan(supabase: SupabaseClient, userId: string): Promise<{ 
 
   const plan = runtimeConfig.plans[priceId];
   if (!plan) {
-    console.warn(`Unknown price ID: ${priceId}, falling back to free tier`);
+    logger.warn('billing.unknown_price_id', { priceId })
     return { monthlyGenerations: 20 };
   }
 

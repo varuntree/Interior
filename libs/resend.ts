@@ -30,7 +30,8 @@ export const sendEmail = async ({
   });
 
   if (error) {
-    console.error("Error sending email:", error.message);
+    const { logger } = await import('@/libs/observability/logger')
+    logger.error('email.send_error', { message: error.message })
     throw error;
   }
 

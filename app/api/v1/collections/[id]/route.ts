@@ -10,6 +10,7 @@ import {
   renameUserCollection, 
   deleteUserCollection 
 } from '@/libs/services/collections'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,9 +23,9 @@ const RenameCollectionSchema = z.object({
   name: z.string().min(1).max(100).trim()
 })
 
-async function handleGET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: collectionId } = params
+    const { id: collectionId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -77,10 +78,11 @@ async function handleGET(req: NextRequest, { params }: Context) {
       }))
     }
 
+    ctx?.logger?.info?.('collections.detail', { userId: user.id, collectionId, itemCount: response.items.length })
     return ok(response)
 
   } catch (error: any) {
-    console.error('Get collection error:', error)
+    ctx?.logger?.error?.('collections.detail_error', { message: error?.message })
     
     if (error.message === 'Collection not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Collection not found or access denied')
@@ -90,9 +92,9 @@ async function handleGET(req: NextRequest, { params }: Context) {
   }
 }
 
-async function handlePATCH(req: NextRequest, { params }: Context) {
+async function handlePATCH(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: collectionId } = params
+    const { id: collectionId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -126,10 +128,11 @@ async function handlePATCH(req: NextRequest, { params }: Context) {
       name
     )
 
+    ctx?.logger?.info?.('collections.rename', { userId: user.id, collectionId })
     return ok({ message: 'Collection renamed successfully' })
 
   } catch (error: any) {
-    console.error('Rename collection error:', error)
+    ctx?.logger?.error?.('collections.rename_error', { message: error?.message })
     
     if (error.message === 'Collection not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Collection not found or access denied')
@@ -147,9 +150,9 @@ async function handlePATCH(req: NextRequest, { params }: Context) {
   }
 }
 
-async function handleDELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: collectionId } = params
+    const { id: collectionId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -173,10 +176,11 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
       user.id
     )
 
+    ctx?.logger?.info?.('collections.delete', { userId: user.id, collectionId })
     return ok({ message: 'Collection deleted successfully' })
 
   } catch (error: any) {
-    console.error('Delete collection error:', error)
+    ctx?.logger?.error?.('collections.delete_error', { message: error?.message })
     
     if (error.message === 'Collection not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Collection not found or access denied')
@@ -190,6 +194,6 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
   }
 }
 
-export const GET = withMethodsCtx(['GET'], handleGET as any)
-export const PATCH = withMethodsCtx(['PATCH'], handlePATCH as any)
-export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)
+export const GET = withMethodsCtx(['GET'], withRequestContext(handleGET) as any)
+export const PATCH = withMethodsCtx(['PATCH'], withRequestContext(handlePATCH) as any)
+export const DELETE = withMethodsCtx(['DELETE'], withRequestContext(handleDELETE) as any)

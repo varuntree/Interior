@@ -6,6 +6,7 @@ import { ok, fail } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { listUserCollections, createUserCollection, ensureDefaultFavorites } from '@/libs/services/collections'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ const CreateCollectionSchema = z.object({
 })
 
 // eslint-disable-next-line no-unused-vars
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
+export const GET = withMethods(['GET'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Get authenticated user
     const supabase = createClient()
@@ -44,15 +45,16 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
       }))
     }
 
+    ctx?.logger?.info?.('collections.list', { userId: user.id, count: response.collections.length })
     return ok(response)
 
   } catch (error: any) {
-    console.error('List collections error:', error)
+    ctx?.logger?.error?.('collections.list_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to fetch collections')
   }
-})
+}))
 
-export const POST = withMethods(['POST'], async (req: NextRequest) => {
+export const POST = withMethods(['POST'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Get authenticated user
     const supabase = createClient()
@@ -89,10 +91,11 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
       createdAt: collection.created_at
     }
 
+    ctx?.logger?.info?.('collections.create', { userId: user.id, collectionId: response.id })
     return ok(response, 'Collection created successfully')
 
   } catch (error: any) {
-    console.error('Create collection error:', error)
+    ctx?.logger?.error?.('collections.create_error', { message: error?.message })
 
     if (error.message === 'Collection name cannot be empty' || error.message === 'Collection name too long') {
       return fail(400, 'VALIDATION_ERROR', error.message)
@@ -100,4 +103,4 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
 
     return fail(500, 'INTERNAL_ERROR', 'Failed to create collection')
   }
-})
+}))

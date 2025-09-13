@@ -2,6 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import * as rendersRepo from '@/libs/repositories/renders';
 import * as jobsRepo from '@/libs/repositories/generation_jobs';
+import { logger } from '@/libs/observability/logger'
 
 export interface ProcessAssetsParams {
   jobId: string;
@@ -85,8 +86,8 @@ export async function processGenerationAssets(
       }
       
       processedAssets.push(asset);
-    } catch (error) {
-      console.error(`Failed to process asset ${i} for render ${render.id}:`, error);
+    } catch (error: any) {
+      logger.error('storage.asset_process_error', { renderId: render.id, index: i, message: error?.message })
       // Continue processing other assets even if one fails
     }
   }
@@ -199,7 +200,7 @@ export async function cleanupFailedAssets(
       .remove(pathsToDelete);
 
     if (error) {
-      console.warn(`Failed to cleanup assets for render ${renderId}:`, error.message);
+      logger.warn('storage.cleanup_warning', { renderId, message: error.message })
     }
   }
 

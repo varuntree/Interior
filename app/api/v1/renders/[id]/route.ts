@@ -5,16 +5,15 @@ import { withMethodsCtx } from '@/libs/api-utils/methods'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { createClient } from '@/libs/supabase/server'
 import { getRenderDetails, deleteUserRender } from '@/libs/services/renders'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
-interface Context {
-  params: { id: string }
-}
+interface Context { params: { id: string } }
 
-async function handleGET(req: NextRequest, { params }: Context) {
+async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: renderId } = params
+    const { id: renderId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -61,10 +60,11 @@ async function handleGET(req: NextRequest, { params }: Context) {
       }))
     }
 
+    ctx?.logger?.info?.('renders.detail', { userId: user.id, renderId })
     return ok(response)
 
   } catch (error: any) {
-    console.error('Get render error:', error)
+    ctx?.logger?.error?.('renders.detail_error', { message: error?.message })
     
     if (error.message === 'Render not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Render not found or access denied')
@@ -74,9 +74,9 @@ async function handleGET(req: NextRequest, { params }: Context) {
   }
 }
 
-async function handleDELETE(req: NextRequest, { params }: Context) {
+async function handleDELETE(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: renderId } = params
+    const { id: renderId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -100,10 +100,11 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
       user.id
     )
 
+    ctx?.logger?.info?.('renders.delete', { userId: user.id, renderId })
     return ok({ message: 'Render deleted successfully' })
 
   } catch (error: any) {
-    console.error('Delete render error:', error)
+    ctx?.logger?.error?.('renders.delete_error', { message: error?.message })
     
     if (error.message === 'Render not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Render not found or access denied')
@@ -113,12 +114,12 @@ async function handleDELETE(req: NextRequest, { params }: Context) {
   }
 }
 
-export const GET = withMethodsCtx(['GET'], handleGET as any)
-export const DELETE = withMethodsCtx(['DELETE'], handleDELETE as any)
+export const GET = withMethodsCtx(['GET'], withRequestContext(handleGET) as any)
+export const DELETE = withMethodsCtx(['DELETE'], withRequestContext(handleDELETE) as any)
 
-export async function PATCH(req: NextRequest, { params }: Context) {
+async function handlePATCH(req: NextRequest, ctx: Context & { logger?: any }) {
   try {
-    const { id: renderId } = params
+    const { id: renderId } = ctx.params
 
     // Get authenticated user
     const supabase = createClient()
@@ -147,13 +148,14 @@ export async function PATCH(req: NextRequest, { params }: Context) {
         body.coverVariant
       )
 
+      ctx?.logger?.info?.('renders.update_cover', { userId: user.id, renderId, coverVariant: body.coverVariant })
       return ok({ message: 'Cover variant updated successfully' })
     }
 
     return fail(400, 'VALIDATION_ERROR', 'No valid updates provided')
 
   } catch (error: any) {
-    console.error('Update render error:', error)
+    ctx?.logger?.error?.('renders.update_error', { message: error?.message })
     
     if (error.message === 'Render not found or access denied' || error.message === 'Variant not found or access denied') {
       return fail(404, 'NOT_FOUND', 'Render or variant not found or access denied')
@@ -162,3 +164,5 @@ export async function PATCH(req: NextRequest, { params }: Context) {
     return fail(500, 'INTERNAL_ERROR', 'Failed to update render')
   }
 }
+
+export const PATCH = withMethodsCtx(['PATCH'], withRequestContext(handlePATCH) as any)

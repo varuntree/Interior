@@ -4,6 +4,7 @@ import { ok, fail } from "@/libs/api-utils/responses";
 import { validate } from "@/libs/api-utils/validate";
 import { createClient } from "@/libs/supabase/server";
 import { startCheckoutService } from "@/libs/services/billing";
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ const BodySchema = z.object({
   // couponId?: string (optional for later)
 });
 
-export const POST = withMethods(['POST'], async (req: Request) => {
+export const POST = withMethods(['POST'], withRequestContext(async (req: Request, ctx?: { logger?: any }) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return fail(401, 'UNAUTHORIZED', 'You must be logged in to checkout.');
@@ -25,12 +26,18 @@ export const POST = withMethods(['POST'], async (req: Request) => {
     if ("res" in v) return v.res;
 
     const { priceId, mode, successUrl, cancelUrl } = v.data;
-    const result = await startCheckoutService(supabase, {
-      userId: user.id,
-      priceId,
-      mode,
-      successUrl,
-      cancelUrl,
-    });
-    return ok(result);
-});
+    try {
+      const result = await startCheckoutService(supabase, {
+        userId: user.id,
+        priceId,
+        mode,
+        successUrl,
+        cancelUrl,
+      });
+      ctx?.logger?.info?.('billing.checkout.started', { userId: user.id, priceId, mode })
+      return ok(result);
+    } catch (e: any) {
+      ctx?.logger?.error?.('billing.checkout_error', { message: e?.message })
+      return fail(500, 'BILLING_ERROR', 'Failed to start checkout')
+    }
+}));

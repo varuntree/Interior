@@ -50,3 +50,4 @@ Operations Notes
 - Health endpoints: `GET /api/v1/health` (app heartbeat), `GET /api/v1/status` (DB connectivity).
 - Storage cleanup is optional in MVP; deletes remove DB rows, not necessarily files. A cleanup helper exists and can be wired later.
 - Prefer `.webp` outputs, lazy‑load images in UI, and avoid caching API responses unless explicitly public.
+- Logs & Correlation: API routes emit structured JSON logs and include `x-request-id` in responses. Use the `requestId` to correlate a user request across start/end/domain events when inspecting logs in your hosting platform.

@@ -4,6 +4,7 @@ import { validate } from '@/libs/api-utils/validate';
 import { ok, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
 import * as collectionsService from '@/libs/services/collections';
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +13,7 @@ const ToggleItemSchema = z.object({
   generationId: z.string().uuid('Generation ID must be a valid UUID')
 });
 
-async function handlePOST(req: Request) {
+async function handlePOST(req: Request, ctx?: { logger?: any }) {
   const supabase = createServiceSupabaseClient();
   
   // Get user session
@@ -40,15 +41,16 @@ async function handlePOST(req: Request) {
         generationId
       }
     );
-
+    ctx?.logger?.info?.('collections.items.toggle', { userId: user.id, collectionId, generationId, isFavorite: (result as any)?.isFavorite })
     return ok(result, {
       headers: { 'Cache-Control': 'private, no-store' }
     });
   } catch (error: any) {
     const status = error?.status || 500;
     const message = error?.message || 'Internal server error';
+    ctx?.logger?.error?.('collections.items.toggle_error', { message })
     return fail(status, 'INTERNAL_ERROR', message);
   }
 }
 
-export const POST = withMethods(['POST'], handlePOST as any);
+export const POST = withMethods(['POST'], withRequestContext(handlePOST as any));

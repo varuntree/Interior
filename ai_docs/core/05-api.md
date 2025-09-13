@@ -5,7 +5,7 @@ Purpose
 
 Conventions
 - Auth: user routes require a Supabase session (SSR client in routes). Public: community gallery, health. Admin: webhooks (service‑role client only).
-- Headers: default `Cache-Control: private, no-store` (helpers set this). Public endpoints may use short caching.
+- Headers: default `Cache-Control: private, no-store` (helpers set this). Public endpoints may use short caching. All v1 routes include `x-request-id` for request correlation.
 - Response shape: `{ success: boolean, data?: T, error?: { code, message, details? } }`.
 - Errors: `VALIDATION_ERROR, UNAUTHORIZED, FORBIDDEN, NOT_FOUND, TOO_MANY_INFLIGHT, LIMIT_EXCEEDED, UPSTREAM_ERROR, INTERNAL_ERROR, METHOD_NOT_ALLOWED, CONFIGURATION_ERROR`.
 
@@ -79,3 +79,4 @@ Notes
 - Allowed values (modes, styles, room types, limits) come from `libs/app-config/runtime.ts` and should not be hardcoded in clients.
 - Image uploads: enforced accepted MIME types and size per runtime config; inputs stored in private bucket; outputs served from public.
 - Idempotency: supported on generation submit via `idempotencyKey` (per‑owner). Services de‑dupe jobs and ledger entries.
+- Observability: Each route emits `http.request.start/end` logs and domain events (e.g., `generation.submit`). See observability spec.

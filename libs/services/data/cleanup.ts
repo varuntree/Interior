@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import runtimeConfig from '@/libs/app-config/runtime'
+import { logger } from '@/libs/observability/logger'
 
 export interface CleanupResult {
   success: boolean
@@ -519,7 +520,7 @@ export function scheduleCleanup(
 
   return setInterval(async () => {
     try {
-      console.log('🧹 Running scheduled cleanup...')
+      logger.info('cleanup.run_start')
       const stats = await performFullCleanup(supabase, {
         cleanStuckJobs: true,
         cleanOrphanedRecords: true,
@@ -528,9 +529,9 @@ export function scheduleCleanup(
       })
 
       const report = generateCleanupReport(stats)
-      console.log('📊 Cleanup completed:', report)
+      logger.info('cleanup.run_completed', { report })
     } catch (error) {
-      console.error('❌ Scheduled cleanup failed:', error)
+      logger.error('cleanup.run_failed', { message: (error as any)?.message })
     }
   }, intervalMs)
 }

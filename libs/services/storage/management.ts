@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { logger } from '@/libs/observability/logger'
 
 export interface StorageStats {
   totalFiles: number
@@ -153,7 +154,7 @@ export async function findOrphanedAssets(
       await findSystemWideOrphans(supabase, orphaned)
     }
   } catch (error) {
-    console.error('Error finding orphaned assets:', error)
+    logger.error('storage.orphan_scan_error', { message: (error as any)?.message })
   }
 
   return orphaned
@@ -247,7 +248,7 @@ async function findSystemWideOrphans(
 ): Promise<void> {
   // This would be an admin function to find system-wide orphans
   // Implementation would depend on admin access patterns
-  console.log('System-wide orphan detection not implemented')
+  logger.info('storage.orphan_detection_not_implemented')
 }
 
 export async function cleanupOrphanedAssets(

@@ -5,10 +5,11 @@ import { ok, fail } from '@/libs/api-utils/responses'
 import { CACHE_CONFIGS } from '@/libs/api-utils/cache'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { getCommunityGallery, getFeaturedCollections } from '@/libs/services/community'
+import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
-export const GET = withMethods(['GET'], async (req: NextRequest) => {
+export const GET = withMethods(['GET'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
     // Parse query parameters
     const url = new URL(req.url)
@@ -113,10 +114,11 @@ export const GET = withMethods(['GET'], async (req: NextRequest) => {
     }
 
     // Return with caching headers for public content
+    ctx?.logger?.info?.('community.list', { type: (response as any)?.type, featuredOnly, hasSearch: !!search })
     return ok(response, undefined, CACHE_CONFIGS.PUBLIC)
 
   } catch (error: any) {
-    console.error('Community gallery error:', error)
+    ctx?.logger?.error?.('community.list_error', { message: error?.message })
     return fail(500, 'INTERNAL_ERROR', 'Failed to fetch community content')
   }
-})
+}))

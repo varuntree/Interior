@@ -14,6 +14,7 @@
     "verify:grep": "grep -R 'use server' app libs || true && grep -R 'createServerClient' components || true && grep -R '@supabase/supabase-js' components || true && grep -R 'service_role' app components || true && grep -R '@/libs/repositories/' app/api || true && grep -R '@/libs/supabase/admin' app | grep -v '/api/v1/webhooks/' | grep -v '/api/v1/admin/' || true",
     "verify:phase0": "bash scripts/verify-phase0.sh",
     "verify:phase9": "bash scripts/verify-phase9.sh",
+    "verify:phase10": "bash scripts/verify-phase10.sh",
     "test": "vitest run"
   },
   "dependencies": {
