@@ -6,7 +6,9 @@ import { useGenerationSubmit } from "@/hooks/useGenerationSubmit";
 import { useGenerationStatus } from "@/hooks/useGenerationStatus";
 import runtimeConfig from "@/libs/app-config/runtime";
 import { Button } from "@/components/ui/button";
-import { Home, Layers, Palette, Sparkles, Wand2, UploadCloud, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Home, Layers, Palette, Sparkles, Wand2, UploadCloud, X, HelpCircle } from "lucide-react";
 import { ResultsGrid } from "./ResultsGrid";
 import { GenerationProgress } from "./GenerationProgress";
 import { toastSuccess, toastError } from "@/components/shared/Toast";
@@ -58,29 +60,57 @@ export function GenerationWorkspaceFinal() {
     <div className="relative">
       {/* Top: glass segmented modes with labels kept on mobile */}
       <div className="px-4 sm:px-6 py-3 border-b sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto w-fit rounded-full border bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/40 p-1 grid grid-cols-4 gap-1">
-          {["redesign","staging","compose","imagine"].map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m as any)}
-              className={[
-                "h-9 px-3 rounded-full text-sm flex items-center gap-2 transition-colors",
-                state.mode === m ? "bg-primary text-primary-foreground" : "hover:bg-accent",
-              ].join(" ")}
-              aria-pressed={state.mode === m}
-            >
-              {m === "compose" ? (
-                <Layers className="h-4 w-4" />
-              ) : m === "imagine" ? (
-                <Sparkles className="h-4 w-4" />
-              ) : m === "redesign" ? (
-                <Wand2 className="h-4 w-4" />
-              ) : (
-                <Home className="h-4 w-4" />
-              )}
+        <div className="relative">
+          <div className="mx-auto w-fit rounded-full border bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/40 p-1 grid grid-cols-4 gap-1">
+            {["redesign","staging","compose","imagine"].map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m as any)}
+                className={[
+                  "h-9 px-3 rounded-full text-sm flex items-center gap-2 transition-colors",
+                  state.mode === m ? "bg-primary text-primary-foreground" : "hover:bg-accent",
+                ].join(" ")}
+                aria-pressed={state.mode === m}
+              >
+                {m === "compose" ? (
+                  <Layers className="h-4 w-4" />
+                ) : m === "imagine" ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : m === "redesign" ? (
+                  <Wand2 className="h-4 w-4" />
+                ) : (
+                  <Home className="h-4 w-4" />
+                )}
               <span className="capitalize">{m}</span>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
+          {/* On-demand mode help: small glass help button at top-right */}
+          <div className="absolute right-0 top-1">
+            <Dialog>
+              <TooltipProvider>
+                <Tooltip>
+                  <DialogTrigger asChild>
+                    <button aria-label="Mode guide" className="inline-flex items-center justify-center h-8 w-8 rounded-full border bg-background/60 backdrop-blur hover:bg-accent">
+                      <HelpCircle className="h-4 w-4" />
+                    </button>
+                  </DialogTrigger>
+                  <TooltipContent side="left">Mode guide</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>What do these modes do?</DialogTitle>
+                </DialogHeader>
+                <ul className="grid gap-2 text-sm">
+                  <li><strong>Redesign</strong> — Keep the room’s structure; restyle furnishings, decor, and palette.</li>
+                  <li><strong>Staging</strong> — Furnish an empty or under‑furnished room for a complete look.</li>
+                  <li><strong>Compose</strong> — Keep your base room; apply style or objects from the reference image.</li>
+                  <li><strong>Imagine</strong> — Create a new interior from text only (no input photos).</li>
+                </ul>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
 
@@ -160,12 +190,28 @@ export function GenerationWorkspaceFinal() {
       <div className="fixed left-0 right-0 bottom-4 z-40">
         <div className="mx-auto max-w-3xl rounded-2xl border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md px-3 py-2">
           <div className="flex items-center gap-2">
-            {showInput1 && (
-              <Pill icon={<Home className="h-4 w-4" />} label="Base" onPick={setInput1File} />
-            )}
-            {showInput2 && (
-              <Pill icon={<Palette className="h-4 w-4" />} label="Ref" onPick={setInput2File} />
-            )}
+            <TooltipProvider>
+              {showInput1 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Pill icon={<Home className="h-4 w-4" />} label="Base room" kind="base" onPick={setInput1File} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    Upload the photo of your room. We keep the architecture (walls, windows, layout).
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {showInput2 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Pill icon={<Palette className="h-4 w-4" />} label="Reference (style/object)" kind="reference" onPick={setInput2File} />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    Add a style or object reference. We transfer palette/materials or a specific object.
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
             <input
               className="flex-1 h-10 bg-transparent outline-none text-sm"
               placeholder={state.mode === "imagine" ? "Prompt (required)…" : "Prompt (optional)…"}
@@ -189,6 +235,21 @@ export function GenerationWorkspaceFinal() {
       )}
     </div>
   );
+}
+
+function modeHelp(mode: string): string {
+  switch (mode) {
+    case "redesign":
+      return "Redesign: Keep the room’s structure; restyle furnishings, decor, and palette.";
+    case "staging":
+      return "Staging: Furnish an empty or under‑furnished room for a complete look.";
+    case "compose":
+      return "Compose: Keep your base room; apply style or objects from the reference image.";
+    case "imagine":
+      return "Imagine: Create a new interior from text only (no input photos).";
+    default:
+      return "Choose a mode to get started.";
+  }
 }
 
 function useObjectUrl(file: File | null) {
@@ -250,7 +311,7 @@ function ResultPreviewPanel({
 }) {
   const cover = results && results.length > 0 ? results[0]?.url : null;
   return (
-    <div className="rounded-md border bg-background overflow-hidden min-h-[22vh] grid place-items-center">
+    <div className="rounded-md border bg-background overflow-hidden min-h-[22vh] grid place-items-center relative">
       {cover ? (
         // Using img to avoid Next Image config concerns here
         <img src={cover} alt="Generated result" className="w-full h-full object-cover" />
@@ -258,6 +319,11 @@ function ResultPreviewPanel({
         <span className="text-sm text-muted-foreground">
           {hasResult ? "Generated result" : "Results will appear here"}
         </span>
+      )}
+      {cover && (
+        <div className="absolute bottom-0 left-0 right-0 bg-black/35 text-primary-foreground px-2 py-1 text-xs">
+          Latest result
+        </div>
       )}
     </div>
   );
@@ -269,6 +335,11 @@ function PreviewBox({ label, url, placeholder, onRemove }: { label: string; url:
       {url ? (
         <>
           <img src={url} alt={`${label} preview`} className="w-full h-full object-cover" />
+          {/* Caption bar */}
+          <div className="absolute bottom-0 left-0 right-0 bg-black/35 text-primary-foreground px-2 py-1 text-xs flex items-center justify-between">
+            <span className="font-medium">{label} preview</span>
+            {onRemove && <span className="opacity-80 hidden sm:inline">Hover/tap × to remove</span>}
+          </div>
           {onRemove && (
             <button
               type="button"
@@ -289,18 +360,22 @@ function PreviewBox({ label, url, placeholder, onRemove }: { label: string; url:
   );
 }
 
-function Pill({ icon, label, onPick }: { icon: React.ReactNode; label: string; onPick: (f: File | null) => void }) {
-  // Determine active by label and file presence could be passed; quick heuristic relies on label
-  // Caller always renders correct pills for current mode
-  const isBase = label.toLowerCase().startsWith("base") || label.toLowerCase().startsWith("room");
+function Pill({ icon, label, kind, onPick }: { icon: React.ReactNode; label: string; kind: 'base' | 'reference'; onPick: (f: File | null) => void }) {
   const { state } = useGeneration();
-  const active = isBase ? !!state.input1File : !!state.input2File;
+  const active = kind === 'base' ? !!state.input1File : !!state.input2File;
   return (
     <label className={[
-      "inline-flex items-center gap-2 rounded-full px-3 h-9 cursor-pointer text-xs backdrop-blur",
-      active ? "bg-primary/10 border border-primary/30" : "border bg-card hover:bg-accent/80",
+      "inline-flex items-center gap-2 rounded-full px-3 h-9 cursor-pointer text-xs backdrop-blur transition-colors",
+      active
+        ? "bg-primary/20 border-2 border-primary/50 ring-1 ring-primary/30 shadow-sm"
+        : "border bg-card hover:bg-accent/80",
     ].join(" ")}>
-      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-background border">{icon}</span>
+      <span className="relative inline-flex items-center justify-center h-6 w-6 rounded-full bg-background border">
+        {icon}
+        {active && (
+          <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full bg-primary border border-background" />
+        )}
+      </span>
       <span className="px-1">{label}</span>
       <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-background border">
         <UploadCloud className="h-3.5 w-3.5" />
