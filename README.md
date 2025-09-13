@@ -80,30 +80,17 @@ Create `.env.local` from `.env.local.example` and configure:
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
-- `REPLICATE_API_TOKEN` - Replicate API token for AI generation
-- `OPENAI_API_KEY` - OpenAI API key (REQUIRED for gpt-image-1 model)
+- `REPLICATE_API_TOKEN` - Replicate API token for AI generation (google/nano-banana model)
 - `STRIPE_SECRET_KEY` - Stripe secret key for billing
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
 
 **Optional:**
-- `WEBHOOK_SECRET` - Custom webhook verification secret
+- `REPLICATE_WEBHOOK_SECRET` - Replicate webhook verification secret
 - `SENTRY_DSN` - Error tracking (if using Sentry)
 
-### OpenAI API Key Requirement
+### Replicate Model
 
-The image generation uses OpenAI's GPT-Image-1 model through Replicate, which requires:
-
-- **Valid OpenAI API Key**: Get from [OpenAI API Keys](https://platform.openai.com/api-keys)
-- **Image Generation Access**: Ensure your OpenAI account has image generation enabled
-- **Sufficient Credits**: You'll be charged by OpenAI for each image generated
-- **Dual Billing**: You pay both Replicate (platform) and OpenAI (model usage)
-
-**Important**: You need BOTH `REPLICATE_API_TOKEN` AND `OPENAI_API_KEY` for generation to work.
-
-**Cost Estimate per Image**:
-- Replicate Platform Fee: ~$0.01-0.02
-- OpenAI API Usage: ~$0.02-0.04  
-- **Total**: ~$0.03-0.06 per image
+Image generation uses Replicate with the `google/nano-banana` model. Provide `REPLICATE_API_TOKEN` and, optionally, `REPLICATE_WEBHOOK_SECRET` to verify incoming webhooks.
 
 ## 🏗️ Architecture
 
@@ -172,9 +159,9 @@ npm run test       # Unit tests (prompt builder + replicate adapter)
 
 This repo follows a strict, documented architecture and coding standard to keep changes fast and reliable.
 
-- Codebase Cleaning docs (plans, audits, standards, changelog): `ai_docs/codebase_cleaning/`
-  - Start with `ai_docs/codebase_cleaning/01-guiding-principles.md`
-  - See per‑phase plans under `ai_docs/codebase_cleaning/phased plans/`
+- Codebase Cleaning docs (plans, audits, standards, changelog): `agent/CodeBaseCleaning/`
+  - Start with `agent/CodeBaseCleaning/01-principles.md`
+  - See per‑phase plans under `agent/CodeBaseCleaning/02-plan.md` and the phase files
 - Golden path: Route → Service → Repository → DB; no Server Actions; no direct DB/storage in components.
 - API responses: always `{ success, data? | error? }` via `libs/api-utils/responses`.
 
@@ -214,28 +201,8 @@ This means the webhook URL is not properly configured:
 2. **Verify webhook endpoint:**
    It should resolve under your public base URL, for example: `https://your-domain.com/api/v1/webhooks/replicate`
 
-### Generation Fails with "openai_api_key is required"
-This means your OpenAI API key is not configured:
-
-1. **Get OpenAI API Key:**
-   - Visit [OpenAI API Keys](https://platform.openai.com/api-keys)
-   - Create a new secret key
-   - Ensure your account has image generation access
-
-2. **Configure in environment:**
-   ```bash
-   # Add to .env.local
-   OPENAI_API_KEY=sk-your-actual-api-key-here
-   
-   # Restart development server
-   npm run dev
-   ```
-
-3. **Verify both keys are set:**
-   ```bash
-   # Check both required keys are present
-   grep -E "(REPLICATE_API_TOKEN|OPENAI_API_KEY)" .env.local
-   ```
+### Generation Fails with "Not a valid HTTPS URL"
+Double-check `PUBLIC_BASE_URL` and `NEXT_PUBLIC_APP_URL` are set to a valid public HTTPS URL, or expose your dev server using a tunnel and set `PUBLIC_BASE_URL` accordingly.
 
 ### Common Issues
 

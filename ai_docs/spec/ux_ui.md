@@ -146,7 +146,7 @@ If user clicks Generate while in‑flight → toast: “Please wait until this g
 
 If no credits → disabled button + inline hint with Upgrade CTA (link to checkout).
 
-If Replicate returns fewer outputs than requested → show what we have; info tooltip “2/3 variants returned”.
+If upstream returns multiple outputs, show all available; when fewer outputs are returned than expected, show what we have and optionally display an info tooltip.
 
 5) My Renders (/dashboard/renders)
 Filters: by Mode, Room Type, Style; search by free text (client‑side filter on loaded page or server pagination later).
@@ -175,7 +175,7 @@ Opening a collection → grid of items (renders).
 Item kebab: Remove from collection, Open render.
 
 7) Community (/dashboard/community)
-Curated sections (from community_collections), each a horizontal carousel or masonry grid.
+Curated sections (from community_images), each a horizontal carousel or masonry grid.
 
 Items can link to:
 
@@ -190,7 +190,7 @@ Profile (email readonly from Supabase).
 
 Plan (name, price) with button Manage billing (Stripe portal route).
 
-Support mailto or Crisp (if configured in config.ts).
+Support contact via mailto (or an external tool if configured separately).
 
 9) Component inventory (re‑use shadcn/ui)
 Buttons (components/ui/button.tsx) — use variants: default, secondary, outline, ghost.
@@ -235,7 +235,7 @@ Validation: “Please add a room photo to continue.”
 12) Performance & media
 Render images: public bucket URLs; display max width container w/ responsive sizes.
 
-Prefer .webp outputs; lazy‑load offscreen images.
+Prefer .jpg outputs; lazy‑load offscreen images.
 
 No client‑side image editing tools in MVP.
 

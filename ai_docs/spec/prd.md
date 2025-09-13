@@ -142,7 +142,7 @@ renders & render_variants: link outputs to a job; persist storage paths + metada
 
 collections & collection_items (with default My Favorites)
 
-community_collections & community_items (admin)
+community_images (admin)
 
 usage_ledger: simple debits for generations; monthly cap check derived
 
@@ -153,13 +153,7 @@ Room Types (AU‑oriented starter set; configurable): Living room, Bedroom, Kitc
 
 Styles (starter set; configurable): Coastal AU, Contemporary AU, Japandi, Scandi AU, Minimal AU, Mid‑Century AU, Industrial AU
 
-Aspect ratios: 1:1 (default), 3:2, 2:3
-
-Variants: default 2; UI cap 3
-
-Quality: auto default
-
-Background control: hidden in MVP (off)
+Note on advanced settings: Aspect ratio, quality, and multi‑variant knobs are not used by the current provider (google/nano‑banana) and are hidden in MVP. They can be revisited in future providers.
 
 7) Plans & limits (simple)
 Central config lists plans and monthly generation caps (values TBD)

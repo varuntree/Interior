@@ -5,18 +5,18 @@ Purpose
 
 Environments & Required Variables
 - Public (client‑exposed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- Server-only: `REPLICATE_API_TOKEN` (required), `SUPABASE_SERVICE_ROLE_KEY` (webhooks only), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (billing), `PUBLIC_BASE_URL` (optional; if not set, base URL is inferred from request when creating webhooks). `OPENAI_API_KEY` is optional and only needed if using an openai/* model.
+- Server-only: `REPLICATE_API_TOKEN` (required), `REPLICATE_WEBHOOK_SECRET` (optional in dev), `SUPABASE_SERVICE_ROLE_KEY` (webhooks only), `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (billing), `PUBLIC_BASE_URL` (optional; if not set, base URL is inferred from request when creating webhooks).
 - Recommended: `NEXT_PUBLIC_APP_URL` or `PUBLIC_BASE_URL` set to your HTTPS origin in prod (used to build absolute webhook URL).
 
 Local Development (Quickstart)
-- Copy `.env.example` → `.env.local`, then fill the variables above. Ensure `REPLICATE_API_TOKEN` is set, and Supabase URL/Anon are from your project. `OPENAI_API_KEY` is optional and only needed if using an openai/* model.
+- Copy `.env.example` → `.env.local`, then fill the variables above. Ensure `REPLICATE_API_TOKEN` is set, and Supabase URL/Anon are from your project.
 - Install and run:
   - `npm install`
   - `npm run dev`
 - Open http://localhost:3000 and sign in (Supabase auth). Dashboard routes are gated by the layout.
 
 Database & Storage Setup (Supabase)
-- In the Supabase SQL editor, apply migrations in order (phase1 → phase2 → later phases). Tables include profiles, generation_jobs, renders (+variants), collections (+items), community, usage_ledger. RLS is enabled by migrations.
+- In the Supabase SQL editor, apply migrations in order: `migrations/0001_baseline.sql` then `migrations/0002_webhook_events.sql`. Tables include profiles, generation_jobs, renders (+variants), collections (+items), community_images, usage_ledger, logs_analytics, and webhook_events. RLS is enabled by migrations.
 - Buckets created by migrations: `public` (public read), `private` (owner‑scoped). No extra bucket creation needed.
 
 Replicate Webhook (Dev)
@@ -49,5 +49,5 @@ Common Pitfalls
 Operations Notes
 - Health endpoints: `GET /api/v1/health` (app heartbeat), `GET /api/v1/status` (DB connectivity).
 - Storage cleanup is optional in MVP; deletes remove DB rows, not necessarily files. A cleanup helper exists and can be wired later.
-- Prefer `.webp` outputs, lazy‑load images in UI, and avoid caching API responses unless explicitly public.
+- Prefer `.jpg` outputs, lazy‑load images in UI, and avoid caching API responses unless explicitly public.
 - Logs & Correlation: API routes emit structured JSON logs and include `x-request-id` in responses. Use the `requestId` to correlate a user request across start/end/domain events when inspecting logs in your hosting platform.

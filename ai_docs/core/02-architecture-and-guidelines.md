@@ -4,7 +4,7 @@ Purpose
 - Define how the system is wired, the boundaries each layer must respect, and the minimal conventions that keep the codebase simple and maintainable. Read this before adding endpoints or services. Code lives in the repo; this document states contracts and guardrails, not full code.
 
 System Topology (Layering)
-- UI (Next.js App Router) → API Route Handlers (`app/api/v1/**`) → Services (`libs/services/**`) → Repositories (`libs/repositories/**`) → Database/Storage (Supabase). External integrations: Replicate (OpenAI gpt‑image‑1) and Stripe.
+- UI (Next.js App Router) → API Route Handlers (`app/api/v1/**`) → Services (`libs/services/**`) → Repositories (`libs/repositories/**`) → Database/Storage (Supabase). External integrations: Replicate (google/nano‑banana) and Stripe.
 - Strict boundaries: no Server Actions; no DB calls from components; routes do input validation + orchestration only; business logic stays in services; repositories are thin typed DB helpers using the Supabase client passed by caller.
 
 Clients & Secrets (Usage Model)
@@ -13,10 +13,10 @@ Clients & Secrets (Usage Model)
 - Admin (service‑role): service role is server‑only. Primary use is webhooks (Stripe/Replicate). A temporary exception is allowed for admin-only endpoints under `/app/api/v1/admin/**`, strictly gated by an allowlist in `ADMIN_EMAILS` and never exposed to the client. Remove this exception when the admin UI is retired.
 - Middleware: `middleware.ts` calls `libs/supabase/middleware.updateSession` to refresh session cookies on navigation.
 
-Configuration (Single Sources of Truth)
-- Product/runtime knobs live in `libs/app-config/runtime.ts`: presets (Room Types, Styles), defaults (mode, aspect ratio, quality, variants), enforcement limits (max variants, accepted mime types, max upload size), plan caps keyed by Stripe priceId, and Replicate settings (webhook path, timeouts, polling). The UI renders from this file; services enforce from it; avoid hardcoding copies in components.
+- Configuration (Single Sources of Truth)
+- Product/runtime knobs live in `libs/app-config/runtime.ts`: presets (Room Types, Styles), defaults (mode), enforcement limits (accepted mime types, max upload size), plan caps keyed by Stripe priceId, and Replicate settings (webhook path, timeouts, polling). The UI renders from this file; services enforce from it; avoid hardcoding copies in components.
 - Brand/marketing and plan metadata live in `config.ts` (app name, domain, Stripe plan list used by marketing pages). Do not duplicate runtime product logic here.
-- Environment variables are validated in `libs/env/index.ts` (public vs server‑only). Required keys include Supabase URL/Anon key (public), and server keys like `OPENAI_API_KEY`, `REPLICATE_API_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` (optional except for webhooks), `PUBLIC_BASE_URL` (optional for webhook URL construction), and `ADMIN_EMAILS` (comma-separated allowlist for temporary admin endpoints).
+- Environment variables are validated in `libs/env/index.ts` (public vs server‑only). Required keys include Supabase URL/Anon key (public), and server keys like `REPLICATE_API_TOKEN`, `REPLICATE_WEBHOOK_SECRET` (optional in dev), `SUPABASE_SERVICE_ROLE_KEY` (webhooks), `PUBLIC_BASE_URL` (optional for webhook URL construction), and `ADMIN_EMAILS` (comma-separated allowlist for temporary admin endpoints).
 
 API Layer (Route Handlers)
 - Location: `app/api/v1/<domain>/<action>/route.ts`. Responsibilities: enforce method (`withMethods`), validate input (Zod), create a standard server client (non‑admin), call a service, and return normalized JSON via helpers.
@@ -33,8 +33,8 @@ Repositories (DB Access)
 - Location: `libs/repositories/**`. Rule: small, typed functions that accept a Supabase client and return typed rows. No HTTP or Next imports; no business logic. Respect RLS by design: owner‑scoped reads/writes for user tables; public read for community tables.
 - Typical files: `generation_jobs.ts`, `renders.ts` (+ `render_variants`), `collections.ts` (+ items), `usage.ts`, `profiles.ts`.
 
-Storage & Paths
-- Buckets: `public` (public read, auth write) and `private` (owner‑scoped via RLS). Inputs (user uploads) go to `private/${userId}/inputs/<uuid>.<ext>`; outputs to `public/renders/${renderId}/<idx>.webp`; thumbnails optional at `.../<idx>_thumb.webp`.
+- Storage & Paths
+- Buckets: `public` (public read, auth write) and `private` (owner‑scoped via RLS). Inputs (user uploads) go to `private/${userId}/inputs/<uuid>.<ext>`; outputs to `public/renders/${renderId}/<idx>.jpg`; thumbnails optional at `.../<idx>_thumb.webp`.
 - Signed URLs: create short‑lived signed URLs for input images passed to Replicate; public result URLs are served directly. Never expose service‑role keys to generate signed URLs in client code.
 
 Webhooks (Async Backbone)
@@ -48,14 +48,14 @@ Auth & Guards
 Performance & Reliability Principles
 - Submissions return quickly (accepted/202) and rely on webhooks to complete. Enforce one in‑flight job per user to simplify UX and avoid surprises. Apply exponential backoff on transient upstream errors in clients; services may retry creation if safe.
 - Treat jobs older than a hard cap (from runtime `timeouts.overallMs`) as stuck; flip to `failed` while still allowing a late webhook success to finalize idempotently.
-- Prefer `.webp` outputs; lazy‑load offscreen images; keep API responses uncached (`no-store`) unless explicitly beneficial.
+- Prefer `.jpg` outputs; lazy‑load offscreen images; keep API responses uncached (`no-store`) unless explicitly beneficial.
 
 Security Checklist (Essentials Only)
 - Service‑role keys are server‑only and limited to webhooks; never import them in general routes or UI. RLS is enabled on all user‑owned tables; public read is explicit for community tables. Inputs live in the private bucket; outputs in public.
 - Validate and sanitize all inputs with Zod; normalize errors; never echo raw upstream errors to clients. Keep secrets in env and validated by `libs/env`.
 
-Observability (Simple & Standard)
-- All v1 routes are wrapped with a small request wrapper that:
+- Observability (Simple & Standard)
+- All v1 routes are wrapped with `withRequestContext` which:
   - generates a `requestId`, adds `x-request-id` to responses,
   - logs `http.request.start` and `http.request.end` with `status` and `durationMs`.
 - Logs are single‑line JSON via `logger.info|warn|error(event, fields)`.

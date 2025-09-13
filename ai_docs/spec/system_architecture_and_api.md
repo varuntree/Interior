@@ -1,5 +1,5 @@
 0) Purpose
-This document specifies how the app is wired (topology, auth, storage, config) and defines the API contracts (including the Replicate webhook). It aligns to the repo’s handbook & playbooks and keeps the MVP code simple and incremental.
+This document specifies how the app is wired (topology, auth, storage, config) and defines the API contracts (including the Replicate webhook). It aligns to the repo’s handbook & playbooks and keeps the MVP code simple and incremental. Provider is Replicate (google/nano-banana).
 
 1) Topology & layering
 bash
@@ -12,7 +12,7 @@ UI (Next.js App Router, Tailwind, shadcn)
 /migrations/** (SQL + RLS)
 /libs/storage/** (uploads + signed URLs)
 /libs/supabase/** (client wrappers for SSR/middleware)
-External: Replicate (Google nano-banana), Stripe, Supabase Storage
+External: Replicate (google/nano-banana), Stripe, Supabase Storage
 Private pages: (app)/dashboard/* guarded in app/(app)/dashboard/layout.tsx by calling /api/v1/auth/me; unauth → redirect to /signin.
 
 No Server Actions. No direct DB from components.
@@ -107,55 +107,36 @@ Copy
 { "success": true, "data": { "id": "uuid", "email": "user@example.com" } }
 Errors: 401 UNAUTHORIZED
 
-6.2 Generation (Phase 0: simple async via Replicate)
+6.2 Generation (async via Replicate)
 POST /api/v1/generations
 Create a generation job and immediately ask Replicate to start. Webhook will finalize.
 
 Auth: required
 
-Content-Type: multipart/form-data or application/json
+Content-Type: multipart/form-data (preferred) or application/json
 
 If multipart/form-data, fields:
 
-mode: redesign | staging | compose | imagine (required)
+- mode: redesign | staging | compose | imagine (required)
+- prompt: string (required for imagine; optional otherwise)
+- roomType: string (optional)
+- style: string (optional)
+- idempotencyKey: string UUID (optional but recommended)
+- input1: file (required for redesign/staging/compose)
+- input2: file (required for compose)
 
-prompt: string (required for imagine; optional otherwise)
-
-roomType: string (optional)
-
-style: string (optional)
-
-aspectRatio: "1:1" | "3:2" | "2:3" (optional; default from config)
-
-quality: "auto" | "low" | "medium" | "high" (optional; default auto)
-
-variants: integer 1–3 (optional; default 2)
-
-idempotencyKey: string UUID (optional but recommended)
-
-input1: file (required for redesign/staging/compose)
-
-input2: file (required for compose)
-
-If application/json, the same fields but input1Url/input2Url must be provided (signed URLs). Server will not accept raw base64 in JSON.
+If application/json, the same scalar fields are accepted. For MVP, JSON with file URLs is not supported — use multipart for uploads. The server does not accept base64 in JSON.
 
 Server behavior:
 
-Credits check (plans in config; if 0 → LIMIT_EXCEEDED)
-
-In‑flight check: if user already has a job in starting|processing, return 409 TOO_MANY_INFLIGHT
-
-If files provided, upload to Supabase Storage (private) and generate short‑lived signed URLs for Replicate
-
-Build prompt template per mode (see §8)
-
-Create Replicate prediction with webhook URL to /api/v1/webhooks/replicate
-
-Persist generation_jobs row with status: "starting" (or "queued" if returned), store prediction_id
-
-Debit one generation from usage_ledger (idempotent on idempotencyKey)
-
-Return job summary
+- Credits check (plans in config; if 0 → LIMIT_EXCEEDED)
+- In‑flight check: if user already has a job in starting|processing, return 409 TOO_MANY_INFLIGHT
+- On file uploads, store to Supabase Storage (private) and generate short‑lived signed URLs for Replicate
+- Build prompt template per mode (see §8)
+- Create Replicate prediction with webhook URL to /api/v1/webhooks/replicate
+- Persist generation_jobs row with status: "starting", store prediction_id
+- Debit one generation from usage_ledger (idempotent on idempotencyKey)
+- Return job summary
 
 Response 202:
 
@@ -270,9 +251,8 @@ Removes from collection
 
 6.5 Community
 Public feed (images)
-- GET /api/v1/community — returns public gallery (synthesized collection of published images)
-- GET /api/v1/community/collections — returns one synthesized collection (Inspiration)
-- GET /api/v1/community/collections/community/items — returns published images (id, image_url, tags?, title?)
+- GET /api/v1/community — returns public gallery (featured|gallery|search) with items per collection; public caching enabled
+- GET /api/v1/community/collections — returns a synthesized collection summary (e.g., “Inspiration”) for marketing usage
 
 Admin (temporary, allowlist-based)
 - POST /api/v1/admin/community/images/upload (multipart/form-data: files[])
@@ -308,7 +288,7 @@ Stripe webhook remains under /api/v1/webhooks/stripe (already bridged at /api/we
 POST /api/v1/webhooks/replicate
 Auth: HMAC verification with a shared secret (env). Reject if invalid.
 
-Payload (shape varies slightly by model; store minimally required fields):
+Payload (shape varies slightly by model; store minimally required fields; google/nano-banana often returns a single URL string which we normalize to an array):
 
 json
 Copy
@@ -321,25 +301,16 @@ Copy
 }
 Behavior:
 
-Look up generation_jobs by prediction_id
-
-If succeeded:
-
-Download each output asset and write to Supabase Storage /public
-
-Generate thumbnails (server‑side transform or store as returned if already webp)
-
-Create renders + render_variants linked to job, set cover variant
-
-Set job status = "succeeded", completed_at = now()
-
-If failed:
-
-Set status = "failed", store normalized error message
-
-Return 200 { success: true }
-
-Idempotency: webhook handler must be safe to repeat.
+- Look up generation_jobs by prediction_id
+- If succeeded:
+  - Normalize output to an array of URLs
+  - Download each output asset and write to Supabase Storage public bucket as JPG: public/renders/<renderId>/<idx>.jpg
+  - (Thumbnails optional; omitted in MVP)
+  - Create renders + render_variants linked to job; set cover variant
+  - Set job status = "succeeded", completed_at = now()
+- If failed:
+  - Set status = "failed", store normalized error message
+- Return 200 { success: true } (handler is idempotent)
 
 7.2 Stripe idempotency (event store)
 Stripe delivers events at-least-once. The app persists a record per event in `public.webhook_events` with a unique `(provider, event_id)` constraint. The webhook handler inserts the event before processing and early-exits on duplicates. This guarantees replay-safety across retries or multiple instances.
@@ -447,9 +418,6 @@ mode=redesign
 prompt=airy, light timber accents
 roomType=Living room
 style=Coastal AU
-aspectRatio=1:1
-quality=auto
-variants=2
 idempotencyKey=2d8c7f3d-51f5-4e15-8e32-b8d0f7ac2af0
 input1=<file>
 Success 202:
@@ -462,13 +430,7 @@ Copy
     "id": "3b7d8c4a-...-1d2",
     "status": "starting",
     "predictionId": "rpctn_abc123",
-    "settings": {
-      "roomType": "Living room",
-      "style": "Coastal AU",
-      "aspectRatio": "1:1",
-      "quality": "auto",
-      "variants": 2
-    }
+    "settings": { "roomType": "Living room", "style": "Coastal AU" }
   }
 }
 Error 409:
@@ -487,7 +449,7 @@ Copy
   "status": "succeeded",
   "output": ["https://replicate/...0.png", "https://replicate/...1.png"]
 }
-Server downloads → public/renders/<renderId>/0.webp, 1.webp; writes renders & render_variants.
+Server downloads → public/renders/<renderId>/0.jpg, 1.jpg; writes renders & render_variants.
 
 14) Minimal operational checklist
 npm run build passes

@@ -51,11 +51,11 @@ Create a Supabase project and copy URL/keys into .env.local.
 4.2 Apply migrations
 Use the Supabase SQL editor to run, in order:
 
-# Baseline (fresh environments only)
+# Baseline schema
 migrations/0001_baseline.sql
 
-# Forward-only changes (apply on dev/prod as needed)
-migrations/0002_webhook_events.sql  -- persistent de-dup store for webhook events
+# Event store for webhook idempotency
+migrations/0002_webhook_events.sql
 
 These are idempotent where possible. Ensure RLS is enabled.
 
@@ -92,13 +92,13 @@ Our legacy path /api/webhook/stripe re‑exports from /api/v1/webhooks/stripe/ro
 Set REPLICATE_API_TOKEN in .env.local.
 
 7.2 Webhook URL
-Runtime config defaults to /api/v1/replicate/webhook.
+Runtime config uses /api/v1/webhooks/replicate.
 
 In dev, Replicate must reach your machine:
 
 Use ngrok http 3000 (or Vercel preview).
 
-Put the public URL + /api/v1/replicate/webhook into the webhook param when you create a prediction.
+Put the public URL + /api/v1/webhooks/replicate into the webhook param when you create a prediction.
 
 The service should build the absolute URL from request.headers.origin or an env override (e.g., PUBLIC_BASE_URL) if needed.
 

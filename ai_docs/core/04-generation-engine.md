@@ -1,7 +1,7 @@
 # Generation Engine — Interior Design Generator (Core)
 
 Purpose
-- Describe how prompts are composed, how inputs map to the external model (Replicate → OpenAI gpt‑image‑1), and how jobs move from submit to results. Keep model specifics in adapters so we can swap/upgrade without rippling changes. This doc is contract‑first with essential snippets only.
+- Describe how prompts are composed, how inputs map to the external model (Replicate → google/nano‑banana), and how jobs move from submit to results. Keep model specifics in adapters so we can swap/upgrade without rippling changes. This doc is contract‑first with essential snippets only.
 
 Internal Types & Settings (Mental Model)
 - A submission carries: `mode` (redesign|staging|compose|imagine), optional `prompt`, `roomType`, `style`, and optional image inputs depending on mode.
@@ -16,12 +16,12 @@ Prompt System (Mode Templates + AU Guardrails)
   - Imagine: text‑only concept; requires user prompt. Example: “Generate a photoreal interior concept for a Home Office in Minimal AU; balanced composition, realistic materials, natural light. [User prompt].”
 - Style descriptions are kept brief and expandable; current seeds include coastal_au, contemporary_au, japandi, scandi_au, minimal_au, midcentury_au, industrial_au, hamptons_au.
 
-Adapter Mapping (Internal → Replicate/OpenAI)
-- Single adapter shapes model inputs so services never depend on vendor fields. Current mappings (nano‑banana):
+Adapter Mapping (Internal → Replicate)
+- Single adapter shapes model inputs so services never depend on vendor fields. Current mappings (google/nano‑banana):
   - `prompt` → composed prompt string.
   - `image_input` → signed URLs array for image inputs (0–2 based on mode).
-  - `output_format` → default 'jpg' (we may omit to use default).
-- Keep all model‑specific field names and defaults in `libs/services/external/replicateAdapter.ts`. Services pass internal types only.
+  - `output_format` → 'jpg' for efficient delivery.
+- Keep model‑specific field names only in `libs/services/external/googleNanoBananaAdapter.ts`. Services pass internal types only.
 
 Submission Flow (Service Contract)
 - Validate mode‑specific inputs and prompt (Imagine requires prompt). Run lightweight moderation on prompt and required image presence per mode.

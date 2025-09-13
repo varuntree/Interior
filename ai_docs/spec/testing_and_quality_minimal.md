@@ -11,6 +11,7 @@ npm run lint           // eslint .
 npm run build          // next build
 npm run verify:grep    // forbidden pattern scan (see below)
 npm run verify:phase10 // observability guards (no console.* in server, routes wrapped)
+npm run verify:phase9  // build warnings + client import hygiene
 1.1 Grep checks (from our Handbook)
 Run these; all must return 0 matches:
 

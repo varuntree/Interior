@@ -47,7 +47,7 @@ export interface Plans {
 export interface ReplicateConfig {
   model: 'google/nano-banana'
   webhookEnabled: boolean        // MVP: true (cheap, reliable)
-  webhookRelativePath: '/api/v1/replicate/webhook'
+  webhookRelativePath: '/api/v1/webhooks/replicate'
   pollingIntervalMs: number      // if we also poll as a fallback (e.g., 2000)
   timeouts: {
     submitMs: number             // request timeout
@@ -106,7 +106,7 @@ const runtimeConfig: RuntimeConfig = {
   replicate: {
     model: 'google/nano-banana',
     webhookEnabled: true,
-    webhookRelativePath: '/api/v1/replicate/webhook',
+    webhookRelativePath: '/api/v1/webhooks/replicate',
     pollingIntervalMs: 2000,
     timeouts: { submitMs: 20000, overallMs: 180000 }
   }
@@ -121,20 +121,17 @@ Mode selector items derive from defaults.mode + static list in code.
 
 Room/Style dropdowns are built from runtimeConfig.presets.
 
-Settings (Aspect ratio, Quality, Variants) use defaults and cap by limits.maxVariantsPerRequest.
+Advanced settings (aspect ratio, quality, variants) are hidden in MVP for the current provider.
 
 File input accepts limits.acceptedMimeTypes, enforces limits.maxUploadsMB.
 
 3.2 Prompt/adapter layer
 Prompt builder composes Mode + Room + Style + user prompt, and enforces structural hints (keep architecture, AU vocabulary).
 
-Replicate adapter maps:
-
-aspectRatio → width/height
-
-quality tiers to allowed size/steps (implementation detail)
-
-variants → num_outputs (capped by limits.maxVariantsPerRequest)
+Replicate adapter maps current provider inputs:
+- prompt → prompt
+- input images → image_input (0–2)
+- output_format → 'jpg'
 
 3.3 API service (enforcement)
 On POST /api/v1/generations:
@@ -147,7 +144,7 @@ Plan check: find user’s price_id from profiles; look up plan in runtimeConfig.
 
 Quota check: count user renders for current month; if >= monthlyGenerations, return 402/429 with friendly message (“You’ve reached your monthly limit for the {Plan} plan.”).
 
-Limits: clamp variants to maxVariantsPerRequest.
+Limits: enforce accepted image types and max upload size.
 
 Submit to Replicate (webhook URL = origin + replicate.webhookRelativePath).
 
@@ -188,7 +185,7 @@ No other code paths should hardcode presets/limits—always import from runtime 
 8) Acceptance checklist (config)
 ✅ UI dropdowns and defaults match runtimeConfig.
 
-✅ API respects maxVariantsPerRequest.
+✅ API enforces accepted MIME types and max upload size.
 
 ✅ Plan limits enforced per priceId.
 

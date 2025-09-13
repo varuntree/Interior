@@ -27,7 +27,7 @@ Community is admin-managed; users can only read. Admin uses a temporary allowlis
 Buckets (already provisioned via 004_storage_buckets.sql):
 
 public — public read, authenticated write.
-
+ 
 private — owner-only via RLS.
 
 Paths
@@ -44,12 +44,12 @@ public/community/<uuid>.<ext>
 MVP: store originals in public at target size. Thumbnails are optional; if omitted, UI requests the original with CSS‑scaled previews. (We can add server-side thumb generation later without contract changes.)
 
 3) Migrations (files‑only; idempotent)
-Place under migrations/phase2/ to keep phase1 intact. Do not auto‑apply. Each file is small and self‑contained.
+Migrations are consolidated and idempotent:
 
-3.1 migrations/phase2/005_generation_jobs.sql
+3.1 migrations/0001_baseline.sql
 sql
 Copy
--- generation_jobs: one record per submission to Replicate
+-- Core schema: profiles, generation_jobs, renders, render_variants, collections, collection_items, usage_ledger, logs_analytics, community_images; RLS policies; storage buckets and policies; default favorites trigger.
 create table if not exists public.generation_jobs (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null,                         -- auth.users.id
@@ -102,7 +102,7 @@ drop index if exists uniq_jobs_owner_idem;
 create unique index uniq_jobs_owner_idem
 on public.generation_jobs (owner_id, idempotency_key)
 where idempotency_key is not null;
-3.2 migrations/phase2/006_renders.sql
+3.2 Renders and Variants (included in 0001_baseline.sql)
 sql
 Copy
 -- renders: one per job (grouping of variants)
@@ -166,7 +166,7 @@ create policy "variants_owner_delete"
 -- Indexes
 create index if not exists idx_renders_owner_created on public.renders (owner_id, created_at desc);
 create index if not exists idx_variants_render_idx on public.render_variants (render_id, idx);
-3.3 migrations/phase2/007_collections.sql
+3.3 Collections & Items (included in 0001_baseline.sql)
 sql
 Copy
 -- collections: user-defined groups; includes default "My Favorites"
@@ -242,7 +242,7 @@ create policy "coll_items_owner_delete"
 
 -- Index
 create index if not exists idx_coll_items_coll on public.collection_items (collection_id);
-3.4 Community images (current)
+3.4 Community images (included in 0001_baseline.sql)
 sql
 Copy
 -- Flat public gallery with allowlist-based admin writes
@@ -272,7 +272,7 @@ create index if not exists idx_comm_images_pub_order
   on public.community_images (is_published, order_index asc, created_at desc);
 create index if not exists idx_comm_images_tags_gin
   on public.community_images using gin (tags);
-3.5 migrations/phase2/009_usage_ledger.sql
+3.5 Usage ledger (included in 0001_baseline.sql)
 sql
 Copy
 -- usage_ledger: track generation debits/credits
@@ -299,26 +299,7 @@ create policy "usage_owner_insert"
   with check (auth.uid() = owner_id);
 
 create index if not exists idx_usage_owner_created on public.usage_ledger (owner_id, created_at desc);
-3.6 migrations/phase2/010_default_favorites_trigger.sql
-sql
-Copy
--- Create "My Favorites" collection automatically on profile creation
-
-create or replace function public.create_default_favorites()
-returns trigger as $$
-begin
-  insert into public.collections (owner_id, name, is_default_favorites)
-  values (new.id, 'My Favorites', true)
-  on conflict do nothing;
-  return new;
-end;
-$$ language plpgsql security definer;
-
--- Add trigger after profiles row is inserted (profiles.id == auth.users.id)
-drop trigger if exists on_profile_created_create_fav on public.profiles;
-create trigger on_profile_created_create_fav
-after insert on public.profiles
-for each row execute function public.create_default_favorites();
+3.6 Default favorites trigger (included in 0001_baseline.sql)
 4) Repositories (shape & contracts)
 Implement in libs/repositories/*.ts. Pure functions, accept SupabaseClient, return typed rows.
 
@@ -392,13 +373,13 @@ Users can delete renders; cascade removes variants (job rows remain for audit).
 Community content is curated; removal detaches only links (renders remain).
 
 7) Config touchpoints
-config.ts: plans metadata, presets (room types, styles), defaults (aspect ratio, quality, variants), default collection name "My Favorites".
+config.ts: plans metadata, presets (room types, styles), default collection name "My Favorites".
 
 Ensure types/config.ts requirement is met: set colors.theme (e.g., 'light') in config.ts.
 
 8) Operational checks (schema)
 Apply migrations in order; verify RLS policies exist.
 
-Confirm public & private buckets are present (already created in 004_storage_buckets.sql).
+Confirm public & private buckets are present (created in 0001_baseline.sql).
 
 Run a manual flow: create job → webhook success → renders & variants exist; paths point to public bucket; collection default exists.

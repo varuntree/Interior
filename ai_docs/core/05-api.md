@@ -17,10 +17,10 @@ Auth
 Generations
 - POST `/api/v1/generations` — Submit a generation job. Auth required.
   - Content types:
-    - `multipart/form-data` (recommended): fields `mode` ('redesign'|'staging'|'compose'|'imagine'), optional `prompt`, `roomType`, `style`, optional `aspectRatio` ('1:1'|'3:2'|'2:3'), optional `quality` ('auto'|'low'|'medium'|'high'), optional `variants` (1..3), optional `idempotencyKey` (uuid); files `input1` (required for redesign/staging/compose), `input2` (required for compose).
-    - `application/json`: same fields but image URLs not yet supported (use multipart for uploads).
+    - `multipart/form-data` (recommended): fields `mode` ('redesign'|'staging'|'compose'|'imagine'), optional `prompt`, `roomType`, `style`, optional `idempotencyKey` (uuid); files `input1` (required for redesign/staging/compose), `input2` (required for compose).
+    - `application/json`: same scalar fields accepted; image URLs are not supported for MVP (use multipart for uploads).
   - Response 202: `{ success: true, data: { id, predictionId, status, settings } }`
-  - Errors: 400 VALIDATION_ERROR (missing inputs, bad fields), 401 UNAUTHORIZED, 402 LIMIT_EXCEEDED, 409 TOO_MANY_INFLIGHT, 500 CONFIGURATION_ERROR (base URL or OPENAI_API_KEY), 500 INTERNAL_ERROR.
+  - Errors: 400 VALIDATION_ERROR (missing inputs, bad fields), 401 UNAUTHORIZED, 402 LIMIT_EXCEEDED, 409 TOO_MANY_INFLIGHT, 500 CONFIGURATION_ERROR (base URL), 500 INTERNAL_ERROR.
 - GET `/api/v1/generations/:id` — Fetch job status. Auth required.
   - Response: when in progress `{ id, status, createdAt, settings }`; when succeeded `{ ..., completedAt, variants: [{ index, url, thumbUrl? }] }`
   - Polling: non‑terminal, stale jobs may be refreshed once from Replicate.
@@ -61,6 +61,9 @@ Community (Public Read)
 - GET `/api/v1/community?featured=&itemsPerCollection=&search=` — Public gallery.
   - Modes: `featured=true` returns featured collections; otherwise returns all collections; `search` returns matching items across collections.
   - Response: one of `{ type: 'featured'|'gallery'|'search', collections?: [...], items?: [...] }` where items include `imageUrl`, optional linked `render`, and `applySettings` (prefill for Create).
+
+Analytics (Public/Non-blocking)
+- POST `/api/v1/analytics/event` — Logs lightweight analytics events. Accepts `{ type: 'page'|'generation_submit'|'generation_done'|'error', payload? }`. Always returns OK and never blocks UX.
 
 Usage
 - GET `/api/v1/usage?includeHistory=&historyLimit=` — Usage summary and plan info. Auth required.

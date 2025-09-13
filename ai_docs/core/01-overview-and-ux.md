@@ -61,9 +61,10 @@ Essential UX Rules (Enforced by UI and API)
 - Saving to Favorites is one‑click and optimistic; Collections operations are fast, with clear feedback.
 
 External Services (Mental Model)
-- Supabase: auth, Postgres (with RLS), and Storage. Storage uses private bucket for inputs and public for outputs/thumbs.
-- Replicate: wraps OpenAI gpt‑image‑1; we send composed prompts and (signed) input image URLs; results arrive via webhook.
+- Supabase: auth, Postgres (with RLS), and Storage. Storage uses private bucket for inputs and public for outputs.
+- Replicate: google/nano‑banana; we send composed prompts and (signed) input image URLs; results arrive via webhook and are stored as JPGs in public storage.
 - Stripe: subscriptions and portal; plan caps are mapped from Stripe priceIds into runtime config for monthly generation limits.
 
 Outcomes
 - When following this document, contributors can navigate the app, understand where to add or modify UX flows, and maintain consistency with the product intent. For data shapes, schemas, adapter mapping, or endpoint details, consult the Architecture, Data & Storage, Engine, and API docs in this core set.
+- Note: advanced generation settings (aspect ratio, quality, variants) are not used by the current provider and are hidden in the MVP UI.

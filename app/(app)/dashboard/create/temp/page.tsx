@@ -5,31 +5,23 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
-import TempV10 from "./temp10";
-import TempV10A from "./temp10a";
-import TempV10B from "./temp10b";
-import TempV10C from "./temp10c";
-import TempV10D from "./temp10d";
-import TempV10E from "./temp10e";
-import TempV10F from "./temp10f";
+import TempV10I from "./temp10i";
+import TempV10N from "./temp10n";
+import TempV10L from "./temp10l";
 
 type VComp = React.ComponentType<{}>;
 
 const registry: { id: string; label: string; Comp: VComp }[] = [
-  { id: "10", label: "Chat‑Like Composer (baseline)", Comp: TempV10 },
-  { id: "10a", label: "Elevated Composer + Icon Uploaders", Comp: TempV10A },
-  { id: "10b", label: "Floating Composer Dock", Comp: TempV10B },
-  { id: "10c", label: "Compose Helper Cards", Comp: TempV10C },
-  { id: "10d", label: "Uploader Tiles with Preview", Comp: TempV10D },
-  { id: "10e", label: "Top Composer Bar", Comp: TempV10E },
-  { id: "10f", label: "FAB Generate + Inline Prompt", Comp: TempV10F },
+  { id: "10i", label: "Big Dropzones + Split Result", Comp: TempV10I },
+  { id: "10l", label: "Bottom Dock Uploaders (pills above dock)", Comp: TempV10L },
+  { id: "10n", label: "Responsive Tabs Mobile", Comp: TempV10N },
 ];
 
 export default function TempCreateExplorationPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [vid, setVid] = useState<string>("10");
+  const [vid, setVid] = useState<string>("10i");
 
   // Initialize from ?v= query if present
   useEffect(() => {
@@ -72,7 +64,7 @@ export default function TempCreateExplorationPage() {
               </select>
             </label>
           </div>
-          <div className="text-xs text-muted-foreground">Deep‑link any variant via ?v=10…10f.</div>
+          <div className="text-xs text-muted-foreground">Deep‑link via ?v=10i or ?v=10n.</div>
         </div>
       </div>
 

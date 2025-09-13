@@ -1,5 +1,7 @@
 # Handbook — ShipFast Base Template (Single Source of Truth)
 
+Note: For a summary of the Phase 11 documentation refresh aligning specs with current implementation, see `ai_docs/docs/phase11-doc-refresh.md`.
+
 This handbook defines **how this repo works**, the **non‑negotiable rules**, and the **golden path** your code agent MUST follow.
 
 ---
@@ -172,7 +174,7 @@ export async function updateProfile(supabase: SupabaseClient, id: string, patch:
   * `colors.main`
   * `auth.loginUrl`, `auth.callbackUrl`
   * Stripe plans metadata (non‑secret)
-  * Crisp/resend identifiers (non‑secret)
+  * Resend identifiers (non‑secret)
 * **Secrets** are env only (`.env.local`), never imported in client code:
   * `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
   * `SUPABASE_SERVICE_ROLE_KEY`

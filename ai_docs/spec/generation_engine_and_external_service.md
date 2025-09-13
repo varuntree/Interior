@@ -1,5 +1,5 @@
 0) Purpose
-Defines the generation engine (prompts, presets, parameter mapping), the adapter to Replicate (Google nano‑banana), and the webhook flow. Keeps MVP simple, reliable, and aligned with our “one in‑flight per user, async via webhook” strategy.
+Defines the generation engine (prompts, presets, parameter mapping), the adapter to Replicate (google/nano‑banana), and the webhook flow. Keeps MVP simple, reliable, and aligned with our “one in‑flight per user, async via webhook” strategy.
 
 1) Interfaces (internal types)
 ts
@@ -82,43 +82,22 @@ Copy
 Generate a photoreal interior concept for a {roomType} in {style} for an Australian home. Balanced composition, realistic materials, natural light. {userPrompt}
 The exact strings live in code as constants so we can iterate without schema changes.
 
-3) Parameter mapping (internal → Replicate / OpenAI model)
-We keep an adapter so model switches/updates don’t spill into the rest of the app:
+3) Parameter mapping (internal → Replicate model)
+We keep an adapter so model switches/updates don’t spill into the rest of the app.
 
-File: libs/services/external/replicateAdapter.ts
-Function: toReplicateInputs(req: GenerationRequest, signedInputUrls: string[]): Record<string, any>
+Runtime adapter: libs/services/external/googleNanoBananaAdapter.ts
+Function: toGoogleNanoBananaInputs(req: GenerationRequest, signedInputUrls: string[], opts?): { prompt, image_input?, output_format? }
 
 Guidelines:
 
-Images: pass up to two image URLs (signed, time-limited) as the model expects (array or key names per current Replicate schema).
+- Images: pass up to two signed image URLs as `image_input` when present.
+- Prompt: the composed prompt (templates above + user text).
+- Output format: set `output_format: 'jpg'` for efficient storage/delivery.
 
-Prompt: the composed prompt (templates above + user text).
+Notes:
 
-Variants: num_outputs = settings.variants.
-
-Aspect ratio & size:
-
-Use a target long edge (e.g., 1024 for auto|medium, 1536 for high, 768 for low).
-
-Convert to width/height from the ratio:
-
-1:1 → 1024x1024 (or 1536/768 accordingly)
-
-3:2 → 1536x1024 (or scaled variants)
-
-2:3 → 1024x1536
-
-Map to whatever the Replicate model expects (size or width/height). Keep this logic isolated in the adapter.
-
-Quality:
-
-auto: omit quality parameter (let the model default).
-
-low|medium|high: prefer to influence resolution via size; pass a quality field only if the model supports it.
-
-Safety strings: none added by default; we rely on a separate lightweight moderation check before submit (see §7).
-
-All model‑specific field names live only in the adapter; elsewhere we use our internal shape (GenerationRequest).
+- Legacy knobs (aspect ratio, quality, variants) are not used by the current provider and are omitted.
+- All model‑specific field names live only in the adapter; elsewhere we use our internal shape (GenerationRequest).
 
 4) Generation service (business logic)
 File: libs/services/generation.ts
@@ -233,9 +212,7 @@ Map to 400 VALIDATION_ERROR with a generic message.
 This is a simple text check on prompt (no heavy service). We can expand later if needed.
 
 8) Variants behavior
-variants requested (1–3) → num_outputs at model adapter.
-
-If upstream returns fewer outputs than requested, store what we have and mark job succeeded with a warning logged; clients simply see fewer variants.
+The current model typically returns a single output URL. If upstream returns multiple outputs, we store each as a variant; if fewer than expected, we store what we have and log a warning.
 
 9) Timeouts & retries
 Submit path retries transient 429/5xx from Replicate up to 3 times (50ms, 200ms, 800ms).
@@ -245,13 +222,9 @@ Submit path retries transient 429/5xx from Replicate up to 3 times (50ms, 200ms,
 10) Defaults & presets (source of truth)
 Modes order: ['redesign','staging','compose','imagine'] (config).
 
-Aspect ratios: ['1:1','3:2','2:3'] (config).
-
-Quality: 'auto' default; maps to size tiers in adapter.
-
-Variants: default 2, max 3.
-
 Room Types & Styles: AU‑oriented lists from config; can be extended without code changes.
+
+Note: advanced generation knobs (aspect ratio, quality, variants) are not used by the current provider and are hidden in the UI.
 
 11) Minimal UI contract (so engine stays simple)
 Disable Generate button while a job is in‑flight for the user.
@@ -271,24 +244,15 @@ Capture normalized upstream error messages for failed jobs (limit length, no PII
 
 Metrics (later): counts per mode, median processing time.
 
-13) Files & stubs to add (when we implement)
-libs/services/generation.ts
-
-libs/services/external/replicateAdapter.ts
-
-libs/repositories/generation_jobs.ts
-
-libs/repositories/renders.ts
-
-libs/repositories/collections.ts
-
-app/api/v1/generations/route.ts (POST, GET by query? or separate /api/v1/generations/[id]/route.ts for GET)
-
-app/api/v1/generations/[id]/route.ts (GET)
-
-app/api/v1/webhooks/replicate/route.ts (POST; service-role client)
-
-All routes return normalized JSON and use the helpers from libs/api-utils/* per our Playbooks.
+13) Files of interest
+- libs/services/generation.ts
+- libs/services/external/googleNanoBananaAdapter.ts
+- libs/services/external/replicateClient.ts
+- libs/repositories/{generation_jobs,renders,collections}.ts
+- app/api/v1/generations/route.ts (POST)
+- app/api/v1/generations/[id]/route.ts (GET, PATCH, DELETE)
+- app/api/v1/webhooks/replicate/route.ts (POST; service-role client)
+- All routes return normalized JSON and use helpers in libs/api-utils/*
 
 14) Acceptance checklist (engine)
 ✅ Redesign/Staging/Compose/Imagine produce expected outputs with AU styles.

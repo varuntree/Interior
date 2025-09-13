@@ -103,6 +103,7 @@ import { withMethods } from '@/libs/api-utils/methods'
 import { ok, fail } from '@/libs/api-utils/responses'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase' // server client (non-admin)
 import { __serviceFn__ } from '@/libs/services/__domain__'
+import { withRequestContext } from '@/libs/observability/request'
 
 // 1) schema
 const BodySchema = z.object({
@@ -110,7 +111,7 @@ const BodySchema = z.object({
   id: z.string().min(1),
 })
 
-export const POST = withMethods(['POST'], async (req: NextRequest) => {
+export const POST = withMethods(['POST'], withRequestContext(async (req: NextRequest, ctx?: any) => {
   try {
     const body = await req.json()
     const parsed = BodySchema.safeParse(body)
@@ -125,12 +126,13 @@ export const POST = withMethods(['POST'], async (req: NextRequest) => {
     const data = await __serviceFn__({ supabase }, parsed.data)
 
     // 4) respond
+    ctx?.logger?.info?.('__domain__.__action__', { ok: true })
     return ok(data)
   } catch (err: any) {
-    // normalize
+    ctx?.logger?.error?.('__domain__.__action___error', { message: err?.message })
     return fail(500, 'INTERNAL_ERROR', err?.message ?? 'Unexpected error')
   }
-})
+}))
 ```
 
 ---

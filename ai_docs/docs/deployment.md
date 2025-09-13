@@ -35,8 +35,8 @@ STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
 # Replicate
 REPLICATE_API_TOKEN=r8_your-api-token
 
-# Security (generate random strings)
-WEBHOOK_SECRET=your-webhook-secret
+# Replicate webhook verification (optional in dev)
+REPLICATE_WEBHOOK_SECRET=your-replicate-webhook-secret
 
 # Admin (temporary allowlist for admin UI)
 ADMIN_EMAILS=alice@example.com,bob@company.com
@@ -72,12 +72,9 @@ ANALYTICS_API_KEY=your-analytics-key
    - Test authentication and data access with a test user
 
 3. **Set Up Storage Buckets**
-   ```sql
-   -- Create storage buckets in Supabase
-   INSERT INTO storage.buckets (id, name, public) VALUES 
-   ('generation-inputs', 'generation-inputs', false),
-   ('generation-outputs', 'generation-outputs', false);
-   ```
+   No manual action required. The baseline migration creates two buckets:
+   - `public` (public read)
+   - `private` (owner-scoped via RLS)
 
 ## Build Process
 

@@ -42,9 +42,9 @@ JOIN profiles p ON r.owner_id = p.id
 WHERE r.created_at > NOW() - INTERVAL '24 hours'
 ORDER BY r.created_at DESC;
 
--- Check for inappropriate content
-SELECT *
-FROM renders
+-- Check recent jobs for problematic prompts
+SELECT id, owner_id, mode, created_at, error
+FROM generation_jobs
 WHERE prompt ILIKE '%inappropriate_keyword%'
 ORDER BY created_at DESC;
 ```
@@ -63,9 +63,9 @@ DELETE FROM collection_items WHERE render_id = 'render-uuid';
 
 ### User Analytics
 ```sql
--- Active users in the last 30 days
+-- Active users in the last 30 days (by jobs submitted)
 SELECT COUNT(DISTINCT owner_id) as active_users
-FROM generations
+FROM generation_jobs
 WHERE created_at > NOW() - INTERVAL '30 days';
 
 -- Top users by generation count
@@ -74,18 +74,19 @@ SELECT
   COUNT(g.id) as generation_count,
   MAX(g.created_at) as last_activity
 FROM profiles p
-JOIN generations g ON p.id = g.owner_id
+JOIN generation_jobs g ON p.id = g.owner_id
 GROUP BY p.id, p.email
 ORDER BY generation_count DESC
 LIMIT 20;
 
--- Users approaching limits
+-- Users approaching limits (current month debits)
 SELECT 
   p.email,
   p.price_id,
   COUNT(u.id) as usage_this_month
 FROM profiles p
-LEFT JOIN usage u ON p.id = u.owner_id 
+LEFT JOIN usage_ledger u ON p.id = u.owner_id 
+  AND u.kind = 'generation_debit'
   AND u.created_at > DATE_TRUNC('month', NOW())
 GROUP BY p.id, p.email, p.price_id
 HAVING COUNT(u.id) > 80
@@ -118,27 +119,21 @@ WHERE id = 'user-uuid';
 
 ### System Health Checks
 ```sql
--- Check generation success rates
+-- Check generation job success rates
 SELECT 
   status,
   COUNT(*) as count,
   ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as percentage
-FROM generations
+FROM generation_jobs
 WHERE created_at > NOW() - INTERVAL '24 hours'
 GROUP BY status;
 
--- Average generation time
+-- Average generation time (succeeded jobs)
 SELECT 
   AVG(EXTRACT(EPOCH FROM (completed_at - created_at))) as avg_seconds
-FROM generations
+FROM generation_jobs
 WHERE status = 'succeeded'
 AND completed_at > NOW() - INTERVAL '24 hours';
-
--- Storage usage
-SELECT 
-  SUM(CASE WHEN source_type = 'render' THEN 1 ELSE 0 END) as internal_images,
-  COUNT(*) as total_community_items
-FROM community_collection_items;
 ```
 
 ### Error Monitoring
@@ -151,7 +146,7 @@ SELECT
   g.error,
   g.created_at,
   p.email
-FROM generations g
+FROM generation_jobs g
 JOIN profiles p ON g.owner_id = p.id
 WHERE g.status = 'failed'
 AND g.created_at > NOW() - INTERVAL '24 hours'
@@ -161,7 +156,7 @@ ORDER BY g.created_at DESC;
 SELECT 
   error,
   COUNT(*) as occurrences
-FROM generations
+FROM generation_jobs
 WHERE status = 'failed'
 AND created_at > NOW() - INTERVAL '7 days'
 GROUP BY error
@@ -181,9 +176,10 @@ ORDER BY occurrences DESC;
 2. Verify usage limits:
    ```sql
    SELECT COUNT(*) as usage_this_month
-   FROM usage u
+   FROM usage_ledger u
    JOIN profiles p ON u.owner_id = p.id
-   WHERE p.email = 'user@example.com'
+   WHERE u.kind = 'generation_debit'
+   AND p.email = 'user@example.com'
    AND u.created_at > DATE_TRUNC('month', NOW());
    ```
 
@@ -192,7 +188,7 @@ ORDER BY occurrences DESC;
 #### Generation Stuck in Processing
 1. Find the generation:
    ```sql
-   SELECT * FROM generations 
+   SELECT * FROM generation_jobs 
    WHERE owner_id = 'user-uuid'
    AND status IN ('processing', 'starting')
    ORDER BY created_at DESC;
@@ -202,7 +198,7 @@ ORDER BY occurrences DESC;
 
 3. Mark as failed if necessary:
    ```sql
-   UPDATE generations 
+   UPDATE generation_jobs 
    SET status = 'failed', error = 'Timeout - generation stuck'
    WHERE id = 'generation-uuid';
    ```
@@ -292,7 +288,7 @@ CREATE TABLE IF NOT EXISTS feature_flags (
 
 -- Insert feature flags
 INSERT INTO feature_flags (flag_name, is_enabled, description) VALUES
-('community_collections', true, 'Enable community collections feature'),
+('community_gallery', true, 'Enable community gallery feature'),
 ('advanced_settings', false, 'Enable advanced generation settings'),
 ('batch_generation', false, 'Enable batch generation feature');
 ```
