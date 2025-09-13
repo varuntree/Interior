@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
 type AdminItem = { id: string; image_url: string; title?: string }
 
@@ -57,21 +58,22 @@ export default function AdminCommunityPage() {
     await checkAdminStatus()
   }
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
+  const uploadFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files || [])
+    if (list.length === 0) return
     const form = new FormData()
-    const filesArray = Array.from(files)
-    filesArray.forEach((f) => form.append('files', f))
+    list.forEach((f) => form.append('files', f))
     setUploading(true)
     setUploadError(null)
-    setUploadStatus(`Uploading ${filesArray.length} file${filesArray.length > 1 ? 's' : ''}…`)
+    setUploadStatus(`Uploading ${list.length} file${list.length > 1 ? 's' : ''}…`)
     try {
       const res = await fetch('/api/v1/admin/community/images/upload', { method: 'POST', body: form })
       const result = await res.json()
       if (result.success) {
-        setUploadStatus(`Uploaded ${result.data.items?.length ?? filesArray.length} file${filesArray.length > 1 ? 's' : ''}`)
+        setUploadStatus(`Uploaded ${result.data.items?.length ?? list.length} file${list.length > 1 ? 's' : ''}`)
         await loadItems()
+      } else {
+        setUploadError(result?.error?.message || 'Upload failed')
       }
     } catch (err) {
       console.error('Upload failed', err)
@@ -80,6 +82,21 @@ export default function AdminCommunityPage() {
       setUploading(false)
       setTimeout(() => setUploadStatus(''), 1200)
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    await uploadFiles(e.target.files)
+  }
+
+  const onChooseFiles = () => fileInputRef.current?.click()
+
+  const handleDrop: React.DragEventHandler<HTMLDivElement> = async (ev) => {
+    ev.preventDefault()
+    ev.stopPropagation()
+    if (ev.dataTransfer?.files?.length) {
+      await uploadFiles(ev.dataTransfer.files)
     }
   }
 
@@ -127,19 +144,37 @@ export default function AdminCommunityPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Community Management</h1>
-          <p className="text-muted-foreground">
-            Manage collections and curated content for the community gallery.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Community Admin</h1>
+          <p className="text-muted-foreground">Upload images and manage the public inspiration feed.</p>
         </div>
         <div className="flex gap-2 items-center">
-          <input ref={fileInputRef} type="file" multiple accept="image/*" onChange={handleUpload} disabled={uploading} />
-          <Button variant="destructive" onClick={handleDelete} disabled={Object.values(selected).every(v => !v)}>
-            Delete Selected
-          </Button>
+          <Button variant="outline" onClick={loadItems} disabled={uploading}>Refresh</Button>
+          <Button onClick={onChooseFiles} disabled={uploading}>Upload Images</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/avif,image/gif"
+            onChange={handleUpload}
+            disabled={uploading}
+          />
         </div>
+      </div>
+
+      {/* Dropzone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDrop={handleDrop}
+        className="rounded-lg border border-border bg-card text-card-foreground p-6 flex items-center justify-between gap-6"
+      >
+        <div>
+          <div className="font-medium">Drag & drop images here</div>
+          <div className="text-sm text-muted-foreground">Supported: JPG, PNG, WEBP, AVIF, GIF • Max 15MB each</div>
+        </div>
+        <Button variant="secondary" onClick={onChooseFiles} disabled={uploading}>Choose files</Button>
       </div>
 
       {/* Upload feedback */}
@@ -150,19 +185,36 @@ export default function AdminCommunityPage() {
           {uploadError && <span className="text-destructive ml-2">{uploadError}</span>}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <Separator />
+
+      {/* Actions bar */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {Object.values(selected).some(Boolean) ? `${Object.values(selected).filter(Boolean).length} selected` : `${items.length} items`}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="destructive" onClick={handleDelete} disabled={!Object.values(selected).some(Boolean)}>
+            Delete Selected
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {items.map((it) => (
-          <Card key={it.id} className="overflow-hidden">
+          <Card key={it.id} className="overflow-hidden group">
             <div className="relative w-full aspect-square">
               <Image src={it.image_url} alt={it.title || 'Image'} fill className="object-cover" />
+              <button
+                type="button"
+                aria-label={selected[it.id] ? 'Deselect' : 'Select'}
+                onClick={() => setSelected((s) => ({ ...s, [it.id]: !s[it.id] }))}
+                className="absolute top-2 left-2 h-6 w-6 rounded-md border border-border bg-background/80 backdrop-blur text-foreground flex items-center justify-center"
+              >
+                <span className="text-xs">{selected[it.id] ? '✓' : ''}</span>
+              </button>
             </div>
-            <CardContent className="flex items-center justify-between p-3">
-              <div className="text-xs truncate max-w-[70%]">{it.title || it.id}</div>
-              <input
-                type="checkbox"
-                checked={!!selected[it.id]}
-                onChange={(e) => setSelected((s) => ({ ...s, [it.id]: e.target.checked }))}
-              />
+            <CardContent className="p-3">
+              <div className="text-xs truncate" title={it.title || it.id}>{it.title || it.id}</div>
             </CardContent>
           </Card>
         ))}

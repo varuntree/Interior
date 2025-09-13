@@ -32,12 +32,40 @@ export async function uploadImages(
     // Basic validation: type and size
     const maxSize = 15 * 1024 * 1024
     if (file.size > maxSize) throw new Error('File too large')
-    const allowed = ['image/jpeg', 'image/png', 'image/webp']
-    const contentType = (file as File).type || 'image/jpeg'
-    if (!allowed.includes(contentType)) throw new Error('Invalid file type')
+    const rawType = (file as File).type || ''
+    const name = (file as File).name || ''
+    const aliasMap: Record<string, string> = {
+      'image/jpg': 'image/jpeg',
+    }
+    const extMap: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      webp: 'image/webp',
+      avif: 'image/avif',
+      gif: 'image/gif',
+    }
+    const allowed = new Set(Object.values(extMap))
+    let contentType = aliasMap[rawType] || rawType
+    if (!allowed.has(contentType as any)) {
+      const m = name.match(/\.([a-zA-Z0-9]+)$/)
+      const ext = m ? m[1].toLowerCase() : ''
+      if (ext && extMap[ext]) contentType = extMap[ext]
+    }
+    if (!allowed.has(contentType as any)) {
+      throw new Error('Invalid file type')
+    }
 
     // Generate path: community/<timestamp>_<random>.ext
-    const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg'
+    const ext = contentType === 'image/png'
+      ? 'png'
+      : contentType === 'image/webp'
+      ? 'webp'
+      : contentType === 'image/avif'
+      ? 'avif'
+      : contentType === 'image/gif'
+      ? 'gif'
+      : 'jpg'
     const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const path = `community/${unique}.${ext}`
 
@@ -56,7 +84,9 @@ export async function uploadImages(
       .insert({ image_path: path, is_published: true, order_index: 0 })
       .select('*')
       .single()
-    if (insErr || !row) throw new Error(`DB insert failed: ${insErr?.message}`)
+    if (insErr || !row) {
+      throw new Error(`DB insert failed: ${insErr?.message}`)
+    }
 
     results.push({ id: row.id, image_url: buildPublicUrl(path), created_at: row.created_at })
   }
@@ -95,4 +125,3 @@ export async function deleteImages(
 
   return { deleted: args.ids.length }
 }
-
