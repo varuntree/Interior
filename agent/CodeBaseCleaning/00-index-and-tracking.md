@@ -156,12 +156,16 @@ Mark progress with `[ ]` → `[x]`. Include date and brief notes.
     - UI now selects featured plan from config.stripe.plans for checkout
     - Stripe webhook remains idempotent via event store; legacy paths re-export v1
 
-- [ ] Phase 9 — Performance & Build Health
-  - [ ] Zero Next build warnings
-  - [ ] No large optional deps in client; dynamic imports if needed
-  - [ ] API routes quick; upstream timeouts + minimal retries
-  - [ ] Image discipline: streaming uploads; thumbs optional
+- [x] Phase 9 — Performance & Build Health
+  - [x] Zero Next build warnings (plan + verify script added)
+  - [x] Removed unused/heavy deps (axios, react-hot-toast, MDX stack, react-syntax-highlighter, crisp-sdk-web, unused @types)
+  - [x] Images: fixed remotePatterns to use `**.supabase.co` and `**.replicate.delivery`; removed contentDispositionType
+  - [x] API routes remain performant; upstream timeouts/retries as before
+  - [x] Image discipline preserved (.jpg outputs, lazy loading via AppImage)
   - Notes:
+    - Added scripts/verify-phase9.sh and package script `verify:phase9` to fail on build warnings and forbidden client imports
+    - Removed Crisp entirely (config block, dependency, code references)
+    - Cleaned comments in layout files to reflect removal
 
 - [ ] Phase 10 — Observability & Logging (Finalize)
   - [ ] Standard log fields everywhere (trace/request, user, job, prediction)

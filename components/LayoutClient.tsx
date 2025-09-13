@@ -7,7 +7,7 @@ import config from "@/config";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 // This component wraps the app with client-side providers and components
-// It includes toast notifications, loading bar, theme provider, and other client features
+// It includes toast notifications, loading bar, and theme provider
 const ClientLayout = ({ children }: { children: ReactNode }) => {
   return (
     <ThemeProvider

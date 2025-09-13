@@ -26,10 +26,6 @@ export interface ConfigProps {
   appName: string;
   appDescription: string;
   domainName: string;
-  crisp: {
-    id?: string;
-    onlyShowOnRoutes?: string[];
-  };
   stripe: {
     plans: {
       isFeatured?: boolean;

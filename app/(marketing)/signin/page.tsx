@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/libs/supabase/client";
 import { Provider } from "@supabase/supabase-js";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import config from "@/config";
 
 // This a login/singup page for Supabase Auth.

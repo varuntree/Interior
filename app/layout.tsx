@@ -5,7 +5,6 @@ import ClientLayout from "@/components/LayoutClient";
 import config from "@/config";
 import "./globals.css";
 
-// Note: We avoid next/font Google fetches during build in restricted envs.
 // Typography is driven via CSS tokens in globals.css (--font-sans, etc.).
 
 export const viewport: Viewport = {
@@ -23,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className="font-sans">
-				{/* ClientLayout contains all the client wrappers (Crisp chat support, toast messages, tooltips, etc.) */}
+				{/* ClientLayout contains the client wrappers (theme, toasts, loading bar) */}
 				<ClientLayout>{children}</ClientLayout>
 			</body>
 		</html>

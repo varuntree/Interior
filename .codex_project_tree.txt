@@ -1,0 +1,443 @@
+.
+├── agent
+│   └── CodeBaseCleaning
+│       ├── 00-index-and-tracking.md
+│       ├── 01-principles.md
+│       ├── 02-plan.md
+│       ├── phase0.md
+│       ├── phase1.md
+│       ├── phase2.md
+│       ├── phase3.md
+│       ├── phase4.md
+│       ├── phase5.md
+│       ├── phase6.md
+│       ├── phase7.md
+│       └── phase8.md
+├── agents
+│   ├── plans
+│   │   ├── phase3.md
+│   │   └── plan.md
+│   └── prompts
+│       └── prime.md
+├── ai_docs
+│   ├── core
+│   │   ├── 01-overview-and-ux.md
+│   │   ├── 02-architecture-and-guidelines.md
+│   │   ├── 03-data-and-storage.md
+│   │   ├── 04-generation-engine.md
+│   │   ├── 05-api.md
+│   │   └── 06-deployment-and-ops.md
+│   ├── docs
+│   │   ├── 01-handbook.md
+│   │   ├── 02-playbooks-and-templates.md
+│   │   ├── admin-guide.md
+│   │   └── deployment.md
+│   └── spec
+│       ├── config_and_plans.md
+│       ├── data_and_storage.md
+│       ├── design_system.md
+│       ├── generation_engine_and_external_service.md
+│       ├── ops_runbook.md
+│       ├── prd.md
+│       ├── system_architecture_and_api.md
+│       ├── testing_and_quality_minimal.md
+│       └── ux_ui.md
+├── app
+│   ├── (app)
+│   │   └── dashboard
+│   │       ├── admin
+│   │       │   └── community
+│   │       │       └── page.tsx
+│   │       ├── collections
+│   │       │   ├── [id]
+│   │       │   │   └── page.tsx
+│   │       │   └── page.tsx
+│   │       ├── community
+│   │       │   └── page.tsx
+│   │       ├── create
+│   │       │   └── page.tsx
+│   │       ├── history
+│   │       │   └── page.tsx
+│   │       ├── layout.tsx
+│   │       ├── page.tsx
+│   │       ├── profile
+│   │       │   └── page.tsx
+│   │       ├── renders
+│   │       │   ├── [id]
+│   │       │   │   └── page.tsx
+│   │       │   └── page.tsx
+│   │       └── settings
+│   │           └── page.tsx
+│   ├── (marketing)
+│   │   ├── blog
+│   │   │   ├── _assets
+│   │   │   │   ├── components
+│   │   │   │   │   ├── Avatar.tsx
+│   │   │   │   │   ├── BadgeCategory.tsx
+│   │   │   │   │   ├── CardArticle.tsx
+│   │   │   │   │   ├── CardCategory.tsx
+│   │   │   │   │   └── HeaderBlog.tsx
+│   │   │   │   ├── content.tsx
+│   │   │   │   └── images
+│   │   │   │       └── authors
+│   │   │   │           └── marc.png
+│   │   │   ├── [articleId]
+│   │   │   │   └── page.tsx
+│   │   │   ├── author
+│   │   │   │   └── [authorId]
+│   │   │   │       └── page.tsx
+│   │   │   ├── category
+│   │   │   │   └── [categoryId]
+│   │   │   │       └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── community
+│   │   │   ├── [collectionId]
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── privacy-policy
+│   │   │   └── page.tsx
+│   │   ├── signin
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   └── tos
+│   │       └── page.tsx
+│   ├── api
+│   │   ├── auth
+│   │   │   └── callback
+│   │   │       └── route.ts
+│   │   ├── stripe
+│   │   │   ├── create-checkout
+│   │   │   │   └── route.ts
+│   │   │   └── create-portal
+│   │   │       └── route.ts
+│   │   ├── v1
+│   │   │   ├── admin
+│   │   │   │   ├── community
+│   │   │   │   │   ├── collections
+│   │   │   │   │   │   ├── [id]
+│   │   │   │   │   │   │   └── items
+│   │   │   │   │   │   ├── delete
+│   │   │   │   │   │   ├── publish
+│   │   │   │   │   │   └── upsert
+│   │   │   │   │   ├── images
+│   │   │   │   │   │   ├── delete
+│   │   │   │   │   │   │   └── route.ts
+│   │   │   │   │   │   └── upload
+│   │   │   │   │   │       └── route.ts
+│   │   │   │   │   └── items
+│   │   │   │   │       ├── delete
+│   │   │   │   │       └── upsert
+│   │   │   │   ├── ensure
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── status
+│   │   │   ├── analytics
+│   │   │   │   └── event
+│   │   │   │       └── route.ts
+│   │   │   ├── auth
+│   │   │   │   └── me
+│   │   │   │       └── route.ts
+│   │   │   ├── collections
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── items
+│   │   │   │   │   │   ├── [renderId]
+│   │   │   │   │   │   │   └── route.ts
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── items
+│   │   │   │   │   └── toggle
+│   │   │   │   │       └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   └── upsert
+│   │   │   │       └── route.ts
+│   │   │   ├── community
+│   │   │   │   ├── collections
+│   │   │   │   │   ├── [collectionId]
+│   │   │   │   │   │   └── items
+│   │   │   │   │   ├── [id]
+│   │   │   │   │   │   └── items
+│   │   │   │   │   │       └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── images
+│   │   │   │   └── route.ts
+│   │   │   ├── credits
+│   │   │   │   └── summary
+│   │   │   ├── favorites
+│   │   │   │   ├── list
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── toggle
+│   │   │   │       └── route.ts
+│   │   │   ├── generations
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── health
+│   │   │   │   └── route.ts
+│   │   │   ├── profile
+│   │   │   │   └── settings
+│   │   │   │       └── route.ts
+│   │   │   ├── renders
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── status
+│   │   │   │   └── route.ts
+│   │   │   ├── stripe
+│   │   │   │   ├── create-checkout
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── create-portal
+│   │   │   │       └── route.ts
+│   │   │   ├── usage
+│   │   │   │   └── route.ts
+│   │   │   └── webhooks
+│   │   │       ├── replicate
+│   │   │       │   └── route.ts
+│   │   │       └── stripe
+│   │   │           └── route.ts
+│   │   └── webhook
+│   │       └── stripe
+│   │           └── route.ts
+│   ├── apple-icon.png
+│   ├── error.tsx
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── icon.png
+│   ├── layout.tsx
+│   ├── not-found.tsx
+│   ├── opengraph-image.png
+│   └── twitter-image.png
+├── components
+│   ├── collections
+│   │   └── CollectionPickerDialog.tsx
+│   ├── common
+│   │   ├── ButtonSignin.tsx
+│   │   └── Footer.tsx
+│   ├── community
+│   │   ├── ApplySettings.tsx
+│   │   ├── CommunityCollection.tsx
+│   │   ├── CommunityItem.tsx
+│   │   └── index.ts
+│   ├── dashboard
+│   │   ├── DashboardHeader.tsx
+│   │   ├── EmptyState.tsx
+│   │   ├── LoadingStates.tsx
+│   │   ├── MobileNav.tsx
+│   │   ├── ResponsiveGrid.tsx
+│   │   └── Sidebar.tsx
+│   ├── ErrorBoundary.tsx
+│   ├── generation
+│   │   ├── GenerationProgress.tsx
+│   │   ├── GenerationSettings.tsx
+│   │   ├── GenerationWorkspace.tsx
+│   │   ├── ImageUpload.tsx
+│   │   ├── ModeSelector.tsx
+│   │   ├── PresetSelectors.tsx
+│   │   ├── PromptInput.tsx
+│   │   ├── ResultCard.tsx
+│   │   └── ResultsGrid.tsx
+│   ├── layout
+│   │   ├── nav.config.ts
+│   │   ├── NavLink.tsx
+│   │   ├── SidebarContent.tsx
+│   │   ├── SidebarDesktop.tsx
+│   │   └── SidebarMobile.tsx
+│   ├── LayoutClient.tsx
+│   ├── renders
+│   │   └── RenderCard.tsx
+│   ├── settings
+│   │   ├── BillingSection.tsx
+│   │   ├── index.ts
+│   │   └── UsageDisplay.tsx
+│   ├── shared
+│   │   ├── Async.tsx
+│   │   ├── Empty.tsx
+│   │   ├── Image.tsx
+│   │   ├── Loading.ts
+│   │   └── Toast.ts
+│   ├── ThemeProvider.tsx
+│   ├── ThemeToggle.tsx
+│   └── ui
+│       ├── accordion.tsx
+│       ├── alert.tsx
+│       ├── avatar.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── command.tsx
+│       ├── dialog.tsx
+│       ├── drawer.tsx
+│       ├── dropdown-menu.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── popover.tsx
+│       ├── progress.tsx
+│       ├── radio-group.tsx
+│       ├── scroll-area.tsx
+│       ├── separator.tsx
+│       ├── sheet.tsx
+│       ├── skeleton.tsx
+│       ├── textarea.tsx
+│       └── tooltip.tsx
+├── components.json
+├── config.ts
+├── contexts
+│   └── GenerationContext.tsx
+├── hooks
+│   ├── useAuth.ts
+│   ├── useCollectionDetail.ts
+│   ├── useCollections.ts
+│   ├── useGenerationStatus.ts
+│   ├── useGenerationSubmit.ts
+│   ├── useRenderDetails.ts
+│   ├── useRenders.ts
+│   └── useUsage.ts
+├── implementation_plan.md
+├── libs
+│   ├── api
+│   │   └── http.ts
+│   ├── api-utils
+│   │   ├── auth.ts
+│   │   ├── cache.ts
+│   │   ├── error-codes.ts
+│   │   ├── errors.ts
+│   │   ├── methods.ts
+│   │   ├── normalize-error.ts
+│   │   ├── responses.ts
+│   │   ├── schemas.ts
+│   │   ├── supabase.ts
+│   │   ├── url-validation.ts
+│   │   ├── validate.ts
+│   │   └── with-request.ts
+│   ├── app-config
+│   │   └── runtime.ts
+│   ├── constants
+│   │   └── limits.ts
+│   ├── env
+│   │   └── index.ts
+│   ├── observability
+│   │   └── logger.ts
+│   ├── repositories
+│   │   ├── collections.ts
+│   │   ├── community_images.ts
+│   │   ├── generation_jobs.ts
+│   │   ├── profiles.ts
+│   │   ├── renders.ts
+│   │   ├── usage.ts
+│   │   └── webhook_events.ts
+│   ├── resend.ts
+│   ├── seo.tsx
+│   ├── services
+│   │   ├── analytics.ts
+│   │   ├── billing.ts
+│   │   ├── collections.ts
+│   │   ├── community_collections.ts
+│   │   ├── community_images_admin.ts
+│   │   ├── community.ts
+│   │   ├── data
+│   │   │   ├── cleanup.ts
+│   │   │   └── validation.ts
+│   │   ├── external
+│   │   │   ├── googleNanoBananaAdapter.ts
+│   │   │   ├── replicateAdapter.ts
+│   │   │   └── replicateClient.ts
+│   │   ├── favorites.ts
+│   │   ├── generation
+│   │   │   ├── moderation.ts
+│   │   │   ├── prompts.ts
+│   │   │   └── types.ts
+│   │   ├── generation_webhooks.ts
+│   │   ├── generation.ts
+│   │   ├── health.ts
+│   │   ├── profile.ts
+│   │   ├── providers
+│   │   │   ├── constants.ts
+│   │   │   ├── generationProvider.ts
+│   │   │   └── replicateProvider.ts
+│   │   ├── renders.ts
+│   │   ├── storage
+│   │   │   ├── assets.ts
+│   │   │   ├── management.ts
+│   │   │   └── uploads.ts
+│   │   └── usage.ts
+│   ├── storage
+│   │   └── storageRepository.ts
+│   ├── stripe.ts
+│   ├── supabase
+│   │   ├── admin.ts
+│   │   ├── client.ts
+│   │   ├── middleware.ts
+│   │   └── server.ts
+│   └── utils.ts
+├── middleware.ts
+├── migrations
+│   ├── _archive
+│   │   ├── phase1
+│   │   │   ├── 001_create_profiles.sql
+│   │   │   ├── 002_profiles_policies.sql
+│   │   │   ├── 003_profiles_trigger.sql
+│   │   │   └── 004_storage_buckets.sql
+│   │   ├── phase2
+│   │   │   ├── 005_create_generations.sql
+│   │   │   ├── 005_generation_jobs.sql
+│   │   │   ├── 006_renders.sql
+│   │   │   ├── 007_collections.sql
+│   │   │   ├── 008_community.sql
+│   │   │   ├── 009_usage_ledger.sql
+│   │   │   ├── 010_default_favorites_trigger.sql
+│   │   │   └── 011_generation_jobs_owner_inflight_unique.sql
+│   │   ├── phase3
+│   │   │   └── 006_alter_generations_inputs.sql
+│   │   ├── phase4
+│   │   │   ├── 007_create_favorites.sql
+│   │   │   └── 008_create_collections.sql
+│   │   ├── phase6
+│   │   │   ├── 009_create_admins.sql
+│   │   │   └── 010_create_community.sql
+│   │   ├── phase7
+│   │   │   ├── 011_logs_analytics.sql
+│   │   │   ├── 012_drop_generation_jobs_legacy_settings.sql
+│   │   │   ├── 012_profile_enhancements.sql
+│   │   │   └── 013_generation_jobs_owner_update_rls.sql
+│   │   ├── phase9
+│   │   │   └── 001_create_community_images.sql
+│   │   └── README.md
+│   ├── 0001_baseline.sql
+│   ├── 0002_webhook_events.sql
+│   └── README.md
+├── next-sitemap.config.js
+├── next.config.js
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── public
+│   ├── blog
+│   │   └── introducing-supabase
+│   │       └── header.png
+│   ├── robots.txt
+│   ├── sitemap-0 2.xml
+│   ├── sitemap-0.xml
+│   └── sitemap.xml
+├── README.md
+├── scripts
+│   ├── setup-dev.sh
+│   └── verify-phase0.sh
+├── tailwind.config.js
+├── tests
+│   ├── google-adapter.test.ts
+│   ├── prompt-builder.test.ts
+│   ├── replicate-adapter.test.ts
+│   └── webhook-normalize.test.ts
+├── tsconfig.json
+├── types
+│   ├── api
+│   │   ├── collections.ts
+│   │   ├── renders.ts
+│   │   └── usage.ts
+│   ├── config.ts
+│   ├── database.ts
+│   └── index.ts
+└── vitest.config.ts
+
+148 directories, 293 files
