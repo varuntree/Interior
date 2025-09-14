@@ -2,6 +2,7 @@ import Image from 'next/image'
 export const dynamic = 'force-dynamic'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import runtimeConfig from '@/libs/app-config/runtime'
 
 interface CommunityItem {
   id: string
@@ -37,6 +38,17 @@ export default async function CollectionPage({
 }: {
   params: { collectionId: string }
 }) {
+  if (!runtimeConfig.featureFlags?.community) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Community Gallery</h1>
+          <p className="text-muted-foreground mb-6">This feature is currently unavailable.</p>
+          <a href="/" className="text-primary hover:underline">← Back to Home</a>
+        </div>
+      </div>
+    )
+  }
   try {
     const { items } = await getCollectionItems(params.collectionId)
 

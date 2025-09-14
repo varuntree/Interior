@@ -29,7 +29,7 @@ const BASE_STEPS: StepDef[] = [
 export function GenerationOverlay({ status, mode }: Props) {
   // Smooth step sequencing while `processing` to create a multi-stop feel
   const [activeIndex, setActiveIndex] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const steps = useMemo(() => BASE_STEPS, []);
 
@@ -52,20 +52,20 @@ export function GenerationOverlay({ status, mode }: Props) {
 
   useEffect(() => {
     // Cancel any previous timer
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) window.clearInterval(timerRef.current);
 
     // Start from floor index when status changes
     setActiveIndex(floorIndex);
 
     // While processing, advance through remaining steps smoothly
     if (status === 'processing') {
-      timerRef.current = setInterval(() => {
+      timerRef.current = window.setInterval(() => {
         setActiveIndex((i) => Math.min(i + 1, steps.length - 1));
       }, 1600);
     }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) window.clearInterval(timerRef.current);
     };
   }, [status, floorIndex, steps.length]);
 
@@ -130,4 +130,3 @@ export function GenerationOverlay({ status, mode }: Props) {
     </div>
   );
 }
-

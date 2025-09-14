@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useGeneration } from "@/contexts/GenerationContext";
 import { useGenerationSubmit } from "@/hooks/useGenerationSubmit";
 import { useGenerationStatus } from "@/hooks/useGenerationStatus";
@@ -429,7 +429,7 @@ function PreviewBox({ label, url, placeholder, onRemove, onPick }: { label: stri
   );
 }
 
-function Pill({ icon, label, kind, onPick }: { icon: React.ReactNode; label: string; kind: 'base' | 'reference'; onPick: (f: File | null) => void }) {
+function Pill({ icon, label, kind, onPick }: { icon: ReactNode; label: string; kind: 'base' | 'reference'; onPick: (f: File | null) => void }) {
   const { state } = useGeneration();
   const active = kind === 'base' ? !!state.input1File : !!state.input2File;
   return (

@@ -1,6 +1,7 @@
 import Image from 'next/image'
 export const dynamic = 'force-dynamic'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import runtimeConfig from '@/libs/app-config/runtime'
 
 interface CommunityCollection {
   id: string
@@ -24,6 +25,17 @@ async function getCollections(): Promise<{ collections: CommunityCollection[] }>
 }
 
 export default async function CommunityPage() {
+  if (!runtimeConfig.featureFlags?.community) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Community Gallery</h1>
+          <p className="text-muted-foreground">This feature is currently unavailable.</p>
+        </div>
+        <a href="/" className="underline">Back to Home</a>
+      </div>
+    )
+  }
   const { collections } = await getCollections()
 
   return (

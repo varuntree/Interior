@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Sparkles, Droplets, Palette } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CarouselApi } from "@/components/ui/carousel";
@@ -9,7 +9,7 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 type Feature = {
   title: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   description: string;
   background: string;
 };

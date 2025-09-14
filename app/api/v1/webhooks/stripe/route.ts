@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { withMethods } from "@/libs/api-utils/methods";
-import { fail } from "@/libs/api-utils/responses";
 import { env } from "@/libs/env";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { handleStripeWebhookService } from "@/libs/services/billing";

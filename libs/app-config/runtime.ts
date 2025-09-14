@@ -41,8 +41,8 @@ export interface ReplicateConfig {
 
 export interface RuntimeConfig {
   featureFlags: {
-    community: true
-    collections: true
+    community: boolean
+    collections: boolean
   }
   presets: Presets
   defaults: GenerationDefaults
@@ -53,7 +53,7 @@ export interface RuntimeConfig {
 
 // ---- DEFAULT EXPORT (MVP baseline) ----
 const runtimeConfig: RuntimeConfig = {
-  featureFlags: { community: true, collections: true },
+  featureFlags: { community: false, collections: false },
 
   presets: {
     roomTypes: [

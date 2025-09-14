@@ -11,12 +11,6 @@ type CarouselContextProps = {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
-function useCarouselContext() {
-  const ctx = React.useContext(CarouselContext);
-  if (!ctx) throw new Error("Carousel.* must be used within <Carousel>");
-  return ctx;
-}
-
 export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   opts?: any;
   plugins?: any[];

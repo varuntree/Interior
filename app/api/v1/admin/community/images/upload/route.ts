@@ -6,7 +6,7 @@ import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
-async function handlePOST(req: Request, ctx?: { logger?: any }) {
+async function handlePOST(req: Request, _ctx?: { logger?: any }) {
   try {
     const supabase = createServiceSupabaseClient()
     const form = await req.formData()

@@ -39,12 +39,13 @@ const navigationMenuItems = [
 
 export function MarketingNavbar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false)
+  const [, setSubmenu] = useState<"explore" | null>(null)
+  const { authed } = useAuthStatus();
+
   if (pathname === "/signin" || pathname?.startsWith("/blog")) {
     return null;
   }
-  const [open, setOpen] = useState(false)
-  const [submenu, setSubmenu] = useState<"explore" | null>(null)
-  const { authed } = useAuthStatus();
 
   return (
     <header className="bg-background inset-x-0 top-0 z-20">

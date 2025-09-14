@@ -1,7 +1,8 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Upload, Wand2, Heart } from "lucide-react";
+import runtimeConfig from "@/libs/app-config/runtime";
 
-const steps = [
+const baseSteps = [
   {
     icon: Upload,
     title: "Upload or describe",
@@ -20,6 +21,10 @@ const steps = [
 ];
 
 export function HowItWorks() {
+  const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
+  const steps = collectionsEnabled
+    ? baseSteps
+    : baseSteps.filter((s) => s.title !== 'Save your favorites');
   return (
     <section className="py-14">
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
@@ -45,4 +50,3 @@ export function HowItWorks() {
 }
 
 export default HowItWorks;
-

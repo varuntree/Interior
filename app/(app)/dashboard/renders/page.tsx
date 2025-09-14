@@ -12,8 +12,10 @@ import { ImageCard } from "@/components/shared/ImageCard";
 import React from "react";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
 import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 export default function RendersPage() {
+  const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
   const { items, loading, loadingMore, hasMore, fetchMore, refetch } = useRenders();
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerItem, setPickerItem] = React.useState<{ type: 'render'|'community'; id: string } | null>(null);
@@ -32,6 +34,7 @@ export default function RendersPage() {
   };
 
   const onToggleFavorite = async (renderId: string) => {
+    if (!collectionsEnabled) return;
     try {
       await apiFetch('/api/v1/favorites/toggle', {
         method: 'POST',
@@ -45,6 +48,7 @@ export default function RendersPage() {
   };
 
   const onAddToCollection = (renderId: string) => {
+    if (!collectionsEnabled) return;
     setPickerItem({ type: 'render', id: renderId });
     setPickerOpen(true);
   };
@@ -107,12 +111,12 @@ export default function RendersPage() {
                 id={r.id}
                 imageUrl={r.cover_variant_url}
                 showMeta={false}
-                isFavorite={!!r.is_favorite}
-                canFavorite
-                canAddToCollection
+                isFavorite={collectionsEnabled ? !!r.is_favorite : false}
+                canFavorite={collectionsEnabled}
+                canAddToCollection={collectionsEnabled}
                 canDelete
-                onToggleFavorite={onToggleFavorite}
-                onAddToCollection={onAddToCollection}
+                onToggleFavorite={collectionsEnabled ? onToggleFavorite : undefined}
+                onAddToCollection={collectionsEnabled ? onAddToCollection : undefined}
                 onOpen={(id) => openViewer(id, r.cover_variant_url)}
                 onDelete={onDelete}
               />
@@ -129,12 +133,13 @@ export default function RendersPage() {
         </div>
       )}
 
+      {collectionsEnabled && (
       <CollectionPickerDialog
         open={pickerOpen}
         onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerItem(null); }}
         item={pickerItem}
         onAdded={() => { toast.success('Added to collection'); refetch(); }}
-      />
+      />)}
 
       {/* Unified Image Viewer */}
       <ImageViewerDialog

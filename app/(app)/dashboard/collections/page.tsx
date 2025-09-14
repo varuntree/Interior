@@ -12,8 +12,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/libs/api/http";
 import { toast } from "sonner";
+import runtimeConfig from "@/libs/app-config/runtime";
+import { useRouter } from "next/navigation";
 
 export default function CollectionsPage() {
+  const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
+  const router = useRouter();
   const { items, loading, error, refetch } = useCollections();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createName, setCreateName] = React.useState("");
@@ -24,6 +28,18 @@ export default function CollectionsPage() {
   const favorites = items.find((c) => c.isDefaultFavorites);
   const others = items.filter((c) => !c.isDefaultFavorites);
   const all = favorites ? [favorites, ...others] : others;
+
+  if (!collectionsEnabled) {
+    return (
+      <div className="space-y-6 p-6">
+        <DashboardHeader title="Collections" subtitle="This feature is currently unavailable" />
+        <div className="flex gap-2">
+          <Button onClick={() => router.replace('/dashboard/renders')}>Go to My Renders</Button>
+          <Button variant="outline" onClick={() => router.replace('/dashboard')}>Create New</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">

@@ -81,7 +81,7 @@ export default function PricingSection() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 place-items-stretch">
-          {plans.map((plan, idx) => {
+          {plans.map((plan) => {
             const featured = plan.id === "pro"; // Monthly featured
             return (
               <div

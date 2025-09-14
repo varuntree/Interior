@@ -2,12 +2,11 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useCallback } from "react";
+import React from "react";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/libs/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import AppImage from "@/components/shared/Image";
 
 import {
@@ -38,8 +37,6 @@ export function Hero() {
   }, [api]);
 
   // Auth status handled by useAuthStatus
-
-  const isMobile = useIsMobile();
 
   return (
     <section className="bg-background pt-12 pb-14 md:pt-16 md:pb-16">

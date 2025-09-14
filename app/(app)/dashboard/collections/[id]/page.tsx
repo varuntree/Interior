@@ -5,23 +5,34 @@ import { useParams, useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useCollectionDetail, type CollectionItem } from "@/hooks/useCollectionDetail";
 import { toast } from "sonner";
 import { ImageCard } from "@/components/shared/ImageCard";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
 import { apiFetch } from "@/libs/api/http";
 import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 export default function CollectionDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
   const { data, items, loading, error, hasMore, loadingMore, fetchMore, refetch, removeItem } = useCollectionDetail(params?.id);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerItem, setPickerItem] = React.useState<{ type: 'render'|'community'; id: string } | null>(null);
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [viewerItem, setViewerItem] = React.useState<CollectionItem | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+
+  if (!collectionsEnabled) {
+    return (
+      <div className="space-y-6 p-6">
+        <DashboardHeader title="Collections" subtitle="This feature is currently unavailable" />
+        <Button onClick={() => router.replace('/dashboard/renders')}>Go to My Renders</Button>
+      </div>
+    );
+  }
 
   const onRemove = async (item: any) => {
     try {
@@ -32,7 +43,7 @@ export default function CollectionDetailPage() {
     }
   };
 
-  const openViewer = (item: CollectionItem, url: string, title?: string) => {
+  const openViewer = (item: CollectionItem) => {
     setViewerItem(item);
     setViewerOpen(true);
   };
@@ -101,7 +112,7 @@ export default function CollectionDetailPage() {
                       }
                     }}
                     onAddToCollection={(id) => { setPickerItem({ type: 'render', id }); setPickerOpen(true); }}
-                    onOpen={() => openViewer(it, it.render.coverImageUrl || "/placeholder.png")}
+                    onOpen={() => openViewer(it)}
                     onDelete={() => onRemove(it)}
                   />
                 );
@@ -116,7 +127,7 @@ export default function CollectionDetailPage() {
                   canAddToCollection
                   canDelete
                   onAddToCollection={(id) => { setPickerItem({ type: 'community', id }); setPickerOpen(true); }}
-                  onOpen={() => openViewer(it, it.imageUrl, 'Community image')}
+                  onOpen={() => openViewer(it)}
                   onDelete={() => onRemove(it)}
                 />
               );

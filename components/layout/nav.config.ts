@@ -1,4 +1,5 @@
 import { Wand2, Image, FolderHeart, Users, Settings } from "lucide-react";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 export type NavItem = {
   name: string;
@@ -7,11 +8,18 @@ export type NavItem = {
   primary?: boolean;
 };
 
-export const primaryNav: NavItem[] = [
+const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
+const communityEnabled = !!runtimeConfig.featureFlags?.community;
+
+const baseNav: NavItem[] = [
   { name: "Create", href: "/dashboard", icon: Wand2, primary: true },
   { name: "My Renders", href: "/dashboard/renders", icon: Image },
-  { name: "Collections", href: "/dashboard/collections", icon: FolderHeart },
-  { name: "Community", href: "/dashboard/community", icon: Users },
+];
+
+export const primaryNav: NavItem[] = [
+  ...baseNav,
+  ...(collectionsEnabled ? [{ name: "Collections", href: "/dashboard/collections", icon: FolderHeart }] : []),
+  ...(communityEnabled ? [{ name: "Community", href: "/dashboard/community", icon: Users }] : []),
 ];
 
 export const secondaryNav: NavItem[] = [

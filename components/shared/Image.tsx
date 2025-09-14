@@ -22,7 +22,6 @@ export function AppImage({
 }: AppImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  const [timedOut, setTimedOut] = useState(false);
   // If priority is passed, Next.js requires not to set loading="lazy"
   // Extract it from rest so we can conditionally omit the loading prop.
   const { priority, ...imgRest } = rest as { priority?: boolean } & Record<string, any>;
@@ -30,13 +29,12 @@ export function AppImage({
   // Safety: avoid infinite spinners if a remote host is blocked or very slow
   React.useEffect(() => {
     if (loaded || errored) return;
-    const t = setTimeout(() => {
+    const t = window.setTimeout(() => {
       if (!loaded && !errored) {
-        setTimedOut(true);
         setErrored(true);
       }
     }, 6000);
-    return () => clearTimeout(t);
+    return () => window.clearTimeout(t);
   }, [loaded, errored]);
 
   const common: any = {

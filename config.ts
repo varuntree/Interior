@@ -1,4 +1,5 @@
 import { ConfigProps } from "./types/config";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 const config = {
   // REQUIRED
@@ -29,7 +30,7 @@ const config = {
           { name: "20 high‑resolution images per month" },
           { name: "4 design modes" },
           { name: "Australian style presets" },
-          { name: "Collections & favorites" },
+          ...(runtimeConfig.featureFlags?.collections ? [{ name: "Collections & favorites" }] : []),
         ],
       },
       {
@@ -47,7 +48,7 @@ const config = {
           { name: "100 high‑resolution images per month" },
           { name: "4 design modes" },
           { name: "Australian style presets" },
-          { name: "Collections & favorites" },
+          ...(runtimeConfig.featureFlags?.collections ? [{ name: "Collections & favorites" }] : []),
           { name: "Priority generation queue" },
         ],
       },

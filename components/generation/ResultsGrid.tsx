@@ -9,6 +9,7 @@ import { GenerationResult } from "@/contexts/GenerationContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Download } from "lucide-react";
+import runtimeConfig from "@/libs/app-config/runtime";
 
 interface ResultsGridProps {
   results: GenerationResult[];
@@ -56,6 +57,7 @@ function ResultsGridInner({
   onDownload,
   className
 }: ResultsGridProps) {
+  const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
   const count = results?.length ?? 0;
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [viewer, setViewer] = React.useState<{ id: string; url: string } | null>(null);
@@ -72,15 +74,15 @@ function ResultsGridInner({
       key={result.id}
       id={result.id}
       imageUrl={result.thumbUrl || result.url}
-      canFavorite={!!onAddToFavorites && !!result.renderId}
-      canAddToCollection={!!onAddToCollection && !!result.renderId}
+      canFavorite={collectionsEnabled && !!onAddToFavorites && !!result.renderId}
+      canAddToCollection={collectionsEnabled && !!onAddToCollection && !!result.renderId}
       canDelete={false}
       showMeta={false}
-      onToggleFavorite={result.renderId && onAddToFavorites ? () => onAddToFavorites(result.renderId!) : undefined}
-      onAddToCollection={result.renderId && onAddToCollection ? () => onAddToCollection(result.renderId!) : undefined}
+      onToggleFavorite={collectionsEnabled && result.renderId && onAddToFavorites ? () => onAddToFavorites(result.renderId!) : undefined}
+      onAddToCollection={collectionsEnabled && result.renderId && onAddToCollection ? () => onAddToCollection(result.renderId!) : undefined}
       onOpen={() => { setViewer({ id: result.id, url: result.url }); setViewerOpen(true); }}
     />
-  )), [results, onAddToFavorites, onAddToCollection]);
+  )), [results, onAddToFavorites, onAddToCollection, collectionsEnabled]);
 
   if (isLoading) {
     return (

@@ -11,6 +11,8 @@ import { Sparkles } from "lucide-react";
 import { apiFetch } from "@/libs/api/http";
 import { toast } from "sonner";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
+import runtimeConfig from "@/libs/app-config/runtime";
+import { useRouter } from "next/navigation";
 
 type CommunityItemDTO = {
   id: string;
@@ -23,6 +25,9 @@ type CommunityItemDTO = {
 }
 
 export default function CommunityPage() {
+  const communityEnabled = !!runtimeConfig.featureFlags?.community;
+  const collectionsEnabled = !!runtimeConfig.featureFlags?.collections;
+  const router = useRouter();
   const [items, setItems] = useState<CommunityItemDTO[]>([]);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -53,14 +58,22 @@ export default function CommunityPage() {
     }
   };
 
-  useEffect(() => { fetchPage(); }, []);
-
-  const onApplySettings = (settings: any) => applySettings(settings);
+  useEffect(() => { if (communityEnabled) { fetchPage(); } }, [communityEnabled]);
 
   const onAddToCollection = (id: string, isCommunity = false) => {
+    if (!collectionsEnabled) return;
     setPickerItem({ type: isCommunity ? 'community' : 'render', id });
     setPickerOpen(true);
   };
+
+  if (!communityEnabled) {
+    return (
+      <div className="space-y-6 p-6">
+        <DashboardHeader title="Community" subtitle="This feature is currently unavailable" />
+        <Button onClick={() => router.replace('/dashboard')}>Back to Create</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -87,18 +100,18 @@ export default function CommunityPage() {
             const id = item.render?.id || item.id;
             const url = item.thumbUrl || item.imageUrl;
             return (
-              <ImageCard
-                key={item.id}
-                id={id}
-                imageUrl={url}
-                canFavorite={false}
-                canAddToCollection
-                canDelete={false}
-                canApplySettings={false}
-                onAddToCollection={() => onAddToCollection(id, !item.render?.id)}
-                onOpen={() => { setViewer({ id, url: item.imageUrl, title: undefined }); setViewerOpen(true); }}
-              />
-            );
+                <ImageCard
+                  key={item.id}
+                  id={id}
+                  imageUrl={url}
+                  canFavorite={false}
+                  canAddToCollection={collectionsEnabled}
+                  canDelete={false}
+                  canApplySettings={false}
+                  onAddToCollection={collectionsEnabled ? () => onAddToCollection(id, !item.render?.id) : undefined}
+                  onOpen={() => { setViewer({ id, url: item.imageUrl, title: undefined }); setViewerOpen(true); }}
+                />
+              );
           })}
         </div>
       )}
@@ -112,12 +125,13 @@ export default function CommunityPage() {
         </div>
       )}
 
+      {collectionsEnabled && (
       <CollectionPickerDialog
         open={pickerOpen}
         onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerItem(null); }}
         item={pickerItem}
         onAdded={() => { toast.success('Added to collection'); }}
-      />
+      />)}
 
       {/* Image viewer */}
       <ImageViewerDialog
