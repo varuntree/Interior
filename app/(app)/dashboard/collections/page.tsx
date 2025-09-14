@@ -1,12 +1,10 @@
 "use client";
 import React from "react";
-import Link from "next/link";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FolderHeart, Plus, Heart, Sparkles } from "lucide-react";
+import { FolderHeart, Plus, Sparkles } from "lucide-react";
 import { useCollections } from "@/hooks/useCollections";
 import { CollectionCard } from "@/components/collections/CollectionCard";
 import { CollectionCardSkeleton } from "@/components/collections/CollectionCard.Skeleton";
@@ -25,6 +23,7 @@ export default function CollectionsPage() {
 
   const favorites = items.find((c) => c.isDefaultFavorites);
   const others = items.filter((c) => !c.isDefaultFavorites);
+  const all = favorites ? [favorites, ...others] : others;
 
   return (
     <div className="space-y-6 p-6">
@@ -50,82 +49,43 @@ export default function CollectionsPage() {
         </div>
       )}
 
-      {/* Default Favorites Collection (Always Present) */}
-      {!loading ? (
-        <Card className="border-primary/30">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Heart className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    My Favorites
-                    <Badge variant="outline" className="text-xs">Default</Badge>
-                  </CardTitle>
-                  <CardDescription>Your automatically saved favorite designs</CardDescription>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{favorites?.itemCount ?? 0} items</Badge>
-                {favorites && (
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href={`/dashboard/collections/${favorites.id}`}>Open</Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Designs you mark as favorites will automatically appear here. This collection cannot be deleted.
-            </p>
-          </CardContent>
-        </Card>
+      {/* Unified grid (Favorites + others) */}
+      {loading ? (
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CollectionCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : all.length === 0 ? (
+        <EmptyState
+          icon={<FolderHeart className="h-12 w-12" />}
+          title="No collections yet"
+          description="Create collections to organize your designs by project, room, or style. Each render can be added to multiple collections."
+          action={{ label: "Create First Collection", onClick: () => setCreateOpen(true) }}
+        />
       ) : (
-        <CollectionCardSkeleton />
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {all.map((c) => (
+            <CollectionCard
+              key={c.id}
+              id={c.id}
+              name={c.name}
+              itemCount={c.itemCount}
+              isDefaultFavorites={c.isDefaultFavorites}
+              onRename={c.isDefaultFavorites ? undefined : () => { setSelectedId(c.id); setRenameName(c.name); setRenameOpen(true); }}
+              onDelete={c.isDefaultFavorites ? undefined : async () => {
+                try {
+                  await apiFetch(`/api/v1/collections/${c.id}`, { method: 'DELETE' });
+                  toast.success('Collection deleted');
+                  await refetch();
+                } catch (e: any) {
+                  toast.error(e?.message || 'Failed to delete');
+                }
+              }}
+            />
+          ))}
+        </div>
       )}
-
-      {/* Other Collections */}
-      <div className="border-t pt-6">
-        {loading ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <CollectionCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : others.length === 0 ? (
-          <EmptyState
-            icon={<FolderHeart className="h-12 w-12" />}
-            title="No custom collections yet"
-            description="Create collections to organize your designs by project, room, or style. Each render can be added to multiple collections."
-            action={{ label: "Create First Collection", onClick: () => setCreateOpen(true) }}
-          />
-        ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {others.map((c) => (
-              <CollectionCard
-                key={c.id}
-                id={c.id}
-                name={c.name}
-                itemCount={c.itemCount}
-                onOpen={() => { /* link wrapper handles */ }}
-                onRename={() => { setSelectedId(c.id); setRenameName(c.name); setRenameOpen(true); }}
-                onDelete={async () => {
-                  try {
-                    await apiFetch(`/api/v1/collections/${c.id}`, { method: 'DELETE' });
-                    toast.success('Collection deleted');
-                    await refetch();
-                  } catch (e: any) {
-                    toast.error(e?.message || 'Failed to delete');
-                  }
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
