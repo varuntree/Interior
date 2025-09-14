@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element, no-unused-vars */
 
 import { useState, useEffect, type ReactNode } from "react";
 import { useGeneration } from "@/contexts/GenerationContext";

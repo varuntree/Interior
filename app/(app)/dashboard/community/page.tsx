@@ -32,7 +32,7 @@ export default function CommunityPage() {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const { applySettings } = useApplySettings();
+  useApplySettings();
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerItem, setPickerItem] = useState<{ type: 'render'|'community'; id: string } | null>(null);

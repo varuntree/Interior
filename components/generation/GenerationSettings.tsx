@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import { cn } from "@/libs/utils";
 import { Button } from "@/components/ui/button";

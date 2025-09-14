@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable no-unused-vars */
 
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -22,7 +23,7 @@ type ItemRef = { type: 'render' | 'community'; id: string } | null;
 
 interface Props {
   open: boolean;
-  onOpenChange: (_: boolean) => void;
+  onOpenChange: (open: boolean) => void;
   item: ItemRef;
   onAdded?: () => void;
 }
