@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FolderHeart, Plus, Heart, Sparkles } from "lucide-react";
 import { useCollections } from "@/hooks/useCollections";
+import { CollectionCard } from "@/components/collections/CollectionCard";
+import { CollectionCardSkeleton } from "@/components/collections/CollectionCard.Skeleton";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/libs/api/http";
 import { toast } from "sonner";
 
 export default function CollectionsPage() {
-  const { items, refetch } = useCollections();
+  const { items, loading, error, refetch } = useCollections();
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createName, setCreateName] = React.useState("");
   const [renameOpen, setRenameOpen] = React.useState(false);
@@ -42,80 +44,84 @@ export default function CollectionsPage() {
         </div>
       </DashboardHeader>
 
+      {!!error && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2 text-sm">
+          {error}
+        </div>
+      )}
+
       {/* Default Favorites Collection (Always Present) */}
-      <Card className="border-primary/20">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Heart className="h-5 w-5 text-primary" />
+      {!loading ? (
+        <Card className="border-primary/30">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Heart className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    My Favorites
+                    <Badge variant="outline" className="text-xs">Default</Badge>
+                  </CardTitle>
+                  <CardDescription>Your automatically saved favorite designs</CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  My Favorites
-                  <Badge variant="outline" className="text-xs">Default</Badge>
-                </CardTitle>
-                <CardDescription>Your automatically saved favorite designs</CardDescription>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{favorites?.itemCount ?? 0} items</Badge>
+                {favorites && (
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/dashboard/collections/${favorites.id}`}>Open</Link>
+                  </Button>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{favorites?.itemCount ?? 0} items</Badge>
-              {favorites && (
-                <Button size="sm" variant="outline" asChild>
-                  <Link href={`/dashboard/collections/${favorites.id}`}>Open</Link>
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Designs you mark as favorites will automatically appear here. This collection cannot be deleted.
-          </p>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Designs you mark as favorites will automatically appear here. This collection cannot be deleted.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <CollectionCardSkeleton />
+      )}
 
       {/* Other Collections */}
       <div className="border-t pt-6">
-        {others.length === 0 ? (
+        {loading ? (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CollectionCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : others.length === 0 ? (
           <EmptyState
             icon={<FolderHeart className="h-12 w-12" />}
             title="No custom collections yet"
             description="Create collections to organize your designs by project, room, or style. Each render can be added to multiple collections."
-            action={{ label: "Create First Collection", onClick: () => {} }}
+            action={{ label: "Create First Collection", onClick: () => setCreateOpen(true) }}
           />
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {others.map((c) => (
-              <Card key={c.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{c.name}</CardTitle>
-                  <CardDescription>{c.itemCount} items</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href={`/dashboard/collections/${c.id}`}>
-                        Open
-                      </Link>
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => { setSelectedId(c.id); setRenameName(c.name); setRenameOpen(true); }}>
-                      Rename
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={async () => {
-                      try {
-                        await apiFetch(`/api/v1/collections/${c.id}`, { method: 'DELETE' });
-                        toast.success('Collection deleted');
-                        await refetch();
-                      } catch (e: any) {
-                        toast.error(e?.message || 'Failed to delete');
-                      }
-                    }}>
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <CollectionCard
+                key={c.id}
+                id={c.id}
+                name={c.name}
+                itemCount={c.itemCount}
+                onOpen={() => { /* link wrapper handles */ }}
+                onRename={() => { setSelectedId(c.id); setRenameName(c.name); setRenameOpen(true); }}
+                onDelete={async () => {
+                  try {
+                    await apiFetch(`/api/v1/collections/${c.id}`, { method: 'DELETE' });
+                    toast.success('Collection deleted');
+                    await refetch();
+                  } catch (e: any) {
+                    toast.error(e?.message || 'Failed to delete');
+                  }
+                }}
+              />
             ))}
           </div>
         )}

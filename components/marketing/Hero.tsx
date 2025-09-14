@@ -2,7 +2,7 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useMemo, useCallback } from "react";
+import React, { useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/libs/utils";
@@ -16,16 +16,12 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 
-// Hero images sourced from feature sections
-// 1-3: Feature 1 (Redesign) — f11, f12, f13
-// 4-6: Feature 2 (Transfer) — f21, f22, f23
+// Hero images sourced only from Feature 1 (Redesign)
+// Iterate between these three images exclusively
 const testimonials = [
   { id: 1, image: "/landing/f11.png" },
   { id: 2, image: "/landing/f12.png" },
   { id: 3, image: "/landing/f13.png" },
-  { id: 4, image: "/landing/f21.png" },
-  { id: 5, image: "/landing/f22.png" },
-  { id: 6, image: "/landing/f23.png" },
 ];
 
 export function Hero() {
@@ -40,32 +36,6 @@ export function Hero() {
   }, [api]);
 
   const isMobile = useIsMobile();
-
-  const getRotation = useCallback(
-    (index: number) => {
-      if (index === current)
-        return "md:-rotate-45 md:translate-x-40 md:scale-75 md:relative";
-      if (index === current + 1) return "md:rotate-0 md:z-10 md:relative";
-      if (index === current + 2)
-        return "md:rotate-45 md:-translate-x-40 md:scale-75 md:relative";
-      return undefined;
-    },
-    [current]
-  );
-
-  const scrollbarBars = useMemo(
-    () =>
-      [...Array(40)].map((_, item) => (
-        <motion.div
-          key={item}
-          initial={{ opacity: item % 5 === 0 ? 0.2 : 0.2, filter: "blur(1px)" }}
-          animate={{ opacity: item % 5 === 0 ? 1 : 0.2, filter: "blur(0px)" }}
-          transition={{ duration: 0.2, delay: item % 5 === 0 ? (item / 5) * 0.05 : 0, ease: "easeOut" }}
-          className={cn("w-[1px] bg-foreground", item % 5 === 0 ? "h-[15px]" : "h-[10px]")}
-        />
-      )),
-    []
-  );
 
   return (
     <section className="bg-background pt-12 pb-14 md:pt-16 md:pb-16">
@@ -122,27 +92,20 @@ export function Hero() {
           </Button>
         </div>
 
-        <div className="relative mt-4 w-full max-w-5xl pb-12">
+        <div className="relative mt-4 w-full max-w-5xl">
           <Carousel
             className="max-w-5xl"
-            plugins={[Autoplay({ delay: 1000, stopOnInteraction: true })]}
+            opts={{ loop: true, align: "start", containScroll: "trimSnaps" }}
+            plugins={[Autoplay({ delay: 2000, stopOnInteraction: true })]}
             setApi={setApi}
           >
             <CarouselContent>
-              {Array.from({ length: isMobile ? testimonials.length : testimonials.length + 2 }).map((_, index) => (
-                <CarouselItem key={index} className="my-4 md:basis-1/3">
-                  <div className={cn("h-[clamp(14rem,36vh,22rem)] md:h-[clamp(18rem,40vh,26rem)] w-full overflow-hidden rounded-lg border bg-card shadow-sm transition-transform duration-500 ease-in-out", getRotation(index))}>
+              {testimonials.map((item, index) => (
+                <CarouselItem key={index} className="my-2 basis-full sm:basis-3/4 md:basis-1/2 lg:basis-1/2">
+                  <div className="h-[clamp(14rem,36vh,22rem)] md:h-[clamp(18rem,40vh,26rem)] w-full overflow-hidden rounded-lg border bg-card shadow-sm">
                     <AppImage
                       alt={`Preview image ${index + 1}`}
-                      src={
-                        index == testimonials.length
-                          ? testimonials[0].image
-                          : index == testimonials.length + 1
-                          ? testimonials[1].image
-                          : index == testimonials.length + 2
-                          ? testimonials[2].image
-                          : testimonials[index].image
-                      }
+                      src={item.image}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 90vw, (max-width: 1024px) 33vw, 320px"
@@ -158,25 +121,21 @@ export function Hero() {
             </CarouselContent>
           </Carousel>
 
-          {/* Animated label and bars, positioned below carousel visuals */}
-          <div className="absolute bottom-0 left-0 right-0 translate-y-full">
-            <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-2">
-              <div className="flex gap-2">{scrollbarBars}</div>
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.p
-                  key={`label-${current}`}
-                  className="w-full text-lg font-medium"
-                  initial={{ opacity: 0, y: 20, scale: 0.9, filter: "blur(5px)" }}
-                  animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, y: -20, scale: 0.9, filter: "blur(5px)" }}
-                  transition={{ duration: 0.5 }}
-                >
-                  Design preview
-                </motion.p>
-              </AnimatePresence>
-              <div className="flex gap-2">{scrollbarBars}</div>
-            </div>
+          {/* Dots with progress synced to autoplay */}
+          <div className="mt-4 flex w-full items-center gap-3 justify-center">
+            {testimonials.map((_, i) => (
+              <button key={`hero-dot-${i}`} onClick={() => api?.scrollTo(i)} className="h-3 w-12" aria-label={`Go to slide ${i+1}`}>
+                <div className={cn("relative h-1 w-full overflow-hidden rounded-full bg-muted", current === i && "bg-primary/20")}> 
+                  {current === i && (
+                    <span className="absolute inset-y-0 left-0 bg-primary" style={{ animation: "heroProgress 2s linear infinite", width: 0 }} />
+                  )}
+                </div>
+              </button>
+            ))}
           </div>
+          <style jsx>{`
+            @keyframes heroProgress { from { width: 0% } to { width: 100% } }
+          `}</style>
         </div>
       </div>
     </section>

@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Sparkles, Trash2 } from "lucide-react";
-import { useCollectionDetail } from "@/hooks/useCollectionDetail";
+import { useCollectionDetail, type CollectionItem } from "@/hooks/useCollectionDetail";
 import { toast } from "sonner";
 import { ImageCard } from "@/components/shared/ImageCard";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
@@ -20,7 +20,7 @@ export default function CollectionDetailPage() {
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerItem, setPickerItem] = React.useState<{ type: 'render'|'community'; id: string } | null>(null);
   const [viewerOpen, setViewerOpen] = React.useState(false);
-  const [viewer, setViewer] = React.useState<{ id: string; url: string; title?: string } | null>(null);
+  const [viewerItem, setViewerItem] = React.useState<CollectionItem | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
   const onRemove = async (item: any) => {
@@ -32,18 +32,18 @@ export default function CollectionDetailPage() {
     }
   };
 
-  const openViewer = (id: string, url: string, title?: string) => {
-    setViewer({ id, url, title });
+  const openViewer = (item: CollectionItem, url: string, title?: string) => {
+    setViewerItem(item);
     setViewerOpen(true);
   };
 
   const handleViewerDelete = async () => {
-    if (!viewer) return;
+    if (!viewerItem) return;
     try {
       setDeleting(true);
-      await onRemove(viewer.id);
+      await removeItem(viewerItem);
       setViewerOpen(false);
-      setViewer(null);
+      setViewerItem(null);
     } finally {
       setDeleting(false);
     }
@@ -66,7 +66,13 @@ export default function CollectionDetailPage() {
         </Button>
       </div>
 
-      {loading && <div>Loading…</div>}
+      {loading && (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-64 bg-muted animate-pulse rounded-lg border" />
+          ))}
+        </div>
+      )}
       {error && <div className="text-destructive">{error}</div>}
 
       {data && (
@@ -95,7 +101,7 @@ export default function CollectionDetailPage() {
                       }
                     }}
                     onAddToCollection={(id) => { setPickerItem({ type: 'render', id }); setPickerOpen(true); }}
-                    onOpen={() => openViewer(it.render.id, it.render.coverImageUrl || "/placeholder.png")}
+                    onOpen={() => openViewer(it, it.render.coverImageUrl || "/placeholder.png")}
                     onDelete={() => onRemove(it)}
                   />
                 );
@@ -110,7 +116,7 @@ export default function CollectionDetailPage() {
                   canAddToCollection
                   canDelete
                   onAddToCollection={(id) => { setPickerItem({ type: 'community', id }); setPickerOpen(true); }}
-                  onOpen={() => openViewer(it.communityImageId, it.imageUrl, 'Community image')}
+                  onOpen={() => openViewer(it, it.imageUrl, 'Community image')}
                   onDelete={() => onRemove(it)}
                 />
               );
@@ -135,10 +141,10 @@ export default function CollectionDetailPage() {
           {/* Unified Image Viewer */}
           <ImageViewerDialog
             open={viewerOpen}
-            onOpenChange={(o) => { setViewerOpen(o); if (!o) setViewer(null); }}
-            imageUrl={viewer?.url || ""}
-            title={viewer?.title}
-            onDelete={viewer ? handleViewerDelete : undefined}
+            onOpenChange={(o) => { setViewerOpen(o); if (!o) setViewerItem(null); }}
+            imageUrl={(viewerItem?.type === 'render' ? (viewerItem.render.coverImageUrl || "") : (viewerItem?.type === 'community' ? viewerItem.imageUrl : ""))}
+            title={viewerItem?.type === 'community' ? 'Community image' : undefined}
+            onDelete={viewerItem ? handleViewerDelete : undefined}
             deleting={deleting}
           />
         </>

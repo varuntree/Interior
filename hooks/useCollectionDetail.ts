@@ -48,7 +48,7 @@ export function useCollectionDetail(collectionId: string | undefined, pageSize: 
   const [hasMore, setHasMore] = useState(false);
 
   const fetchDetail = async () => {
-    if (!collectionId) return;
+    if (!collectionId) { setLoading(false); return; }
     try {
       setLoading(true);
       setError(null);
@@ -89,6 +89,7 @@ export function useCollectionDetail(collectionId: string | undefined, pageSize: 
     setItems([]);
     setOffset(0);
     setHasMore(false);
+    if (!collectionId) { setLoading(false); return; }
     fetchDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionId, pageSize]);

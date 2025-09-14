@@ -44,15 +44,7 @@ export async function listUserCollections(
   ctx: { supabase: SupabaseClient },
   ownerId: string
 ): Promise<CollectionWithCount[]> {
-  const collections = await collectionsRepo.listCollections(ctx.supabase, ownerId)
-  // Count both render items and community image items per collection
-  const withCounts = await Promise.all(collections.map(async (c) => {
-    const [renderCount, communityCount] = await Promise.all([
-      collectionsRepo.countCollectionItems(ctx.supabase, c.id).catch(() => 0),
-      collectionsRepo.countCollectionCommunityItems(ctx.supabase, c.id).catch(() => 0),
-    ])
-    return { ...c, item_count: renderCount + communityCount }
-  }))
+  const withCounts = await collectionsRepo.listCollectionsWithCounts(ctx.supabase, ownerId)
   return withCounts
 }
 

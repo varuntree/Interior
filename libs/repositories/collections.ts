@@ -29,6 +29,53 @@ export async function listCollections(
   return data || []
 }
 
+/**
+ * Optimized utility to fetch collections for a user along with item counts
+ * for both render items and community items using only three queries:
+ *   - collections (owned by user)
+ *   - collection_items filtered by user's collection ids
+ *   - collection_community_items filtered by user's collection ids
+ * It then aggregates counts in-memory to avoid N+1 queries.
+ */
+export async function listCollectionsWithCounts(
+  supabase: SupabaseClient,
+  ownerId: string
+): Promise<Array<Collection & { item_count: number }>> {
+  const collections = await listCollections(supabase, ownerId)
+  if (collections.length === 0) return []
+
+  const ids = collections.map(c => c.id)
+
+  // Fetch all render items for these collections (only collection_id column)
+  const { data: renderRows, error: renderErr } = await supabase
+    .from('collection_items')
+    .select('collection_id')
+    .in('collection_id', ids)
+  if (renderErr) throw renderErr
+
+  // Fetch all community items for these collections (only collection_id column)
+  const { data: communityRows, error: commErr } = await supabase
+    .from('collection_community_items')
+    .select('collection_id')
+    .in('collection_id', ids)
+  if (commErr) throw commErr
+
+  // Aggregate counts per collection id
+  const renderCountMap = new Map<string, number>()
+  for (const row of renderRows || []) {
+    renderCountMap.set(row.collection_id, (renderCountMap.get(row.collection_id) || 0) + 1)
+  }
+  const communityCountMap = new Map<string, number>()
+  for (const row of communityRows || []) {
+    communityCountMap.set(row.collection_id, (communityCountMap.get(row.collection_id) || 0) + 1)
+  }
+
+  return collections.map(c => ({
+    ...c,
+    item_count: (renderCountMap.get(c.id) || 0) + (communityCountMap.get(c.id) || 0)
+  }))
+}
+
 export async function getDefaultFavorites(
   supabase: SupabaseClient,
   ownerId: string

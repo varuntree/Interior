@@ -30,15 +30,18 @@ export function ImageViewerDialog({
   deleteLabel = "Delete",
   className,
 }: ImageViewerDialogProps) {
+  const descId = "image-viewer-desc";
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         hideDefaultClose
+        aria-describedby={descId}
         className={cn(
           "overflow-hidden sm:rounded-xl p-0 bg-card border border-border shadow-2xl w-[96vw] max-w-[min(96vw,1200px)]",
           className
         )}
       >
+        <p id={descId} className="sr-only">Image viewer dialog</p>
         <div className="p-2 md:p-3">
           <div className="relative w-full" style={{ height: "min(85vh, 85svh)" }}>
           {/* Image */}
