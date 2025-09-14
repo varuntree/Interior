@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const requestUrl = new URL(req.url);
   const code = requestUrl.searchParams.get("code");
-  const nextParam = requestUrl.searchParams.get('next');
 
   if (code) {
     const supabase = createClient();
@@ -19,7 +18,5 @@ export async function GET(req: NextRequest) {
   // URL to redirect to after sign in process completes
   // Use environment-based URL to ensure consistent redirects
   const baseUrl = getApplicationUrl(req);
-  const isSafeNext = !!nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//');
-  const destination = isSafeNext ? nextParam! : config.auth.callbackUrl;
-  return NextResponse.redirect(baseUrl + destination);
+  return NextResponse.redirect(baseUrl + config.auth.callbackUrl);
 }

@@ -53,8 +53,30 @@ export default function PricingSection() {
   });
 
   async function startCheckout(priceId: string) {
-    setLoading(priceId)
-    window.location.href = `/start-checkout?priceId=${encodeURIComponent(priceId)}`
+    try {
+      setLoading(priceId);
+      const res = await fetch("/api/v1/stripe/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId,
+          mode: "subscription",
+          successUrl: `${window.location.origin}/dashboard/settings?success=true`,
+          cancelUrl: `${window.location.origin}/#pricing`,
+        }),
+      });
+      if (res.status === 401) {
+        window.location.href = "/signin";
+        return;
+      }
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error?.message || "Failed to start checkout");
+      window.location.href = json.data.url;
+    } catch {
+      alert("Please sign in to continue.");
+    } finally {
+      setLoading(null);
+    }
   }
 
   return (

@@ -65,9 +65,7 @@ export default function Signin() {
     try {
       setLoading(true);
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-      const urlParams = new URLSearchParams(window.location.search)
-      const nextParam = urlParams.get('next')
-      const redirectURL = baseUrl + "/api/auth/callback" + (nextParam ? `?next=${encodeURIComponent(nextParam)}` : "");
+      const redirectURL = baseUrl + "/api/auth/callback";
       await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -122,10 +120,7 @@ export default function Signin() {
       const rt = data.session?.refresh_token;
       if (!at || !rt) throw new Error("Missing session tokens after sign-in.");
       await setServerSession(at, rt);
-      const urlParams = new URLSearchParams(window.location.search)
-      const nextParam = urlParams.get('next')
-      const isSafe = !!nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
-      window.location.href = isSafe ? nextParam! : "/dashboard";
+      window.location.href = "/dashboard";
     } catch (err: any) {
       console.error(err);
       setFormError("Invalid email or password.");
@@ -155,10 +150,7 @@ export default function Signin() {
       if (error) throw error;
       if (data.session?.access_token && data.session.refresh_token) {
         await setServerSession(data.session.access_token, data.session.refresh_token);
-        const urlParams = new URLSearchParams(window.location.search)
-        const nextParam = urlParams.get('next')
-        const isSafe = !!nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//')
-        window.location.href = isSafe ? nextParam! : "/dashboard";
+        window.location.href = "/dashboard";
         return;
       }
       // If email confirmations are enabled in Supabase, session may be null.
