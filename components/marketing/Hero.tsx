@@ -3,6 +3,7 @@
 import Autoplay from "embla-carousel-autoplay";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useCallback } from "react";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/libs/utils";
@@ -27,6 +28,7 @@ const testimonials = [
 export function Hero() {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
+  const { authed: isAuthed } = useAuthStatus();
 
   React.useEffect(() => {
     if (!api) return;
@@ -34,6 +36,8 @@ export function Hero() {
       setCurrent(api.selectedScrollSnap());
     });
   }, [api]);
+
+  // Auth status handled by useAuthStatus
 
   const isMobile = useIsMobile();
 
@@ -85,7 +89,9 @@ export function Hero() {
         {/* CTAs above the animated label to avoid overlap */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/signin">Try it free</Link>
+            <Link href={isAuthed ? "/dashboard" : "/signin"}>
+              {isAuthed ? "Open Dashboard" : "Try it free"}
+            </Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
             <Link href="/community">See examples</Link>

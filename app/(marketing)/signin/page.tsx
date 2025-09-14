@@ -65,7 +65,19 @@ export default function Signin() {
     try {
       setLoading(true);
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-      const redirectURL = baseUrl + "/api/auth/callback";
+      // Preserve checkout intent if present
+      const sp = new URLSearchParams(window.location.search);
+      const qp = new URLSearchParams();
+      const priceId = sp.get('priceId');
+      const checkoutMode = sp.get('mode');
+      const successUrl = sp.get('successUrl');
+      const cancelUrl = sp.get('cancelUrl');
+      if (priceId) qp.set('priceId', priceId);
+      if (checkoutMode) qp.set('mode', checkoutMode);
+      if (successUrl) qp.set('successUrl', successUrl);
+      if (cancelUrl) qp.set('cancelUrl', cancelUrl);
+      const query = qp.toString();
+      const redirectURL = baseUrl + "/api/auth/callback" + (query ? `?${query}` : "");
       await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -100,6 +112,37 @@ export default function Signin() {
     }
   }
 
+  function getCheckoutParams(): null | {
+    priceId: string;
+    mode: 'payment' | 'subscription';
+    successUrl: string;
+    cancelUrl: string;
+  } {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const priceId = sp.get('priceId');
+      const mode = (sp.get('mode') as 'payment' | 'subscription') || 'subscription';
+      const successUrl = sp.get('successUrl');
+      const cancelUrl = sp.get('cancelUrl');
+      if (priceId && successUrl && cancelUrl) {
+        return { priceId, mode, successUrl, cancelUrl };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  function redirectToCallbackOrDashboard() {
+    const params = getCheckoutParams();
+    if (params) {
+      const sp = new URLSearchParams(params as any);
+      window.location.href = `/api/auth/callback?${sp.toString()}`;
+      return;
+    }
+    window.location.href = '/dashboard';
+  }
+
   async function handleEmailSignin(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
@@ -120,7 +163,7 @@ export default function Signin() {
       const rt = data.session?.refresh_token;
       if (!at || !rt) throw new Error("Missing session tokens after sign-in.");
       await setServerSession(at, rt);
-      window.location.href = "/dashboard";
+      redirectToCallbackOrDashboard();
     } catch (err: any) {
       console.error(err);
       setFormError("Invalid email or password.");
@@ -150,7 +193,7 @@ export default function Signin() {
       if (error) throw error;
       if (data.session?.access_token && data.session.refresh_token) {
         await setServerSession(data.session.access_token, data.session.refresh_token);
-        window.location.href = "/dashboard";
+        redirectToCallbackOrDashboard();
         return;
       }
       // If email confirmations are enabled in Supabase, session may be null.

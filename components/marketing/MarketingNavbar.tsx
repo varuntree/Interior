@@ -15,6 +15,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { ArrowRight, Menu, X } from "lucide-react";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 // Minimal, clean menu panel with only current pages
 const ExploreMenu = () => (
@@ -43,6 +44,7 @@ export function MarketingNavbar() {
   }
   const [open, setOpen] = useState(false)
   const [submenu, setSubmenu] = useState<"explore" | null>(null)
+  const { authed } = useAuthStatus();
 
   return (
     <header className="bg-background inset-x-0 top-0 z-20">
@@ -75,7 +77,9 @@ export function MarketingNavbar() {
             <div className="flex items-center gap-2">
               {pathname !== "/signin" && (
                 <Button asChild className="hidden md:block">
-                  <Link href="/signin">Login</Link>
+                  <Link href={authed ? "/dashboard" : "/signin"}>
+                    {authed ? 'Dashboard' : 'Login'}
+                  </Link>
                 </Button>
               )}
               <Button
@@ -114,7 +118,9 @@ export function MarketingNavbar() {
               <div className="mx-8 mt-auto flex flex-col items-center gap-8 py-16">
                 {pathname !== "/signin" && (
                   <Button asChild>
-                    <Link href="/signin">Login</Link>
+                    <Link href={authed ? "/dashboard" : "/signin"}>
+                      {authed ? 'Dashboard' : 'Login'}
+                    </Link>
                   </Button>
                 )}
               </div>

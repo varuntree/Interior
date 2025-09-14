@@ -96,7 +96,7 @@ Runtime config uses /api/v1/webhooks/replicate.
 
 In dev, Replicate must reach your machine:
 
-Use ngrok http 3000 (or Vercel preview).
+Use Cloudflare Tunnel: `cloudflared tunnel --url http://localhost:3000` (or Vercel preview).
 
 Put the public URL + /api/v1/webhooks/replicate into the webhook param when you create a prediction.
 
@@ -170,7 +170,7 @@ Deployment checklist:
 
 Stripe webhook signature error: wrong STRIPE_WEBHOOK_SECRET (ensure it matches the active endpoint).
 
-Replicate webhook not firing: local server isn’t public → use ngrok and pass its URL in prediction webhook.
+Replicate webhook not firing: local server isn’t public → use Cloudflare Tunnel and pass its URL in prediction webhook.
 
 Images not visible: check storage bucket policy (public bucket has read policy) and that we’re using public paths for result images.
 

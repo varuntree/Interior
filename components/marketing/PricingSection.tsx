@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import config from "@/config";
 import runtimeConfig from "@/libs/app-config/runtime";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 type PlanCard = {
   id: "plus" | "pro";
@@ -28,6 +29,7 @@ function formatUSD(n: number) {
 
 export default function PricingSection() {
   const [loading, setLoading] = useState<string | null>(null);
+  const { authed } = useAuthStatus();
 
   // Build plans from config but keep copy simple and universal.
   const plans: PlanCard[] = (config.stripe.plans || []).map((p) => {
@@ -52,30 +54,19 @@ export default function PricingSection() {
     };
   });
 
-  async function startCheckout(priceId: string) {
-    try {
-      setLoading(priceId);
-      const res = await fetch("/api/v1/stripe/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId,
-          mode: "subscription",
-          successUrl: `${window.location.origin}/dashboard/settings?success=true`,
-          cancelUrl: `${window.location.origin}/#pricing`,
-        }),
-      });
-      if (res.status === 401) {
-        window.location.href = "/signin";
-        return;
-      }
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error?.message || "Failed to start checkout");
-      window.location.href = json.data.url;
-    } catch {
-      alert("Please sign in to continue.");
-    } finally {
-      setLoading(null);
+  function startCheckout(priceId: string) {
+    setLoading(priceId);
+    const params = new URLSearchParams({
+      priceId,
+      mode: 'subscription',
+      successUrl: `${window.location.origin}/dashboard/settings?success=true`,
+      cancelUrl: `${window.location.origin}/#pricing`
+    });
+    // Single canonical handoff: server-side in auth callback
+    if (authed) {
+      window.location.href = `/api/auth/callback?${params.toString()}`;
+    } else {
+      window.location.href = `/signin?${params.toString()}`;
     }
   }
 
