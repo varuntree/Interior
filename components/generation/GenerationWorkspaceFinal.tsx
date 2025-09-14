@@ -6,13 +6,14 @@ import { useGenerationSubmit } from "@/hooks/useGenerationSubmit";
 import { useGenerationStatus } from "@/hooks/useGenerationStatus";
 import runtimeConfig from "@/libs/app-config/runtime";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Home, Layers, Palette, Sparkles, Wand2, UploadCloud, X, HelpCircle } from "lucide-react";
-import { ResultsGrid } from "./ResultsGrid";
-import { GenerationProgress } from "./GenerationProgress";
+// Results grid is intentionally not used on this screen anymore.
+// The right preview panel now handles display of results and loading overlay.
+import { GenerationOverlay } from "./GenerationOverlay";
 import { toastSuccess, toastError } from "@/components/shared/Toast";
-import { apiFetch } from "@/libs/api/http";
 
 export function GenerationWorkspaceFinal() {
   const {
@@ -42,14 +43,8 @@ export function GenerationWorkspaceFinal() {
   const showInput1 = state.mode !== "imagine";
   const showInput2 = state.mode === "compose";
   const [hasResult, setHasResult] = useState(false);
+  const basePreviewUrl = useObjectUrl(state.input1File);
 
-  async function handleAddToFavorites(renderId: string) {
-    await apiFetch("/api/v1/collections/favorites/items", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ renderId }),
-    });
-  }
   function onGenerate() {
     if (!canSubmit) return;
     submitGeneration();
@@ -131,57 +126,44 @@ export function GenerationWorkspaceFinal() {
               input2={state.input2File}
               onRemove1={() => setInput1File(null)}
               onRemove2={() => setInput2File(null)}
+              onPick1={(f) => setInput1File(f)}
+              onPick2={(f) => setInput2File(f)}
             />
           )}
-          <ResultPreviewPanel results={state.results} hasResult={hasResult} />
+          <ResultPreviewPanel
+            results={state.results}
+            hasResult={hasResult}
+            isGenerating={state.isGenerating}
+            status={state.generationStatus}
+            mode={state.mode}
+            baseUrl={basePreviewUrl}
+          />
         </section>
 
-        {/* Results section using real component */}
-        {state.results && state.results.length > 0 && (
-          <ResultsGrid
-            results={state.results}
-            mode={state.mode}
-            roomType={state.roomType}
-            style={state.style}
-            prompt={state.prompt}
-            onAddToFavorites={handleAddToFavorites}
-            onAddToCollection={() => {}}
-            onRerun={() => {
-              resetForm();
-              if (canSubmit) submitGeneration();
-            }}
-          />
-        )}
       </div>
 
       {/* Presets bar above dock with labels */}
       <div className="fixed left-0 right-0 md:left-64 bottom-28 z-30">
         <div className="mx-auto max-w-3xl rounded-xl border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 px-4 py-2 shadow-sm">
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <label className="grid gap-1">
+            <div className="grid gap-1">
               <span className="text-muted-foreground">Room Type</span>
-              <select
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+              <SelectPopover
                 value={state.roomType}
-                onChange={(e) => setRoomType(e.target.value as any)}
-              >
-                {runtimeConfig.presets.roomTypes.map((r) => (
-                  <option key={r.id} value={r.label}>{r.label}</option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1">
+                onChange={(v) => setRoomType(v)}
+                items={runtimeConfig.presets.roomTypes.map((r) => r.label)}
+                placeholder="Choose room type"
+              />
+            </div>
+            <div className="grid gap-1">
               <span className="text-muted-foreground">Style</span>
-              <select
-                className="h-9 rounded-md border bg-background px-3 text-sm"
+              <SelectPopover
                 value={state.style}
-                onChange={(e) => setStyle(e.target.value as any)}
-              >
-                {runtimeConfig.presets.styles.map((s) => (
-                  <option key={s.id} value={s.label}>{s.label}</option>
-                ))}
-              </select>
-            </label>
+                onChange={(v) => setStyle(v)}
+                items={runtimeConfig.presets.styles.map((s) => s.label)}
+                placeholder="Choose style"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -230,9 +212,7 @@ export function GenerationWorkspaceFinal() {
         </div>
       </div>
 
-      {state.isGenerating && (
-        <GenerationProgress onCancel={() => {}} showCancel={false} />
-      )}
+      {/* Loader is now overlaid inside the right ResultPreviewPanel */}
     </div>
   );
 }
@@ -272,12 +252,16 @@ function InputPreviewPanel({
   input2,
   onRemove1,
   onRemove2,
+  onPick1,
+  onPick2,
 }: {
   mode: string;
   input1: File | null;
   input2: File | null;
   onRemove1: () => void;
   onRemove2: () => void;
+  onPick1: (f: File | null) => void;
+  onPick2: (f: File | null) => void;
 }) {
   const url1 = useObjectUrl(input1);
   const url2 = useObjectUrl(input2);
@@ -285,8 +269,20 @@ function InputPreviewPanel({
   if (mode === "compose") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-h-[22vh]">
-        <PreviewBox label="Base" url={url1} placeholder="Add a base room via the Base pill" onRemove={input1 ? onRemove1 : undefined} />
-        <PreviewBox label="Reference" url={url2} placeholder="Add a reference via the Ref pill" onRemove={input2 ? onRemove2 : undefined} />
+        <PreviewBox
+          label="Base"
+          url={url1}
+          placeholder="Upload the photo of your room"
+          onRemove={input1 ? onRemove1 : undefined}
+          onPick={onPick1}
+        />
+        <PreviewBox
+          label="Reference"
+          url={url2}
+          placeholder="Add a style or object reference"
+          onRemove={input2 ? onRemove2 : undefined}
+          onPick={onPick2}
+        />
       </div>
     );
   }
@@ -295,9 +291,9 @@ function InputPreviewPanel({
     <PreviewBox
       label="Room"
       url={url1}
-      placeholder={mode === "staging" ? "Upload an empty/sparse room"
-        : "Upload the room to redesign"}
+      placeholder={mode === "staging" ? "Upload an empty/sparse room" : "Upload the room to redesign"}
       onRemove={input1 ? onRemove1 : undefined}
+      onPick={onPick1}
     />
   );
 }
@@ -305,37 +301,97 @@ function InputPreviewPanel({
 function ResultPreviewPanel({
   results,
   hasResult,
+  isGenerating,
+  status,
+  mode,
+  baseUrl,
 }: {
   results: { url: string }[] | null;
   hasResult: boolean;
+  isGenerating: boolean;
+  status: 'idle' | 'uploading' | 'creating' | 'processing' | 'succeeded' | 'failed';
+  mode: string;
+  baseUrl: string | null;
 }) {
   const cover = results && results.length > 0 ? results[0]?.url : null;
+  const showBlurBase = isGenerating && mode !== 'imagine' && !!baseUrl;
+  const isCompact = mode === 'imagine';
+
   return (
-    <div className="rounded-md border bg-background overflow-hidden min-h-[22vh] grid place-items-center relative">
+    <div className="relative rounded-md border bg-background overflow-hidden min-h-[22vh] grid place-items-center">
+      {/* Image layer */}
       {cover ? (
-        // Using img to avoid Next Image config concerns here
-        <img src={cover} alt="Generated result" className="w-full h-full object-cover" />
+        <img
+          src={cover}
+          alt="Generated result"
+          className={[
+            isCompact
+              ? "max-h-[60vh] w-auto max-w-full object-contain mx-auto"
+              : "w-full h-full object-cover",
+            "transition-all duration-500 ease-out"
+          ].join(" ")}
+        />
+      ) : showBlurBase ? (
+        <img
+          src={baseUrl!}
+          alt="Generating preview"
+          className="w-full h-full object-cover scale-105 blur-md transition-all duration-700 ease-out"
+        />
       ) : (
         <span className="text-sm text-muted-foreground">
-          {hasResult ? "Generated result" : "Results will appear here"}
+          {hasResult ? "Generated result" : "Results will appear on the right"}
         </span>
       )}
+
+      {/* Subtle label when a cover is present */}
       {cover && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/35 text-primary-foreground px-2 py-1 text-xs">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0 bg-black/35 text-primary-foreground px-2 py-1 text-xs">
           Latest result
+        </div>
+      )}
+
+      {/* Overlay loader during generation */}
+      {isGenerating && (
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] supports-[backdrop-filter]:bg-background/35">
+          <GenerationOverlay status={status} mode={mode} />
         </div>
       )}
     </div>
   );
 }
 
-function PreviewBox({ label, url, placeholder, onRemove }: { label: string; url: string | null; placeholder: string; onRemove?: () => void }) {
+function PreviewBox({ label, url, placeholder, onRemove, onPick }: { label: string; url: string | null; placeholder: string; onRemove?: () => void; onPick?: (f: File | null) => void }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleFiles = (files: FileList | null) => {
+    if (!onPick || !files || files.length === 0) return;
+    const file = files[0];
+    const max = (runtimeConfig.limits.maxUploadsMB || 15) * 1024 * 1024;
+    const accepted = runtimeConfig.limits.acceptedMimeTypes || [];
+    if (file.size > max) {
+      toastError(`File too large. Max ${runtimeConfig.limits.maxUploadsMB}MB`);
+      return;
+    }
+    if (accepted.length > 0 && !accepted.includes(file.type)) {
+      toastError("Unsupported file type");
+      return;
+    }
+    onPick(file);
+  };
+
   return (
-    <div className="group relative rounded-md border bg-background overflow-hidden min-h-[22vh]">
+    <div
+      className={[
+        "group relative rounded-md border bg-background overflow-hidden min-h-[22vh]",
+        dragOver ? "ring-2 ring-primary/50" : ""
+      ].join(" ")}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
+    >
       {url ? (
         <>
           <img src={url} alt={`${label} preview`} className="w-full h-full object-cover" />
-          {/* Caption bar */}
           <div className="absolute bottom-0 left-0 right-0 bg-black/35 text-primary-foreground px-2 py-1 text-xs flex items-center justify-between">
             <span className="font-medium">{label} preview</span>
             {onRemove && <span className="opacity-80 hidden sm:inline">Hover/tap × to remove</span>}
@@ -352,9 +408,22 @@ function PreviewBox({ label, url, placeholder, onRemove }: { label: string; url:
           )}
         </>
       ) : (
-        <div className="w-full h-full grid place-items-center text-sm text-muted-foreground p-4 text-center">
-          {placeholder}
-        </div>
+        <label className="w-full h-full grid place-items-center text-sm text-muted-foreground p-4 text-center cursor-pointer">
+          <div className="flex flex-col items-center gap-2">
+            <span className="inline-flex items-center justify-center h-12 w-12 rounded-full border bg-background">
+              <UploadCloud className="h-5 w-5" />
+            </span>
+            <span className="text-foreground font-medium">{label}</span>
+            <span className="max-w-[28ch]">{placeholder}</span>
+            <span className="text-xs text-muted-foreground">Click to upload or drag and drop</span>
+          </div>
+          <input
+            type="file"
+            accept={runtimeConfig.limits.acceptedMimeTypes.join(",")}
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+        </label>
       )}
     </div>
   );
@@ -387,5 +456,52 @@ function Pill({ icon, label, kind, onPick }: { icon: React.ReactNode; label: str
         onChange={(e) => onPick(e.target.files?.[0] ?? null)}
       />
     </label>
+  );
+}
+
+function SelectPopover({
+  value,
+  onChange,
+  items,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  items: string[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const display = value || placeholder || 'Select';
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="h-9 rounded-md border bg-background px-3 text-sm text-left w-full"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          {display}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="start" className="p-0 w-[var(--radix-popover-trigger-width,12rem)]">
+        <div role="listbox" className="max-h-64 overflow-auto py-1">
+          {items.map((it) => (
+            <button
+              key={it}
+              role="option"
+              aria-selected={value === it}
+              onClick={() => { onChange(it); setOpen(false); }}
+              className={[
+                'w-full text-left px-3 py-2 text-sm hover:bg-accent',
+                value === it ? 'bg-accent' : ''
+              ].join(' ')}
+            >
+              {it}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

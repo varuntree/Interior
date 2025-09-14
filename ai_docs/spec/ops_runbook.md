@@ -111,7 +111,7 @@ Webhook updates status → UI shows results immediately.
 
 8) Smoke checks (manual)
 8.1 Core generation
-Sign in, go to /dashboard/create.
+Sign in, go to /dashboard.
 
 Mode Imagine → type a short prompt → Generate.
 

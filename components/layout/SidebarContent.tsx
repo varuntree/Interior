@@ -77,4 +77,3 @@ export function SidebarContent({ className, onNavigate }: { className?: string; 
     </div>
   );
 }
-

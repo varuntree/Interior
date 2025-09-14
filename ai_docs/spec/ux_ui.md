@@ -17,8 +17,7 @@ Left sidebar (persistent) → right content area.
 
 bash
 Copy
-/dashboard                       → Overview (recent renders + quick actions)
-/dashboard/create                → Generation workspace (primary screen)
+/dashboard                       → Generation workspace (primary screen)
 /dashboard/renders               → My Renders (all results)
 /dashboard/collections           → Collections (incl. “My Favorites”)
 /dashboard/community             → Community (admin‑curated inspiration)
@@ -33,8 +32,6 @@ Community is read‑only for users; content curated by admin via separate admin 
 
 3) Sidebar & layout
 3.1 Sidebar items (top → bottom)
-Overview
-
 Create (primary CTAs)
 
 My Renders
@@ -54,7 +51,7 @@ Page title, optional subtitle.
 
 Secondary actions contextually (e.g., “New Collection” on Collections).
 
-4) Generation workspace (/dashboard/create) — core screen
+4) Generation workspace (/dashboard) — core screen
 4.1 Goals
 Make “Generate” obvious.
 
@@ -393,7 +390,7 @@ The application uses a comprehensive design token system defined in app/globals.
 
 **Layout Rules for Key Screens**
 
-**Generator Page (/dashboard/create)**
+**Generator Page (/dashboard)**
 - Mobile (<768px):
   - Single column layout
   - Sticky bottom primary action (Generate button)

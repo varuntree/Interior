@@ -17,15 +17,14 @@ End‑to‑End Flow (Happy Path)
 - User signs in → navigates to Create → selects a mode and presets (Room Type, Style), provides inputs (images or prompt), clicks Generate. API checks credits and enforces the “one in‑flight job” rule → uploads inputs (if any) → calls Replicate (Google nano‑banana) with a webhook back to our app. UI shows progress (polls job status). Webhook completes → image stored to public bucket and linked to a Render → UI shows result → user can Save to “My Favorites” or a Collection, and Download.
 
 Navigation Map (Dashboard)
-- Overview: recent renders and quick actions.
-- Create (primary): generation workspace for the four modes.
-- My Renders: all render groups (each groups 1–3 variants) with filters.
-- Collections: user collections, including a system “My Favorites.”
-- Community: admin‑curated inspiration sets with “Apply Settings.”
-- Settings: basic profile + manage billing links.
+- Create (primary at /dashboard): generation workspace for the four modes.
+- My Renders (/dashboard/renders): all render groups (each groups 1–3 variants) with filters.
+- Collections (/dashboard/collections): user collections, including a system “My Favorites.”
+- Community (/dashboard/community): admin‑curated inspiration sets with “Apply Settings.”
+- Settings (/dashboard/settings): basic profile + manage billing links.
 
 Key Screens (Goals and States)
-- Create (/dashboard/create)
+- Create (/dashboard)
   - Goal: make “Generate” obvious. Presets guide novices; advanced controls are minimal. Required inputs depend on mode.
   - States: Idle (ready); Submitting (locks form, shows toast/progress); Processing (periodic GET /api/v1/generations/:id); Succeeded (show variants grid with actions); Failed (clear message + Try Again prefilled).
 - My Renders (/dashboard/renders)
