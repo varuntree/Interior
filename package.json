@@ -52,6 +52,7 @@
     "react-tooltip": "^5.26.3",
     "replicate": "^1.0.1",
     "resend": "^4.0.1",
+    "sharp": "^0.34.3",
     "sonner": "^2.0.7",
     "stripe": "^13.11.0",
     "tailwind-merge": "^3.3.1",

@@ -3,6 +3,7 @@
 import { cn } from "@/libs/utils";
 import { Home, Sparkles } from "lucide-react";
 import React from "react";
+import config from "@/config";
 
 type LogoProps = {
   className?: string;
@@ -36,7 +37,7 @@ export function Logo({ className, showWordmark = true, size = "md" }: LogoProps)
       </span>
       {showWordmark && (
         <span className="text-lg font-semibold tracking-tight select-none">
-          Interior AI
+          {config.appName}
         </span>
       )}
     </span>

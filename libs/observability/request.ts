@@ -1,9 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createLogger, Logger } from '@/libs/observability/logger'
 
-type AnyCtx = Record<string, unknown> | undefined
-type Handler = (req: NextRequest, ctx?: AnyCtx & { logger: Logger; requestId: string }) => Promise<Response>
-
 function genRequestId(): string {
   try {
     // crypto.randomUUID in Node >= 16
@@ -13,8 +10,8 @@ function genRequestId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-export function withRequestContext(handler: Handler): any {
-  return async (req: NextRequest, nextCtx?: AnyCtx) => {
+export function withRequestContext(handler: (req: NextRequest, ctx: any) => Promise<Response>) {
+  return async (req: NextRequest, nextCtx: any) => {
     const requestId = genRequestId()
     const url = new URL(req.url)
     const route = url.pathname
@@ -24,7 +21,8 @@ export function withRequestContext(handler: Handler): any {
     baseLogger.info('http.request.start')
     const start = Date.now()
     try {
-      const res = await handler(req, { ...(nextCtx || {}), logger: baseLogger, requestId })
+      const ctxObj = { ...(nextCtx || {}), logger: baseLogger, requestId }
+      const res = await handler(req, ctxObj)
       const headers = new Headers(res.headers)
       headers.set('x-request-id', requestId)
       const durationMs = Date.now() - start

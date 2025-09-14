@@ -18,6 +18,7 @@ import {
   Clock
 } from "lucide-react";
 import { apiFetch } from "@/libs/api/http";
+import config from "@/config";
 
 interface UserProfile {
   id: string;
@@ -170,7 +171,7 @@ export default function SettingsPage() {
             <Button 
               variant="outline" 
               className="flex-1"
-              onClick={() => window.open('mailto:support@interior-ai.com.au', '_blank')}
+              onClick={() => window.open(`mailto:${config.resend.supportEmail}`, '_blank')}
             >
               <Mail className="h-4 w-4 mr-2" />
               Contact Support

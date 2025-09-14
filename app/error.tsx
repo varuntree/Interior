@@ -45,7 +45,7 @@ export default function Error({
       url: typeof window !== 'undefined' ? window.location.href : 'Unknown'
     };
     
-    const subject = encodeURIComponent('Error Report - Interior AI');
+    const subject = encodeURIComponent(`Error Report - ${config.appName}`);
     const body = encodeURIComponent(`
 Error Details:
 - Message: ${errorReport.message}

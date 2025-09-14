@@ -2,33 +2,31 @@ import { ConfigProps } from "./types/config";
 
 const config = {
   // REQUIRED
-  appName: "Interior AI",
+  appName: "QuickDesignHome",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
     "Transform your space with AI-powered interior design. Generate beautiful room designs with Australian-inspired styles.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
-  domainName: "interior-ai.com",
+  domainName: "quickdesignhome.com",
   stripe: {
     // Create multiple plans in your Stripe dashboard, then add them here. You can add as many plans as you want, just make sure to add the priceId
     plans: [
       {
-        // REQUIRED — we use this to find the plan in the webhook (for instance if you want to update the user's credits based on the plan)
+        // REQUIRED — used by webhooks to map the subscribed plan
         priceId:
           process.env.NODE_ENV === "development"
-            ? "price_1Niyy5AxyNprDp7iZIqEyD2h"
-            : "price_456",
+            ? "price_1S782TCZJ3iopmxZOw8mbsOV" // Weekly $6.99 (test)
+            : "price_1S78OkCZJ3iopmxZpmXhaK1l", // Weekly $6.99 (live)
         //  REQUIRED - Name of the plan, displayed on the pricing page
-        name: "Starter",
-        // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
-        description: "Perfect for getting started with AI interior design",
-        // The price you want to display, the one user will be charged on Stripe.
-        price: 29,
-        // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 49,
+        name: "Weekly",
+        // A friendly description of the plan
+        description: "Flexible weekly access to AI interior design",
+        // Display price (USD)
+        price: 6.99,
+        // Optional crossed-out anchor price
+        priceAnchor: undefined,
         features: [
-          {
-            name: "150 generations per month",
-          },
+          { name: "20 high‑resolution images per month" },
           { name: "4 design modes" },
           { name: "Australian style presets" },
           { name: "Collections & favorites" },
@@ -37,23 +35,20 @@ const config = {
       {
         priceId:
           process.env.NODE_ENV === "development"
-            ? "price_1O5KtcAxyNprDp7iftKnrrpw"
-            : "price_456",
-        // This plan will look different on the pricing page, it will be highlighted. You can only have one plan with isFeatured: true
+            ? "price_1S7832CZJ3iopmxZN96mdDtb" // Monthly $24.99 (test)
+            : "price_1S78PJCZJ3iopmxZuoOkwjdl", // Monthly $24.99 (live)
+        // This plan will be highlighted on the pricing page.
         isFeatured: true,
-        name: "Advanced",
-        description: "For designers and power users",
-        price: 79,
-        priceAnchor: 129,
+        name: "Monthly",
+        description: "Best value for power users",
+        price: 24.99,
+        priceAnchor: undefined,
         features: [
-          {
-            name: "600 generations per month",
-          },
+          { name: "100 high‑resolution images per month" },
           { name: "4 design modes" },
           { name: "Australian style presets" },
           { name: "Collections & favorites" },
           { name: "Priority generation queue" },
-          { name: "Community gallery access" },
         ],
       },
     ],
@@ -66,11 +61,11 @@ const config = {
   },
   resend: {
     // REQUIRED — Email 'From' field to be used when sending magic login links
-    fromNoReply: `ShipFast <noreply@resend.shipfa.st>`,
+    fromNoReply: `QuickDesignHome <noreply@quickdesignhome.com>`,
     // REQUIRED — Email 'From' field to be used when sending other emails, like abandoned carts, updates etc..
-    fromAdmin: `Marc at ShipFast <marc@resend.shipfa.st>`,
+    fromAdmin: `QuickDesignHome Support <support@quickdesignhome.com>`,
     // Email shown to customer if need support.
-    supportEmail: "marc.louvion@gmail.com",
+    supportEmail: "support@quickdesignhome.com",
   },
   colors: {
     // REQUIRED — This color will be reflected on the whole app outside of the document (loading bar, Chrome tabs, etc..)

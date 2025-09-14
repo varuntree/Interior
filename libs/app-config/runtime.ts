@@ -87,11 +87,15 @@ const runtimeConfig: RuntimeConfig = {
     acceptedMimeTypes: ['image/jpeg','image/png','image/webp']
   },
 
-  // IMPORTANT: fill these with YOUR Stripe priceIds from config.ts at deploy time.
+  // IMPORTANT: keep keys in sync with config.ts.stripe.plans[*].priceId
   plans: {
-    // examples using current dev priceIds; numbers are placeholders you can tweak anytime
-    'price_1Niyy5AxyNprDp7iZIqEyD2h': { label: 'Starter',  monthlyGenerations: 150, maxConcurrentJobs: 1 },
-    'price_1O5KtcAxyNprDp7iftKnrrpw': { label: 'Advanced', monthlyGenerations: 600, maxConcurrentJobs: 1 },
+    // Weekly $6.99 (test priceId in dev)
+    'price_1S782TCZJ3iopmxZOw8mbsOV': { label: 'Weekly',  monthlyGenerations: 20,  maxConcurrentJobs: 1 },
+    // Monthly $24.99 (test priceId in dev)
+    'price_1S7832CZJ3iopmxZN96mdDtb': { label: 'Monthly', monthlyGenerations: 100, maxConcurrentJobs: 1 },
+    // Live priceIds
+    'price_1S78OkCZJ3iopmxZpmXhaK1l': { label: 'Weekly',  monthlyGenerations: 20,  maxConcurrentJobs: 1 },
+    'price_1S78PJCZJ3iopmxZuoOkwjdl': { label: 'Monthly', monthlyGenerations: 100, maxConcurrentJobs: 1 },
   },
 
   replicate: {

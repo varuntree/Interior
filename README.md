@@ -1,4 +1,4 @@
-# Interior AI Design Generator
+# QuickDesignHome — Interior Design Generator
 
 An AI-powered interior design generation platform for the Australian market. Create stunning redesigns, virtual staging, composition, and imagination-based interior designs using advanced AI models.
 

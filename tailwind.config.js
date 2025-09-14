@@ -7,7 +7,15 @@ module.exports = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-  	extend: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem', // px-4
+        md: '1.5rem',    // md:px-6
+        lg: '2rem',      // lg:px-8
+      },
+    },
+    extend: {
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',

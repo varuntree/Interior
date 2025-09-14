@@ -2,7 +2,7 @@ import config from "@/config";
 import runtimeConfig from "@/libs/app-config/runtime";
 import { createCheckout, createCustomerPortal, findCheckoutSession } from "@/libs/stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getProfileById, getProfileByEmail, setBillingByUserId, setAccessByCustomerId } from "@/libs/repositories/profiles";
+import { getProfileById, getProfileByEmail, setBillingByUserId, setAccessByCustomerId, setBillingByCustomerId } from "@/libs/repositories/profiles";
 import { recordWebhookEventIfNew } from "@/libs/repositories/webhook_events";
 
 export async function startCheckoutService(db: SupabaseClient, args: {
@@ -223,6 +223,7 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       const userId = stripeObject.client_reference_id as string | null;
       const customerEmail = (session?.customer_details?.email ||
                              stripeObject.customer_details?.email) as string | undefined;
+      const subscriptionId = (session?.subscription as string) || null;
 
       // Validate plan from both config and runtime config
       const configPlan = config.stripe.plans.find((p) => p.priceId === priceId);
@@ -247,6 +248,12 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
         priceId: priceId ?? null,
         hasAccess: true,
       });
+      if (subscriptionId) {
+        await setBillingByCustomerId(adminDb, {
+          customerId: customerId || '',
+          subscriptionId,
+        })
+      }
       break;
     }
 
@@ -254,13 +261,31 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       const stripeObject = event.data.object;
       const customerId = stripeObject.customer as string;
       const priceId = stripeObject.items?.data?.[0]?.price?.id;
+      const subscriptionId = stripeObject.id as string;
+      const cps = stripeObject.current_period_start ? new Date(stripeObject.current_period_start * 1000).toISOString() : undefined;
+      const cpe = stripeObject.current_period_end ? new Date(stripeObject.current_period_end * 1000).toISOString() : undefined;
+      const status: string = stripeObject.status;
+      const hasAccess = status === 'active' || status === 'trialing';
       
       // Update the user's plan
       if (priceId && runtimeConfig.plans[priceId]) {
-        await setAccessByCustomerId(adminDb, {
+        await setBillingByCustomerId(adminDb, {
           customerId,
-          hasAccess: stripeObject.status === 'active',
-        });
+          priceId,
+          hasAccess,
+          subscriptionId,
+          currentPeriodStart: cps || null,
+          currentPeriodEnd: cpe || null,
+        })
+      } else {
+        // Still update access/periods even if plan unknown
+        await setBillingByCustomerId(adminDb, {
+          customerId,
+          hasAccess,
+          subscriptionId,
+          currentPeriodStart: cps || null,
+          currentPeriodEnd: cpe || null,
+        })
       }
       break;
     }
@@ -268,9 +293,10 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
     case "customer.subscription.deleted": {
       const stripeObject = event.data.object;
       const subscription = stripeObject; // already contains customer
-      await setAccessByCustomerId(adminDb, {
+      await setBillingByCustomerId(adminDb, {
         customerId: String(subscription.customer),
         hasAccess: false,
+        currentPeriodEnd: new Date().toISOString(),
       });
       break;
     }
@@ -279,13 +305,26 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       const stripeObject = event.data.object;
       const priceId = stripeObject.lines.data[0]?.price?.id;
       const customerId = stripeObject.customer as string;
+      const period = stripeObject.lines.data[0]?.period;
+      const cps = period?.start ? new Date(period.start * 1000).toISOString() : undefined;
+      const cpe = period?.end ? new Date(period.end * 1000).toISOString() : undefined;
       
       // Validate plan exists in runtime config
       if (priceId && runtimeConfig.plans[priceId]) {
-        await setAccessByCustomerId(adminDb, {
+        await setBillingByCustomerId(adminDb, {
+          customerId,
+          priceId,
+          hasAccess: true,
+          currentPeriodStart: cps || null,
+          currentPeriodEnd: cpe || null,
+        })
+      } else {
+        await setBillingByCustomerId(adminDb, {
           customerId,
           hasAccess: true,
-        });
+          currentPeriodStart: cps || null,
+          currentPeriodEnd: cpe || null,
+        })
       }
       break;
     }
@@ -296,7 +335,7 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
       
       // Temporarily disable access on payment failure
       // In production, you might want more sophisticated handling
-      await setAccessByCustomerId(adminDb, {
+      await setBillingByCustomerId(adminDb, {
         customerId,
         hasAccess: false,
       });

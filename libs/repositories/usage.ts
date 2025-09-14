@@ -13,19 +13,23 @@ export async function debitGeneration(
 ): Promise<UsageLedgerEntry> {
   const { ownerId, jobId, amount = 1, idempotencyKey } = params;
 
-  // Check for existing debit with same idempotency key
+  // Check for existing debit entry for this job (idempotent on jobId + optional idempotencyKey)
   if (idempotencyKey) {
     const { data: existing } = await supabase
       .from('usage_ledger')
       .select('*')
       .eq('owner_id', ownerId)
-      .eq('meta->jobId', jobId)
-      .eq('meta->idempotencyKey', idempotencyKey)
-      .maybeSingle();
-
-    if (existing) {
-      return existing as UsageLedgerEntry;
-    }
+      .contains('meta', { jobId, idempotencyKey })
+      .maybeSingle()
+    if (existing) return existing as UsageLedgerEntry
+  } else {
+    const { data: existing } = await supabase
+      .from('usage_ledger')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .contains('meta', { jobId })
+      .maybeSingle()
+    if (existing) return existing as UsageLedgerEntry
   }
 
   const entry: NewUsageLedgerEntry = {
@@ -114,6 +118,31 @@ export async function getMonthlyUsage(
     credits,
     net: debits - credits // Net usage (positive = used more than credited)
   };
+}
+
+export async function getUsageInRange(
+  supabase: SupabaseClient,
+  ownerId: string,
+  fromIso: string,
+  toIso: string
+): Promise<{ debits: number; credits: number; net: number }> {
+  const { data, error } = await supabase
+    .from('usage_ledger')
+    .select('kind, amount')
+    .eq('owner_id', ownerId)
+    .gte('created_at', fromIso)
+    .lt('created_at', toIso)
+
+  if (error) throw error
+
+  let debits = 0
+  let credits = 0
+  for (const entry of data || []) {
+    if (entry.kind === 'generation_debit') debits += entry.amount
+    else if (entry.kind === 'credit_adjustment') credits += entry.amount
+  }
+
+  return { debits, credits, net: debits - credits }
 }
 
 export async function getCurrentMonthUsage(

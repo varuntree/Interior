@@ -52,8 +52,11 @@ export function UsageDisplay({ className }: UsageDisplayProps) {
 
       // Transform the API response to match our interface
       const data = result.data;
-      const usagePercentage = data.monthlyLimit > 0 
-        ? Math.round((data.generationsUsed / data.monthlyLimit) * 100)
+      const monthlyLimit = data.usage?.monthlyLimit ?? 0;
+      const generationsUsed = data.usage?.currentMonth?.net ?? 0;
+      const remaining = data.usage?.remaining ?? Math.max(0, monthlyLimit - generationsUsed);
+      const usagePercentage = monthlyLimit > 0 
+        ? Math.round((generationsUsed / monthlyLimit) * 100)
         : 0;
 
       // Calculate reset date (assuming monthly billing cycle)
@@ -62,9 +65,9 @@ export function UsageDisplay({ className }: UsageDisplayProps) {
       const daysUntilReset = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       setUsageData({
-        generationsUsed: data.generationsUsed || 0,
-        monthlyLimit: data.monthlyLimit || 0,
-        remaining: data.remainingGenerations || 0,
+        generationsUsed,
+        monthlyLimit,
+        remaining,
         usagePercentage,
         resetDate: resetDate.toISOString(),
         daysUntilReset: Math.max(0, daysUntilReset)

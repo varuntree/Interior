@@ -6,6 +6,7 @@ import { moderateContent, moderateImageInputs } from './generation/moderation';
 import { uploadGenerationInput } from './storage/uploads';
 import * as jobsRepo from '@/libs/repositories/generation_jobs';
 import * as usageRepo from '@/libs/repositories/usage';
+import { checkGenerationAllowance } from '@/libs/services/usage'
 import { getGenerationProvider } from '@/libs/services/providers/generationProvider';
 import type { GenerationRequest } from '@/libs/services/generation/types';
 import { randomUUID } from 'crypto';
@@ -104,9 +105,8 @@ export async function submitGeneration(
   const finalPrompt = buildPrompt(promptParams);
 
   // Check user quota
-  const userPlan = await getUserPlan(supabase, userId);
-  const remaining = await usageRepo.getRemainingGenerations(supabase, userId, userPlan.monthlyGenerations);
-  if (remaining <= 0) {
+  const allowance = await checkGenerationAllowance({ supabase }, userId)
+  if (!allowance.allowed) {
     throw new Error('LIMIT_EXCEEDED');
   }
 

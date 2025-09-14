@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Interior AI - Development Setup Script
+# QuickDesignHome - Development Setup Script
 # This script helps set up local development with ngrok for webhook support
 
 set -e  # Exit on any error
 
-echo "🏠 Interior AI - Development Setup"
+echo "🏠 QuickDesignHome - Development Setup"
 echo "=================================="
 echo ""
 

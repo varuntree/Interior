@@ -5,6 +5,7 @@ import { CTASection } from "@/components/marketing/CTASection";
 import { FeatureRedesign } from "@/components/marketing/FeatureRedesign";
 import { FeatureTransfer } from "@/components/marketing/FeatureTransfer";
 import { FeatureStaging } from "@/components/marketing/FeatureStaging";
+import PricingSection from "@/components/marketing/PricingSection";
 
 export default function Page() {
   return (
@@ -15,6 +16,7 @@ export default function Page() {
         <FeatureRedesign />
         <FeatureTransfer />
         <FeatureStaging />
+        <PricingSection />
         <HowItWorks />
         <CTASection />
       </main>

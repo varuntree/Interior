@@ -1,16 +1,12 @@
 "use client";
 
 import * as React from "react";
-import useEmblaCarousel, {
-  type EmblaCarouselType as CarouselApi,
-  type EmblaOptionsType as CarouselOptions,
-  type EmblaPluginType as CarouselPlugin,
-} from "embla-carousel-react";
+import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/libs/utils";
 
 type CarouselContextProps = {
   carouselRef: (node: HTMLElement | null) => void;
-  api: CarouselApi | undefined;
+  api: any | undefined;
 };
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
@@ -22,13 +18,13 @@ function useCarouselContext() {
 }
 
 export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
-  opts?: CarouselOptions;
-  plugins?: CarouselPlugin[];
-  setApi?: (api: CarouselApi) => void;
+  opts?: any;
+  plugins?: any[];
+  setApi?: (api: any) => void;
 }
 
 export function Carousel({ className, children, opts, plugins, setApi, ...props }: CarouselProps) {
-  const [carouselRef, api] = useEmblaCarousel({ align: "start", ...opts }, plugins);
+  const [carouselRef, api] = useEmblaCarousel({ align: "start", ...(opts || {}) }, plugins as any);
 
   React.useEffect(() => {
     if (api && setApi) setApi(api);
@@ -73,5 +69,7 @@ export function CarouselItem({ className, ...props }: CarouselItemProps) {
   );
 }
 
-export type { CarouselApi, CarouselOptions, CarouselPlugin };
-
+// Provide loose type aliases to satisfy external imports without binding to a specific Embla version
+export type CarouselApi = any;
+export type CarouselOptions = any;
+export type CarouselPlugin = any;

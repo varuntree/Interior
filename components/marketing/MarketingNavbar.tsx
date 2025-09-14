@@ -38,7 +38,7 @@ const navigationMenuItems = [
 
 export function MarketingNavbar() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/blog")) {
+  if (pathname === "/signin" || pathname?.startsWith("/blog")) {
     return null;
   }
   const [open, setOpen] = useState(false)
@@ -64,12 +64,20 @@ export function MarketingNavbar() {
                     </NavigationMenuContent>
                   </NavigationMenuItem>
                 ))}
+                {/* Direct link to pricing section on homepage */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink href="/#pricing" className="text-xs xl:text-sm px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground">
+                    Pricing
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
               </NavigationMenuList>
             </div>
             <div className="flex items-center gap-2">
-              <Button asChild className="hidden md:block">
-                <Link href="/signin">Login</Link>
-              </Button>
+              {pathname !== "/signin" && (
+                <Button asChild className="hidden md:block">
+                  <Link href="/signin">Login</Link>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="icon"
@@ -93,6 +101,9 @@ export function MarketingNavbar() {
           {open && (
             <div className="border-border bg-background fixed inset-0 top-[72px] flex h-[calc(100vh-72px)] w-full flex-col overflow-auto border-t lg:hidden">
               <div className="px-4 py-2">
+                <Button variant="ghost" className="w-full justify-start" asChild onClick={() => { setOpen(false); setSubmenu(null); }}>
+                  <Link href="/#pricing">Pricing</Link>
+                </Button>
                 <Button variant="ghost" className="w-full justify-start" asChild>
                   <Link href="/community">Community</Link>
                 </Button>
@@ -101,9 +112,11 @@ export function MarketingNavbar() {
                 </Button>
               </div>
               <div className="mx-8 mt-auto flex flex-col items-center gap-8 py-16">
-                <Button asChild>
-                  <Link href="/signin">Login</Link>
-                </Button>
+                {pathname !== "/signin" && (
+                  <Button asChild>
+                    <Link href="/signin">Login</Link>
+                  </Button>
+                )}
               </div>
             </div>
           )}

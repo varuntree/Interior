@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import * as usageRepo from '@/libs/repositories/usage'
 import runtimeConfig from '@/libs/app-config/runtime'
+import { getProfileById } from '@/libs/repositories/profiles'
 
 export interface UserUsage {
   currentMonth: {
@@ -32,26 +33,34 @@ export async function getUserUsageStatus(
   ownerId: string,
   userPriceId?: string
 ): Promise<UserUsage> {
-  // Get user's plan information
-  const planInfo = getPlanFromPriceId(userPriceId)
-  
-  // Get current month usage
-  const currentMonthUsage = await usageRepo.getCurrentMonthUsage(ctx.supabase, ownerId)
-  
-  // Calculate remaining generations
-  const remaining = await usageRepo.getRemainingGenerations(
+  // Fetch profile for window
+  const profile = await getProfileById(ctx.supabase, ownerId)
+  const planInfo = getPlanFromPriceId(profile?.price_id || userPriceId)
+
+  // Determine billing window
+  let periodStart: Date
+  let periodEnd: Date
+  if (profile?.current_period_start && profile?.current_period_end) {
+    periodStart = new Date(profile.current_period_start)
+    periodEnd = new Date(profile.current_period_end)
+  } else {
+    const now = new Date()
+    periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+  }
+
+  // Get usage in window
+  const usage = await usageRepo.getUsageInRange(
     ctx.supabase,
     ownerId,
-    planInfo.monthlyGenerations
+    periodStart.toISOString(),
+    periodEnd.toISOString()
   )
 
-  // Calculate billing period (current month)
-  const now = new Date()
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const remaining = Math.max(0, planInfo.monthlyGenerations - usage.net)
 
   return {
-    currentMonth: currentMonthUsage,
+    currentMonth: usage,
     remaining,
     monthlyLimit: planInfo.monthlyGenerations,
     planId: planInfo.id,
@@ -73,21 +82,33 @@ export async function checkGenerationAllowance(
   remaining: number
   message?: string
 }> {
-  const planInfo = getPlanFromPriceId(userPriceId)
-  
-  const remaining = await usageRepo.getRemainingGenerations(
-    ctx.supabase,
-    ownerId,
-    planInfo.monthlyGenerations
-  )
+  // Fetch profile to get window and price
+  const profile = await getProfileById(ctx.supabase, ownerId)
+  const planInfo = getPlanFromPriceId(profile?.price_id || userPriceId)
 
-  if (remaining >= requestedGenerations) {
-    return {
-      allowed: true,
-      remaining
-    }
+  // Determine window
+  let periodStart: Date
+  let periodEnd: Date
+  if (profile?.current_period_start && profile?.current_period_end) {
+    periodStart = new Date(profile.current_period_start)
+    periodEnd = new Date(profile.current_period_end)
+  } else {
+    const now = new Date()
+    periodStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   }
 
+  const usage = await usageRepo.getUsageInRange(
+    ctx.supabase,
+    ownerId,
+    periodStart.toISOString(),
+    periodEnd.toISOString()
+  )
+
+  const remaining = Math.max(0, planInfo.monthlyGenerations - usage.net)
+  if (remaining >= requestedGenerations) {
+    return { allowed: true, remaining }
+  }
   return {
     allowed: false,
     remaining,

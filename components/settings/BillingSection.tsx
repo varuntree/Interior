@@ -209,7 +209,7 @@ export function BillingSection() {
             </p>
             {billingData.priceAudPerMonth > 0 && (
               <p className="text-sm text-muted-foreground">
-                ${billingData.priceAudPerMonth} AUD/month
+                ${billingData.priceAudPerMonth} USD/month
               </p>
             )}
             {nextBillingDate && (
@@ -237,7 +237,7 @@ export function BillingSection() {
             Manage Billing
           </Button>
           
-          {billingData.planId !== 'pro' && !billingData.isCanceled && (
+          {billingData.planName !== 'Monthly' && !billingData.isCanceled && (
             <Button 
               className="w-full"
               onClick={handleUpgradePlan}

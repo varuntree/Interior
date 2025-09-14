@@ -39,18 +39,23 @@ export function AppImage({
     return () => clearTimeout(t);
   }, [loaded, errored]);
 
+  const common: any = {
+    alt,
+    className: cn("object-cover transition-all duration-300", !loaded && "blur-sm", className),
+    onLoad: () => setLoaded(true),
+    onError: () => { setErrored(true); setLoaded(true); },
+    sizes,
+    ...imgRest,
+  };
+
   return (
     <div className={cn("relative w-full h-full", containerClassName)}>
       {!errored ? (
-        <Image
-          alt={alt}
-          className={cn("object-cover transition-all duration-300", !loaded && "blur-sm", className)}
-          onLoad={() => setLoaded(true)}
-          onError={() => { setErrored(true); setLoaded(true); }}
-          sizes={sizes}
-          {...(priority ? { priority: true } : { loading })}
-          {...imgRest}
-        />
+        priority ? (
+          <Image {...common} priority />
+        ) : (
+          <Image {...common} loading={loading} />
+        )
       ) : (
         fallback ?? (
           <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">

@@ -31,6 +31,7 @@ export const POST = withMethods(['POST'], withRequestContext(async (req: Request
       return new Response(JSON.stringify({ received: true }), { status: 200 });
     } catch (e: any) {
       ctx?.logger?.error?.('billing.webhook.error', { message: e?.message || String(e) })
-      return fail(500, 'INTERNAL_ERROR', 'Webhook error');
+      // Avoid noisy retries; processing is idempotent via webhook_events store
+      return new Response(JSON.stringify({ received: true, error: 'handled' }), { status: 200 });
     }
 }));
