@@ -3,13 +3,12 @@
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Image as ImageIcon, Search, Filter, Plus, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Plus, Sparkles } from "lucide-react";
 import { useRenders } from "@/hooks/useRenders";
 import { apiFetch } from "@/libs/api/http";
 import { toast } from "sonner";
-import { RenderCard } from "@/components/renders/RenderCard";
+import { ImageCard } from "@/components/shared/ImageCard";
 import React from "react";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
 import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
@@ -79,24 +78,14 @@ export default function RendersPage() {
         </Badge>
       </DashboardHeader>
 
-      {/* Search and Filters (disabled for MVP) */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search your renders..." className="pl-10" disabled />
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          <Button size="sm" asChild>
-            <a href="/dashboard/create">
-              <Plus className="h-4 w-4 mr-2" />
-              Create New
-            </a>
-          </Button>
-        </div>
+      {/* Actions */}
+      <div className="flex justify-end">
+        <Button size="sm" asChild>
+          <a href="/dashboard/create">
+            <Plus className="h-4 w-4 mr-2" />
+            Create New
+          </a>
+        </Button>
       </div>
 
       {/* Grid */}
@@ -111,19 +100,24 @@ export default function RendersPage() {
 
       {items.length > 0 && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((r) => (
-            <RenderCard
-              key={r.id}
-              id={r.id}
-              imageUrl={r.cover_variant_url}
-              title={`${r.mode}${r.room_type ? ` • ${r.room_type}` : ''}${r.style ? ` • ${r.style}` : ''}`}
-              isFavorite={!!r.is_favorite}
-              onToggleFavorite={onToggleFavorite}
-              onAddToCollection={onAddToCollection}
-              onOpen={(id) => openViewer(id, r.cover_variant_url, `${r.mode}${r.room_type ? ` • ${r.room_type}` : ''}${r.style ? ` • ${r.style}` : ''}`)}
-              onDelete={onDelete}
-            />
-          ))}
+          {items.map((r) => {
+            return (
+              <ImageCard
+                key={r.id}
+                id={r.id}
+                imageUrl={r.cover_variant_url}
+                showMeta={false}
+                isFavorite={!!r.is_favorite}
+                canFavorite
+                canAddToCollection
+                canDelete
+                onToggleFavorite={onToggleFavorite}
+                onAddToCollection={onAddToCollection}
+                onOpen={(id) => openViewer(id, r.cover_variant_url)}
+                onDelete={onDelete}
+              />
+            );
+          })}
         </div>
       )}
 

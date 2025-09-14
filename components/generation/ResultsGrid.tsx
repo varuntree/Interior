@@ -3,7 +3,8 @@
 
 import React, { memo, useMemo } from "react";
 import { cn } from "@/libs/utils";
-import { ResultCard } from "./ResultCard";
+import { ImageCard } from "@/components/shared/ImageCard";
+import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
 import { GenerationResult } from "@/contexts/GenerationContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,6 +57,8 @@ function ResultsGridInner({
   className
 }: ResultsGridProps) {
   const count = results?.length ?? 0;
+  const [viewerOpen, setViewerOpen] = React.useState(false);
+  const [viewer, setViewer] = React.useState<{ id: string; url: string } | null>(null);
 
   const gridClass = useMemo(() => cn(
     "grid gap-4",
@@ -65,19 +68,19 @@ function ResultsGridInner({
   ), [count]);
 
   const items = useMemo(() => (results || []).map((result) => (
-    <ResultCard
+    <ImageCard
       key={result.id}
-      result={result}
-      mode={mode}
-      roomType={roomType}
-      style={style}
-      prompt={prompt}
-      onAddToFavorites={onAddToFavorites}
-      onAddToCollection={onAddToCollection}
-      onRerun={onRerun}
-      onDownload={onDownload}
+      id={result.id}
+      imageUrl={result.thumbUrl || result.url}
+      canFavorite={!!onAddToFavorites && !!result.renderId}
+      canAddToCollection={!!onAddToCollection && !!result.renderId}
+      canDelete={false}
+      showMeta={false}
+      onToggleFavorite={result.renderId && onAddToFavorites ? () => onAddToFavorites(result.renderId!) : undefined}
+      onAddToCollection={result.renderId && onAddToCollection ? () => onAddToCollection(result.renderId!) : undefined}
+      onOpen={() => { setViewer({ id: result.id, url: result.url }); setViewerOpen(true); }}
     />
-  )), [results, mode, roomType, style, prompt, onAddToFavorites, onAddToCollection, onRerun, onDownload]);
+  )), [results, onAddToFavorites, onAddToCollection]);
 
   if (isLoading) {
     return (
@@ -121,6 +124,13 @@ function ResultsGridInner({
 
       {/* Results Grid */}
       <div className={gridClass}>{items}</div>
+
+      <ImageViewerDialog
+        open={viewerOpen}
+        onOpenChange={(o) => { setViewerOpen(o); if (!o) setViewer(null); }}
+        imageUrl={viewer?.url || ''}
+        title={undefined}
+      />
 
       {/* Bulk Actions */}
       {results.length > 1 && (

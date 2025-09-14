@@ -8,9 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Sparkles, Trash2 } from "lucide-react";
 import { useCollectionDetail } from "@/hooks/useCollectionDetail";
 import { toast } from "sonner";
-import { RenderCard } from "@/components/renders/RenderCard";
-import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
+import { ImageCard } from "@/components/shared/ImageCard";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
 import { apiFetch } from "@/libs/api/http";
 import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
@@ -74,48 +72,49 @@ export default function CollectionDetailPage() {
       {data && (
         <>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {items.map((it) => (
-              it.type === 'render' ? (
-                <RenderCard
-                  key={`r-${it.renderId}-${it.addedAt}`}
-                  id={it.render.id}
-                  imageUrl={it.render.coverImageUrl || "/placeholder.png"}
-                  title={`${it.render.mode || ''}${it.render.roomType ? ` • ${it.render.roomType}` : ''}${it.render.style ? ` • ${it.render.style}` : ''}`}
-                  isFavorite={undefined}
-                  onToggleFavorite={async (id) => {
-                    try {
-                      await apiFetch('/api/v1/favorites/toggle', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ generationId: id })
-                      });
-                    } catch (e: any) {
-                      toast.error(e?.message || 'Failed to toggle favorite');
-                    }
-                  }}
-                  onAddToCollection={(id) => { setPickerItem({ type: 'render', id }); setPickerOpen(true); }}
-                  onOpen={(id) => openViewer(id, it.render.coverImageUrl || "/placeholder.png", `${it.render.mode || ''}${it.render.roomType ? ` • ${it.render.roomType}` : ''}${it.render.style ? ` • ${it.render.style}` : ''}`)}
-                  onDelete={async () => { await onRemove(it); }}
+            {items.map((it) => {
+              if (it.type === 'render') {
+                return (
+                  <ImageCard
+                    key={`r-${it.renderId}-${it.addedAt}`}
+                    id={it.render.id}
+                    imageUrl={it.render.coverImageUrl || "/placeholder.png"}
+                    showMeta={false}
+                    canFavorite
+                    canAddToCollection
+                    canDelete
+                    onToggleFavorite={async (id) => {
+                      try {
+                        await apiFetch('/api/v1/favorites/toggle', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ generationId: id })
+                        });
+                      } catch (e: any) {
+                        toast.error(e?.message || 'Failed to toggle favorite');
+                      }
+                    }}
+                    onAddToCollection={(id) => { setPickerItem({ type: 'render', id }); setPickerOpen(true); }}
+                    onOpen={() => openViewer(it.render.id, it.render.coverImageUrl || "/placeholder.png")}
+                    onDelete={() => onRemove(it)}
+                  />
+                );
+              }
+              // community item within a collection
+              return (
+                <ImageCard
+                  key={`c-${it.communityImageId}-${it.addedAt}`}
+                  id={it.communityImageId}
+                  imageUrl={it.imageUrl}
+                  canFavorite={false}
+                  canAddToCollection
+                  canDelete
+                  onAddToCollection={(id) => { setPickerItem({ type: 'community', id }); setPickerOpen(true); }}
+                  onOpen={() => openViewer(it.communityImageId, it.imageUrl, 'Community image')}
+                  onDelete={() => onRemove(it)}
                 />
-              ) : (
-                <Card key={`c-${it.communityImageId}-${it.addedAt}`} className="group overflow-hidden relative">
-                  <CardContent className="p-0">
-                    <div className="relative aspect-square bg-muted">
-                      <Image src={it.imageUrl} alt="Community item" fill className="object-cover" />
-                      <div className="absolute inset-x-2 bottom-2 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
-                        <div className="flex items-center justify-end rounded-lg px-2 py-1.5 backdrop-blur-md bg-white/60 dark:bg-black/40 border border-white/30 dark:border-white/10 shadow-sm">
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                            aria-label="Delete"
-                            onClick={async () => { await onRemove(it); }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            ))}
+              );
+            })}
           </div>
 
           {items.length > 0 && hasMore && (

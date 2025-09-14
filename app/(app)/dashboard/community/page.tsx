@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CommunityItem, useApplySettings } from "@/components/community";
+import { useApplySettings } from "@/components/community";
+import { ImageCard } from "@/components/shared/ImageCard";
+import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
 import { Sparkles } from "lucide-react";
 import { apiFetch } from "@/libs/api/http";
 import { toast } from "sonner";
@@ -29,6 +31,8 @@ export default function CommunityPage() {
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerItem, setPickerItem] = useState<{ type: 'render'|'community'; id: string } | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewer, setViewer] = useState<{ id: string; url: string; title?: string } | null>(null);
 
   const fetchPage = async (next?: string) => {
     try {
@@ -52,19 +56,6 @@ export default function CommunityPage() {
   useEffect(() => { fetchPage(); }, []);
 
   const onApplySettings = (settings: any) => applySettings(settings);
-
-  const onToggleFavorite = async (renderIdOrCommunityId: string, isCommunity = false) => {
-    try {
-      await apiFetch('/api/v1/favorites/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isCommunity ? { communityImageId: renderIdOrCommunityId } : { generationId: renderIdOrCommunityId })
-      });
-      toast.success('Updated favorites');
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update favorites');
-    }
-  };
 
   const onAddToCollection = (id: string, isCommunity = false) => {
     setPickerItem({ type: isCommunity ? 'community' : 'render', id });
@@ -92,15 +83,23 @@ export default function CommunityPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {items.map((item) => (
-            <CommunityItem
-              key={item.id}
-              item={item as any}
-              onApplySettings={onApplySettings}
-              onToggleFavorite={(id) => onToggleFavorite(item.render?.id || item.id, !item.render?.id)}
-              onAddToCollection={(id) => onAddToCollection(item.render?.id || item.id, !item.render?.id)}
-            />
-          ))}
+          {items.map((item) => {
+            const id = item.render?.id || item.id;
+            const url = item.thumbUrl || item.imageUrl;
+            return (
+              <ImageCard
+                key={item.id}
+                id={id}
+                imageUrl={url}
+                canFavorite={false}
+                canAddToCollection
+                canDelete={false}
+                canApplySettings={false}
+                onAddToCollection={() => onAddToCollection(id, !item.render?.id)}
+                onOpen={() => { setViewer({ id, url: item.imageUrl, title: undefined }); setViewerOpen(true); }}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -118,6 +117,14 @@ export default function CommunityPage() {
         onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerItem(null); }}
         item={pickerItem}
         onAdded={() => { toast.success('Added to collection'); }}
+      />
+
+      {/* Image viewer */}
+      <ImageViewerDialog
+        open={viewerOpen}
+        onOpenChange={(o) => { setViewerOpen(o); if (!o) setViewer(null); }}
+        imageUrl={viewer?.url || ''}
+        title={viewer?.title}
       />
     </div>
   );

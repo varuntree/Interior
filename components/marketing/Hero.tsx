@@ -16,14 +16,16 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 
+// Hero images sourced from feature sections
+// 1-3: Feature 1 (Redesign) — f11, f12, f13
+// 4-6: Feature 2 (Transfer) — f21, f22, f23
 const testimonials = [
-  { id: 1, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/person1.jpeg", name: "Joan Doe" },
-  { id: 2, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/person2.jpeg", name: "Jane Smith" },
-  { id: 3, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/person3.jpeg", name: "John Johnson" },
-  { id: 4, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/person4.jpeg", name: "Sarah William" },
-  { id: 5, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/person5.jpeg", name: "Michael Brown" },
-  { id: 6, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/bw3.jpeg", name: "Emily Davis" },
-  { id: 7, image: "https://deifkwefumgah.cloudfront.net/shadcnblocks/block/lummi/bw11.jpeg", name: "Joson White" },
+  { id: 1, image: "/landing/f11.png" },
+  { id: 2, image: "/landing/f12.png" },
+  { id: 3, image: "/landing/f13.png" },
+  { id: 4, image: "/landing/f21.png" },
+  { id: 5, image: "/landing/f22.png" },
+  { id: 6, image: "/landing/f23.png" },
 ];
 
 export function Hero() {

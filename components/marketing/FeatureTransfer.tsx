@@ -54,10 +54,12 @@ export function FeatureTransfer() {
     const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
     if (!isMobile) return;
     const id = setInterval(() => {
-      const snaps = api.scrollSnapList().length;
-      const next = (api.selectedScrollSnap() + 1) % snaps;
-      api.scrollTo(next);
-    }, 1200);
+      if (api.canScrollNext()) {
+        api.scrollNext();
+      } else {
+        api.scrollTo(0);
+      }
+    }, 1400);
     return () => clearInterval(id);
   }, [api]);
 
@@ -142,7 +144,7 @@ export function FeatureTransfer() {
               <button key={`ft-dot-${i}`} onClick={() => goToSlide(i)} className="h-4 w-full">
                 <div className={`${current === i ? "bg-primary/20" : "bg-muted"} relative my-auto h-1 w-full overflow-hidden rounded-full`}>
                   {current === i && (
-                    <span className="absolute inset-y-0 left-0 bg-primary" style={{ animation: "ft2progress 1.2s linear infinite", width: 0 }} />
+                    <span className="absolute inset-y-0 left-0 bg-primary" style={{ animation: "ft2progress 1.4s linear infinite", width: 0 }} />
                   )}
                 </div>
               </button>
