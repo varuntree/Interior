@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import config from "@/config";
+import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -49,12 +50,7 @@ export function MarketingNavbar() {
         <NavigationMenu className="min-w-full [&>div:last-child]:left-auto">
           <div className="flex w-full justify-between gap-2 py-4">
             <Link href="/" className="flex items-center gap-2" aria-label={config.appName}>
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-semibold text-sm">IA</span>
-              </div>
-              <span className="text-lg font-semibold tracking-tighter">
-                {config.appName}
-              </span>
+              <Logo />
             </Link>
             <div className="flex items-center gap-2 xl:gap-8">
               <NavigationMenuList className="hidden gap-2 lg:flex">

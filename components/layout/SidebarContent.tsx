@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Wand2 } from "lucide-react";
 import { cn } from "@/libs/utils";
 import { Badge } from "@/components/ui/badge";
+import { Wand2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { primaryNav, secondaryNav } from "./nav.config";
 import { NavLink } from "./NavLink";
+import { Logo } from "@/components/shared/Logo";
 
 export function SidebarContent({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -26,11 +27,8 @@ export function SidebarContent({ className, onNavigate }: { className?: string; 
     <div className={cn("flex h-full w-64 flex-col bg-sidebar text-sidebar-foreground", className)}>
       {/* Header */}
       <div className="flex h-16 items-center px-6 border-b border-sidebar-border">
-        <Link href="/dashboard" className="flex items-center space-x-2" onClick={onNavigate}>
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <Wand2 className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
-          <span className="text-lg font-semibold">Interior AI</span>
+        <Link href="/dashboard" className="flex items-center" onClick={onNavigate}>
+          <Logo />
         </Link>
       </div>
 

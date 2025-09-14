@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { SidebarDesktop } from "@/components/layout/SidebarDesktop";
 import { SidebarMobile } from "@/components/layout/SidebarMobile";
+import { Logo } from "@/components/shared/Logo";
 
 export default async function LayoutPrivate({ children }: { children: ReactNode }) {
   // Use the same pattern as the /api/v1/auth/me route
@@ -21,10 +22,7 @@ export default async function LayoutPrivate({ children }: { children: ReactNode 
         <header className="md:hidden flex items-center justify-between h-16 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <SidebarMobile />
           <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-semibold text-sm">IA</span>
-            </div>
-            <span className="font-semibold text-foreground">Interior AI</span>
+            <Logo size="sm" />
           </div>
           <div className="w-10" /> {/* Spacer for balance */}
         </header>
