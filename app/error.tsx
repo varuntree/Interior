@@ -145,7 +145,7 @@ Please describe what you were doing when this error occurred:
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">Quick actions:</p>
           <div className="flex justify-center gap-4 text-sm">
-            <Link href="/dashboard/create" className="text-primary hover:underline">
+            <Link href="/dashboard" className="text-primary hover:underline">
               Create Design
             </Link>
             <Link href="/dashboard/renders" className="text-primary hover:underline">

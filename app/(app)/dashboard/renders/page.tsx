@@ -81,7 +81,7 @@ export default function RendersPage() {
       {/* Actions */}
       <div className="flex justify-end">
         <Button size="sm" asChild>
-          <a href="/dashboard/create">
+          <a href="/dashboard">
             <Plus className="h-4 w-4 mr-2" />
             Create New
           </a>
@@ -94,7 +94,7 @@ export default function RendersPage() {
           icon={<ImageIcon className="h-12 w-12" />}
           title="No renders yet"
           description="Start creating beautiful interior designs to see them here."
-          action={{ label: "Create Your First Design", href: "/dashboard/create" }}
+          action={{ label: "Create Your First Design", href: "/dashboard" }}
         />
       )}
 

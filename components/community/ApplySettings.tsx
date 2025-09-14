@@ -34,7 +34,7 @@ export function useApplySettings() {
       params.set('source', 'community');
 
       // Navigate to create page with prefilled settings
-      const createUrl = `/dashboard/create${params.toString() ? `?${params.toString()}` : ''}`;
+      const createUrl = `/dashboard${params.toString() ? `?${params.toString()}` : ''}`;
       router.push(createUrl);
 
     } catch (error) {
