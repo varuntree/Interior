@@ -3,19 +3,29 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/libs/api/http";
 
-export interface CollectionItem {
-  renderId: string;
-  addedAt: string;
-  render?: {
-    id: string;
-    mode: string;
-    roomType?: string;
-    style?: string;
-    coverVariant: number;
-    coverImageUrl?: string;
-    createdAt: string;
-  } | null;
-}
+export type CollectionItem =
+  | {
+      type: 'render';
+      renderId: string;
+      addedAt: string;
+      render: {
+        id: string;
+        mode: string;
+        roomType?: string;
+        style?: string;
+        coverVariant: number;
+        coverImageUrl?: string;
+        createdAt: string;
+      };
+    }
+  | {
+      type: 'community';
+      communityImageId: string;
+      addedAt: string;
+      imageUrl: string;
+      thumbUrl?: string;
+      applySettings?: any;
+    };
 
 export interface CollectionDetail {
   collection: {
@@ -83,9 +93,13 @@ export function useCollectionDetail(collectionId: string | undefined, pageSize: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionId, pageSize]);
 
-  const removeItem = async (renderId: string) => {
+  const removeItem = async (item: CollectionItem) => {
     if (!collectionId) return;
-    await apiFetch(`/api/v1/collections/${collectionId}/items/${renderId}`, { method: 'DELETE' });
+    if (item.type === 'render') {
+      await apiFetch(`/api/v1/collections/${collectionId}/items/${item.renderId}`, { method: 'DELETE' });
+    } else {
+      await apiFetch(`/api/v1/collections/${collectionId}/community-items/${item.communityImageId}`, { method: 'DELETE' });
+    }
     // refetch from start to keep pagination accurate
     await fetchDetail();
   };

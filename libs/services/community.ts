@@ -266,3 +266,21 @@ export function urlParamsToSettings(params: URLSearchParams): GenerationSettings
 
 // Admin functions for future admin interface
 // (Legacy admin collection helpers removed in favor of community_images-only flow)
+
+// ---- New flat list service (cursor-paginated) ----
+export async function listCommunityFlat(
+  ctx: { supabase: SupabaseClient },
+  args: { limit?: number; cursor?: string | null }
+): Promise<{ items: Array<{ id: string; imageUrl: string; thumbUrl?: string; applySettings?: GenerationSettings; createdAt: string }>; nextCursor?: string }> {
+  const { items, nextCursor } = await imagesRepo.listPublishedImagesPage(ctx.supabase, { limit: args.limit, cursor: args.cursor })
+  return {
+    items: items.map(r => ({
+      id: r.id,
+      imageUrl: r.external_url || (r.image_path ? buildPublicUrl(r.image_path) : ''),
+      thumbUrl: r.thumb_path ? buildPublicUrl(r.thumb_path) : undefined,
+      applySettings: r.apply_settings ?? undefined,
+      createdAt: r.created_at,
+    })),
+    nextCursor,
+  }
+}

@@ -59,7 +59,7 @@ export function GenerationWorkspaceFinal() {
   return (
     <div className="relative">
       {/* Top: glass segmented modes with labels kept on mobile */}
-      <div className="px-4 sm:px-6 py-3 border-b sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="px-4 sm:px-6 py-3 sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="relative">
           <div className="mx-auto w-fit rounded-full border bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/40 p-1 grid grid-cols-4 gap-1">
             {["redesign","staging","compose","imagine"].map((m) => (
@@ -155,7 +155,7 @@ export function GenerationWorkspaceFinal() {
       </div>
 
       {/* Presets bar above dock with labels */}
-      <div className="fixed left-0 right-0 bottom-28 z-30">
+      <div className="fixed left-0 right-0 md:left-64 bottom-28 z-30">
         <div className="mx-auto max-w-3xl rounded-xl border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 px-4 py-2 shadow-sm">
           <div className="grid grid-cols-2 gap-3 text-xs">
             <label className="grid gap-1">
@@ -187,7 +187,7 @@ export function GenerationWorkspaceFinal() {
       </div>
 
       {/* Bottom dock: uploader pills + prompt + generate */}
-      <div className="fixed left-0 right-0 bottom-4 z-40">
+      <div className="fixed left-0 right-0 md:left-64 bottom-4 z-40">
         <div className="mx-auto max-w-3xl rounded-2xl border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md px-3 py-2">
           <div className="flex items-center gap-2">
             <TooltipProvider>

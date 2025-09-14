@@ -22,6 +22,9 @@ export function AppImage({
 }: AppImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
+  // If priority is passed, Next.js requires not to set loading="lazy"
+  // Extract it from rest so we can conditionally omit the loading prop.
+  const { priority, ...imgRest } = rest as { priority?: boolean } & Record<string, any>;
 
   return (
     <div className={cn("relative w-full h-full", containerClassName)}>
@@ -32,8 +35,8 @@ export function AppImage({
           onLoad={() => setLoaded(true)}
           onError={() => { setErrored(true); setLoaded(true); }}
           sizes={sizes}
-          loading={loading}
-          {...rest}
+          {...(priority ? { priority: true } : { loading })}
+          {...imgRest}
         />
       ) : (
         fallback ?? (
@@ -53,4 +56,3 @@ export function AppImage({
 }
 
 export default AppImage;
-

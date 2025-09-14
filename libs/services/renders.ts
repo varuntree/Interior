@@ -140,19 +140,7 @@ export async function listUserRenders(
   }
 }
 
-export async function getRenderDetails(
-  ctx: { supabase: SupabaseClient },
-  renderId: string,
-  ownerId: string
-): Promise<RenderWithVariants | null> {
-  const result = await rendersRepo.getRenderWithVariants(ctx.supabase, renderId, ownerId)
-  
-  if (!result) {
-    return null
-  }
-
-  return await formatRenderWithVariants(result.render, result.variants)
-}
+// Removed legacy render details fetch used by the old details page.
 
 export async function getVariantsForJob(
   ctx: { supabase: SupabaseClient },
@@ -212,22 +200,7 @@ export async function deleteUserRender(
   await rendersRepo.deleteRender(ctx.supabase, renderId, ownerId)
 }
 
-export async function updateRenderCover(
-  ctx: { supabase: SupabaseClient },
-  renderId: string,
-  ownerId: string,
-  variantIndex: number
-): Promise<void> {
-  // Verify the variant exists
-  const variants = await rendersRepo.getVariantsByRender(ctx.supabase, renderId)
-  const variant = variants.find(v => v.idx === variantIndex && v.owner_id === ownerId)
-  
-  if (!variant) {
-    throw new Error('Variant not found or access denied')
-  }
-
-  await rendersRepo.updateRenderCoverVariant(ctx.supabase, renderId, ownerId, variantIndex)
-}
+// Removed legacy cover update used by the old details page.
 
 export async function getRecentUserRenders(
   ctx: { supabase: SupabaseClient },

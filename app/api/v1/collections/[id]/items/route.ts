@@ -8,7 +8,9 @@ import { createClient } from '@/libs/supabase/server'
 import { 
   getCollectionWithItems, 
   addRenderToCollection,
-  addToFavorites
+  addCommunityImageToCollection,
+  addToFavorites,
+  addCommunityToFavorites,
 } from '@/libs/services/collections'
 import { withRequestContext } from '@/libs/observability/request'
 
@@ -21,6 +23,10 @@ interface Context {
 // Validation schemas
 const AddItemSchema = z.object({
   renderId: z.string().uuid('Invalid render ID format')
+})
+
+const AddCommunityItemSchema = z.object({
+  communityImageId: z.string().uuid('Invalid community image ID format')
 })
 
 const BatchAddItemsSchema = z.object({
@@ -64,10 +70,11 @@ async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
 
     // Build response
     const response = {
-      items: paginatedItems.map(item => ({
+      items: paginatedItems.map((item: any) => item.render ? {
+        type: 'render' as const,
         renderId: item.render_id,
         addedAt: item.added_at,
-        render: item.render ? {
+        render: {
           id: item.render.id,
           mode: item.render.mode,
           roomType: item.render.room_type,
@@ -75,8 +82,15 @@ async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
           coverVariant: item.render.cover_variant,
           coverImageUrl: item.render.cover_image_url,
           createdAt: item.render.created_at
-        } : null
-      })),
+        }
+      } : {
+        type: 'community' as const,
+        communityImageId: item.community_image_id,
+        addedAt: item.added_at,
+        imageUrl: item.image_url,
+        thumbUrl: item.thumb_url,
+        applySettings: item.apply_settings,
+      }),
       pagination: {
         limit,
         offset,
@@ -144,26 +158,38 @@ async function handlePOST(req: NextRequest, ctx: Context & { logger?: any }) {
       })
     } else {
       // Single item add
-      const parsed = AddItemSchema.safeParse(body)
-      if (!parsed.success) {
-        return fail(400, 'VALIDATION_ERROR', 'Invalid request body', parsed.error.flatten())
+      const parsedRender = AddItemSchema.safeParse(body)
+      const parsedCommunity = AddCommunityItemSchema.safeParse(body)
+      if (!parsedRender.success && !parsedCommunity.success) {
+        return fail(400, 'VALIDATION_ERROR', 'Invalid request body')
       }
-
-      const { renderId } = parsed.data
 
       // Get service client
       const serviceSupabase = createServiceSupabaseClient()
 
       // Special case: if this is the "favorites" shortcut
       if (collectionId === 'favorites') {
-        await addToFavorites({ supabase: serviceSupabase }, user.id, renderId)
+        if (parsedRender.success) {
+          await addToFavorites({ supabase: serviceSupabase }, user.id, parsedRender.data.renderId)
+        } else if (parsedCommunity.success) {
+          await addCommunityToFavorites({ supabase: serviceSupabase }, user.id, parsedCommunity.data.communityImageId)
+        }
       } else {
-        await addRenderToCollection(
-          { supabase: serviceSupabase },
-          user.id,
-          collectionId,
-          renderId
-        )
+        if (parsedRender.success) {
+          await addRenderToCollection(
+            { supabase: serviceSupabase },
+            user.id,
+            collectionId,
+            parsedRender.data.renderId
+          )
+        } else if (parsedCommunity.success) {
+          await addCommunityImageToCollection(
+            { supabase: serviceSupabase },
+            user.id,
+            collectionId,
+            parsedCommunity.data.communityImageId
+          )
+        }
       }
 
       ctx?.logger?.info?.('collections.items.add', { userId: user.id, collectionId })

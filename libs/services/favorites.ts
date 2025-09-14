@@ -4,13 +4,10 @@ import * as collectionsRepo from '@/libs/repositories/collections'
 // Toggle favorite for a render using the default favorites collection
 export async function toggleFavorite(
   ctx: { supabase: SupabaseClient },
-  args: { userId: string; generationId: string }
+  args: { userId: string; generationId?: string; communityImageId?: string }
 ): Promise<{ isFavorite: boolean }> {
   const { supabase } = ctx
-  const { userId, generationId } = args
-
-  // Treat generationId as renderId
-  const renderId = generationId
+  const { userId, generationId, communityImageId } = args
 
   // Ensure default favorites exists
   let favorites = await collectionsRepo.getDefaultFavorites(supabase, userId)
@@ -18,24 +15,42 @@ export async function toggleFavorite(
     favorites = await collectionsRepo.createCollection(supabase, userId, 'My Favorites')
   }
 
-  // Check if item already in favorites
-  const { data: existing, error } = await supabase
-    .from('collection_items')
-    .select('render_id')
-    .eq('collection_id', favorites.id)
-    .eq('render_id', renderId)
-    .maybeSingle()
-  if (error) throw error
-
-  if (existing) {
-    // Remove from favorites
-    await collectionsRepo.removeFromCollection(supabase, favorites.id, renderId)
-    return { isFavorite: false }
-  } else {
-    // Add to favorites
-    await collectionsRepo.addToCollection(supabase, favorites.id, renderId)
-    return { isFavorite: true }
+  if (generationId) {
+    const renderId = generationId
+    const { data: existing, error } = await supabase
+      .from('collection_items')
+      .select('render_id')
+      .eq('collection_id', favorites.id)
+      .eq('render_id', renderId)
+      .maybeSingle()
+    if (error) throw error
+    if (existing) {
+      await collectionsRepo.removeFromCollection(supabase, favorites.id, renderId)
+      return { isFavorite: false }
+    } else {
+      await collectionsRepo.addToCollection(supabase, favorites.id, renderId)
+      return { isFavorite: true }
+    }
   }
+
+  if (communityImageId) {
+    const { data: existing, error } = await supabase
+      .from('collection_community_items')
+      .select('community_image_id')
+      .eq('collection_id', favorites.id)
+      .eq('community_image_id', communityImageId)
+      .maybeSingle()
+    if (error) throw error
+    if (existing) {
+      await collectionsRepo.removeCommunityImageFromCollection(supabase, favorites.id, communityImageId)
+      return { isFavorite: false }
+    } else {
+      await collectionsRepo.addCommunityImageToCollection(supabase, favorites.id, communityImageId)
+      return { isFavorite: true }
+    }
+  }
+
+  throw new Error('Missing item identifier')
 }
 
 // List favorites items

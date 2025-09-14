@@ -6,8 +6,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { GenerationProvider } from "@/contexts/GenerationContext";
 import { GenerationWorkspaceFinal } from "@/components/generation/GenerationWorkspaceFinal";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 export default function CreatePage() {
   const searchParams = useSearchParams();
@@ -49,12 +48,7 @@ export default function CreatePage() {
         <DashboardHeader 
           title="Create Design" 
           subtitle="Transform your space with AI-powered interior design"
-        >
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            Phase 7 Complete
-          </Badge>
-        </DashboardHeader>
+        />
 
         {/* Community Settings Applied Alert */}
         {showCommunityAlert && prefillData && (

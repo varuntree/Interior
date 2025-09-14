@@ -45,19 +45,15 @@ export async function listUserCollections(
   ownerId: string
 ): Promise<CollectionWithCount[]> {
   const collections = await collectionsRepo.listCollections(ctx.supabase, ownerId)
-  
-  // Get item counts for each collection
-  const collectionsWithCounts = await Promise.all(
-    collections.map(async (collection) => {
-      const items = await collectionsRepo.listCollectionItems(ctx.supabase, collection.id)
-      return {
-        ...collection,
-        item_count: items.length
-      }
-    })
-  )
-  
-  return collectionsWithCounts
+  // Count both render items and community image items per collection
+  const withCounts = await Promise.all(collections.map(async (c) => {
+    const [renderCount, communityCount] = await Promise.all([
+      collectionsRepo.countCollectionItems(ctx.supabase, c.id).catch(() => 0),
+      collectionsRepo.countCollectionCommunityItems(ctx.supabase, c.id).catch(() => 0),
+    ])
+    return { ...c, item_count: renderCount + communityCount }
+  }))
+  return withCounts
 }
 
 export async function createUserCollection(
@@ -126,6 +122,15 @@ export async function addToFavorites(
   await collectionsRepo.addToCollection(ctx.supabase, favorites.id, renderId)
 }
 
+export async function addCommunityToFavorites(
+  ctx: { supabase: SupabaseClient },
+  ownerId: string,
+  communityImageId: string
+): Promise<void> {
+  const favorites = await ensureDefaultFavorites(ctx, ownerId)
+  await collectionsRepo.addCommunityImageToCollection(ctx.supabase, favorites.id, communityImageId)
+}
+
 export async function addRenderToCollection(
   ctx: { supabase: SupabaseClient },
   ownerId: string,
@@ -147,6 +152,17 @@ export async function addRenderToCollection(
   }
   
   await collectionsRepo.addToCollection(ctx.supabase, collectionId, renderId)
+}
+
+export async function addCommunityImageToCollection(
+  ctx: { supabase: SupabaseClient },
+  ownerId: string,
+  collectionId: string,
+  communityImageId: string
+): Promise<void> {
+  const collection = await collectionsRepo.getCollectionById(ctx.supabase, collectionId, ownerId)
+  if (!collection) throw new Error('Collection not found or access denied')
+  await collectionsRepo.addCommunityImageToCollection(ctx.supabase, collectionId, communityImageId)
 }
 
 export async function removeRenderFromCollection(
@@ -172,7 +188,15 @@ export async function getCollectionWithItems(
   limit = 50
 ): Promise<{
   collection: collectionsRepo.Collection
-  items: CollectionItemWithRender[]
+  items: Array<CollectionItemWithRender | {
+    type: 'community'
+    collection_id: string
+    community_image_id: string
+    added_at: string
+    image_url: string
+    thumb_url?: string
+    apply_settings?: any
+  }>
 }> {
   // Get collection and verify ownership
   const collection = await collectionsRepo.getCollectionById(ctx.supabase, collectionId, ownerId)
@@ -181,7 +205,7 @@ export async function getCollectionWithItems(
     throw new Error('Collection not found or access denied')
   }
   
-  // Get items with render details (basic fields)
+  // Get render items with render details (basic fields)
   const { data: items, error } = await ctx.supabase
     .from('collection_items')
     .select(`
@@ -214,7 +238,7 @@ export async function getCollectionWithItems(
 
   // Format the response (with cover image url using public bucket)
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const formattedItems: CollectionItemWithRender[] = (items || []).map((item: any) => {
+  const renderFormatted: CollectionItemWithRender[] = (items || []).map((item: any) => {
     const renderData = Array.isArray(item.renders) ? item.renders[0] : item.renders
     const variants = variantsByRender.get(renderData.id) || []
     const cover = variants.find(v => v.idx === renderData.cover_variant)
@@ -234,10 +258,33 @@ export async function getCollectionWithItems(
       }
     }
   })
+  // Community image items
+  const commRows = await collectionsRepo.listCommunityItemsWithImage(ctx.supabase, collectionId, limit)
+  const communityFormatted = commRows.map(row => {
+    const img = row.community_image
+    const imageUrl = img?.external_url || (img?.image_path ? `${base}/storage/v1/object/public/public/${img.image_path}` : '')
+    const thumbUrl = img?.thumb_path ? `${base}/storage/v1/object/public/public/${img.thumb_path}` : undefined
+    return {
+      type: 'community' as const,
+      collection_id: row.collection_id,
+      community_image_id: row.community_image_id,
+      added_at: row.added_at,
+      image_url: imageUrl,
+      thumb_url: thumbUrl,
+      apply_settings: img?.apply_settings ?? undefined,
+    }
+  })
+
+  // Merge and sort by added_at desc; limit
+  const merged = [
+    ...renderFormatted,
+    ...communityFormatted,
+  ].sort((a: any, b: any) => (new Date(b.added_at).getTime() - new Date(a.added_at).getTime()))
+   .slice(0, limit)
   
   return {
     collection,
-    items: formattedItems
+    items: merged
   }
 }
 
@@ -265,6 +312,17 @@ export async function batchAddToCollection(
   
   // Batch insert (ignore duplicates)
   await collectionsRepo.batchAddToCollection(ctx.supabase, collectionId, verifiedRenderIds)
+}
+
+export async function removeCommunityImageFromCollection(
+  ctx: { supabase: SupabaseClient },
+  ownerId: string,
+  collectionId: string,
+  communityImageId: string
+): Promise<void> {
+  const collection = await collectionsRepo.getCollectionById(ctx.supabase, collectionId, ownerId)
+  if (!collection) throw new Error('Collection not found or access denied')
+  await collectionsRepo.removeCommunityImageFromCollection(ctx.supabase, collectionId, communityImageId)
 }
 
 // Minimal upsert for API compatibility

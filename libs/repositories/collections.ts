@@ -125,6 +125,32 @@ export async function removeFromCollection(
   if (error) throw error
 }
 
+// Community image items (new)
+export async function addCommunityImageToCollection(
+  supabase: SupabaseClient,
+  collectionId: string,
+  communityImageId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('collection_community_items')
+    .insert({ collection_id: collectionId, community_image_id: communityImageId })
+    .select()
+  if (error && error.code !== '23505') throw error
+}
+
+export async function removeCommunityImageFromCollection(
+  supabase: SupabaseClient,
+  collectionId: string,
+  communityImageId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('collection_community_items')
+    .delete()
+    .eq('collection_id', collectionId)
+    .eq('community_image_id', communityImageId)
+  if (error) throw error
+}
+
 export async function listCollectionItems(
   supabase: SupabaseClient,
   collectionId: string,
@@ -139,6 +165,54 @@ export async function listCollectionItems(
   
   if (error) throw error
   return data || []
+}
+
+export async function countCollectionItems(
+  supabase: SupabaseClient,
+  collectionId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('collection_items')
+    .select('render_id', { count: 'exact', head: true })
+    .eq('collection_id', collectionId)
+  if (error) throw error
+  return count || 0
+}
+
+export async function countCollectionCommunityItems(
+  supabase: SupabaseClient,
+  collectionId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('collection_community_items')
+    .select('community_image_id', { count: 'exact', head: true })
+    .eq('collection_id', collectionId)
+  if (error) throw error
+  return count || 0
+}
+
+export async function listCommunityItemsWithImage(
+  supabase: SupabaseClient,
+  collectionId: string,
+  limit = 50
+): Promise<Array<{ collection_id: string; community_image_id: string; added_at: string; community_image: {
+  id: string; image_path?: string | null; thumb_path?: string | null; external_url?: string | null; apply_settings?: any; created_at: string;
+} | null }>> {
+  const { data, error } = await supabase
+    .from('collection_community_items')
+    .select(`
+      collection_id,
+      community_image_id,
+      added_at,
+      community_image:community_images!collection_community_items_community_image_id_fkey (
+        id, image_path, thumb_path, external_url, apply_settings, created_at
+      )
+    `)
+    .eq('collection_id', collectionId)
+    .order('added_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return (data || []) as any
 }
 
 export async function getCollectionById(

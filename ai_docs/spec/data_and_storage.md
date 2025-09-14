@@ -21,7 +21,7 @@ One render groups a set of render_variants created by a single generation job.
 
 My Favorites is a system collection auto-created per user.
 
-Community is admin-managed; users can only read. Admin uses a temporary allowlist to upload/delete images.
+Community is admin-managed; users can only read. Admin uses a temporary allowlist to upload/delete images. Users can now save community images to their own collections and favorites via a dedicated join table (see §3.7).
 
 2) Storage (Supabase Storage)
 Buckets (already provisioned via 004_storage_buckets.sql):
@@ -39,7 +39,7 @@ Outputs (final images visible in product):
 public/renders/${renderId}/${variantIndex}.jpg
 
 Community images (admin uploads):
-public/community/<uuid>.<ext>
+ public/community/<uuid>.<ext>
 
 MVP: store originals in public at target size. Thumbnails are optional; if omitted, UI requests the original with CSS‑scaled previews. (We can add server-side thumb generation later without contract changes.)
 
@@ -272,6 +272,9 @@ create index if not exists idx_comm_images_pub_order
   on public.community_images (is_published, order_index asc, created_at desc);
 create index if not exists idx_comm_images_tags_gin
   on public.community_images using gin (tags);
+  
+-- (Optional) index for JSONB apply_settings lookups, created in baseline
+create index if not exists idx_comm_images_apply_settings on public.community_images using gin (apply_settings jsonb_path_ops);
 3.5 Usage ledger (included in 0001_baseline.sql)
 sql
 Copy
@@ -300,6 +303,40 @@ create policy "usage_owner_insert"
 
 create index if not exists idx_usage_owner_created on public.usage_ledger (owner_id, created_at desc);
 3.6 Default favorites trigger (included in 0001_baseline.sql)
+
+3.7 Community image collection items (Phase 11)
+sql
+Copy
+-- Save community images into user collections and default favorites (no ownership over images required)
+create table if not exists public.collection_community_items (
+  collection_id uuid not null references public.collections(id) on delete cascade,
+  community_image_id uuid not null references public.community_images(id) on delete cascade,
+  added_at timestamptz not null default now(),
+  primary key (collection_id, community_image_id)
+);
+
+alter table public.collection_community_items enable row level security;
+
+-- RLS: owner of the collection controls items
+create policy if not exists "coll_comm_items_owner_select"
+  on public.collection_community_items for select
+  using (
+    exists(select 1 from public.collections c where c.id = collection_id and c.owner_id = auth.uid())
+  );
+
+create policy if not exists "coll_comm_items_owner_insert"
+  on public.collection_community_items for insert
+  with check (
+    exists(select 1 from public.collections c where c.id = collection_id and c.owner_id = auth.uid())
+  );
+
+create policy if not exists "coll_comm_items_owner_delete"
+  on public.collection_community_items for delete
+  using (
+    exists(select 1 from public.collections c where c.id = collection_id and c.owner_id = auth.uid())
+  );
+
+create index if not exists idx_coll_comm_items_coll on public.collection_community_items (collection_id);
 4) Repositories (shape & contracts)
 Implement in libs/repositories/*.ts. Pure functions, accept SupabaseClient, return typed rows.
 
@@ -338,6 +375,10 @@ addToCollection(supabase, collectionId, renderId)
 
 removeFromCollection(supabase, collectionId, renderId)
 
+addCommunityImageToCollection(supabase, collectionId, communityImageId)
+
+removeCommunityImageFromCollection(supabase, collectionId, communityImageId)
+
 listCollectionItems(supabase, collectionId)
 
 4.4 community.ts
@@ -371,6 +412,7 @@ Jobs & renders retained indefinitely (for MVP).
 Users can delete renders; cascade removes variants (job rows remain for audit).
 
 Community content is curated; removal detaches only links (renders remain).
+Community images saved into collections are stored only as join rows; the original community assets remain public-read and are not duplicated.
 
 7) Config touchpoints
 config.ts: plans metadata, presets (room types, styles), default collection name "My Favorites".
@@ -383,3 +425,4 @@ Apply migrations in order; verify RLS policies exist.
 Confirm public & private buckets are present (created in 0001_baseline.sql).
 
 Run a manual flow: create job → webhook success → renders & variants exist; paths point to public bucket; collection default exists.
+Phase 11: verify table collection_community_items exists with RLS policies enabled, and adding a community image to favorites/collections works via API.

@@ -18,14 +18,16 @@ interface CollectionItem {
   createdAt: string;
 }
 
+type ItemRef = { type: 'render' | 'community'; id: string } | null;
+
 interface Props {
   open: boolean;
   onOpenChange: (_: boolean) => void;
-  renderId: string | null;
+  item: ItemRef;
   onAdded?: () => void;
 }
 
-export function CollectionPickerDialog({ open, onOpenChange, renderId, onAdded }: Props) {
+export function CollectionPickerDialog({ open, onOpenChange, item, onAdded }: Props) {
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
@@ -70,13 +72,14 @@ export function CollectionPickerDialog({ open, onOpenChange, renderId, onAdded }
   };
 
   const addToCollection = async () => {
-    if (!renderId || !selected) return;
+    if (!item || !selected) return;
     setLoading(true);
     try {
+      const body = item.type === 'render' ? { renderId: item.id } : { communityImageId: item.id };
       await apiFetch(`/api/v1/collections/${selected}/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ renderId })
+        body: JSON.stringify(body)
       });
       toast.success('Added to collection');
       onAdded?.();
@@ -116,7 +119,7 @@ export function CollectionPickerDialog({ open, onOpenChange, renderId, onAdded }
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={addToCollection} disabled={loading || !selected || !renderId}>Add</Button>
+          <Button onClick={addToCollection} disabled={loading || !selected || !item}>Add</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

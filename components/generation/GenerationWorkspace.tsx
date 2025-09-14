@@ -71,10 +71,10 @@ export function GenerationWorkspace() {
   };
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerRenderId, setPickerRenderId] = useState<string | null>(null);
+  const [pickerItem, setPickerItem] = useState<{ type: 'render'|'community'; id: string } | null>(null);
 
   const handleAddToCollection = (renderId: string) => {
-    setPickerRenderId(renderId);
+    setPickerItem({ type: 'render', id: renderId });
     setPickerOpen(true);
   };
 
@@ -264,8 +264,8 @@ export function GenerationWorkspace() {
       {/* Collection Picker */}
       <CollectionPickerDialog
         open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        renderId={pickerRenderId}
+        onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerItem(null); }}
+        item={pickerItem}
         onAdded={() => toastSuccess('Added to collection')}
       />
     </div>

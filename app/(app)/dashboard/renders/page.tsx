@@ -10,15 +10,17 @@ import { useRenders } from "@/hooks/useRenders";
 import { apiFetch } from "@/libs/api/http";
 import { toast } from "sonner";
 import { RenderCard } from "@/components/renders/RenderCard";
-import { useRouter } from "next/navigation";
 import React from "react";
 import { CollectionPickerDialog } from "@/components/collections/CollectionPickerDialog";
+import { ImageViewerDialog } from "@/components/shared/ImageViewerDialog";
 
 export default function RendersPage() {
-  const router = useRouter();
   const { items, loading, loadingMore, hasMore, fetchMore, refetch } = useRenders();
   const [pickerOpen, setPickerOpen] = React.useState(false);
-  const [pickerRenderId, setPickerRenderId] = React.useState<string | null>(null);
+  const [pickerItem, setPickerItem] = React.useState<{ type: 'render'|'community'; id: string } | null>(null);
+  const [viewerOpen, setViewerOpen] = React.useState(false);
+  const [viewer, setViewer] = React.useState<{ id: string; url: string; title?: string } | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   const onDelete = async (renderId: string) => {
     try {
@@ -44,8 +46,25 @@ export default function RendersPage() {
   };
 
   const onAddToCollection = (renderId: string) => {
-    setPickerRenderId(renderId);
+    setPickerItem({ type: 'render', id: renderId });
     setPickerOpen(true);
+  };
+
+  const openViewer = (id: string, url: string, title?: string) => {
+    setViewer({ id, url, title });
+    setViewerOpen(true);
+  };
+
+  const handleViewerDelete = async () => {
+    if (!viewer) return;
+    try {
+      setDeleting(true);
+      await onDelete(viewer.id);
+      setViewerOpen(false);
+      setViewer(null);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -101,7 +120,7 @@ export default function RendersPage() {
               isFavorite={!!r.is_favorite}
               onToggleFavorite={onToggleFavorite}
               onAddToCollection={onAddToCollection}
-              onOpen={(id) => router.push(`/dashboard/renders/${id}`)}
+              onOpen={(id) => openViewer(id, r.cover_variant_url, `${r.mode}${r.room_type ? ` • ${r.room_type}` : ''}${r.style ? ` • ${r.style}` : ''}`)}
               onDelete={onDelete}
             />
           ))}
@@ -118,9 +137,19 @@ export default function RendersPage() {
 
       <CollectionPickerDialog
         open={pickerOpen}
-        onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerRenderId(null); }}
-        renderId={pickerRenderId}
+        onOpenChange={(o) => { setPickerOpen(o); if (!o) setPickerItem(null); }}
+        item={pickerItem}
         onAdded={() => { toast.success('Added to collection'); refetch(); }}
+      />
+
+      {/* Unified Image Viewer */}
+      <ImageViewerDialog
+        open={viewerOpen}
+        onOpenChange={(o) => { setViewerOpen(o); if (!o) setViewer(null); }}
+        imageUrl={viewer?.url || ""}
+        title={viewer?.title}
+        onDelete={viewer ? handleViewerDelete : undefined}
+        deleting={deleting}
       />
     </div>
   );

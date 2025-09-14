@@ -4,117 +4,25 @@ import { withMethods } from '@/libs/api-utils/methods'
 import { ok, fail } from '@/libs/api-utils/responses'
 import { CACHE_CONFIGS } from '@/libs/api-utils/cache'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
-import { getCommunityGallery, getFeaturedCollections } from '@/libs/services/community'
+import { listCommunityFlat } from '@/libs/services/community'
 import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
 export const GET = withMethods(['GET'], withRequestContext(async (req: NextRequest, ctx) => {
   try {
-    // Parse query parameters
+    // Parse query parameters (flat list only)
     const url = new URL(req.url)
-    const featuredOnly = url.searchParams.get('featured') === 'true'
-    const itemsPerCollection = parseInt(url.searchParams.get('itemsPerCollection') || '10')
-    const rawSearch = url.searchParams.get('search')
-    const search = rawSearch ? rawSearch.slice(0, 100).trim() : null
+    const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '24')))
+    const cursor = url.searchParams.get('cursor')
 
     // Get service client (no auth required for community endpoint)
     const serviceSupabase = createServiceSupabaseClient()
 
-    let response
+    const { items, nextCursor } = await listCommunityFlat({ supabase: serviceSupabase }, { limit, cursor })
+    const response = { items, nextCursor }
 
-    if (search && search.length > 0) {
-      // Search community content
-      const { searchCommunityContent } = await import('@/libs/services/community')
-      const items = await searchCommunityContent(
-        { supabase: serviceSupabase },
-        search,
-        20
-      )
-
-      response = {
-        type: 'search',
-        query: search,
-        items: items.map(item => ({
-          id: item.id,
-          collectionId: item.collection_id,
-          imageUrl: item.image_url,
-          thumbUrl: item.thumb_url,
-          sourceType: item.source_type,
-          applySettings: item.apply_settings,
-          createdAt: item.created_at,
-          render: item.render_id ? {
-            id: item.render_id,
-            mode: item.apply_settings?.mode,
-            roomType: item.apply_settings?.roomType,
-            style: item.apply_settings?.style
-          } : null
-        }))
-      }
-    } else if (featuredOnly) {
-      // Get only featured collections
-      const collections = await getFeaturedCollections(
-        { supabase: serviceSupabase },
-        itemsPerCollection
-      )
-
-      response = {
-        type: 'featured',
-        collections: collections.map(collection => ({
-          id: collection.id,
-          title: collection.title,
-          description: collection.description,
-          isFeatured: collection.is_featured,
-          orderIndex: collection.order_index,
-          itemCount: collection.items.length,
-          items: collection.items.map(item => ({
-            id: item.id,
-            imageUrl: item.image_url,
-            thumbUrl: item.thumb_url,
-            sourceType: item.source_type,
-            applySettings: item.apply_settings,
-            createdAt: item.created_at
-          }))
-        }))
-      }
-    } else {
-      // Get all community collections
-      const collections = await getCommunityGallery(
-        { supabase: serviceSupabase },
-        false,
-        itemsPerCollection
-      )
-
-      response = {
-        type: 'gallery',
-        collections: collections.map(collection => ({
-          id: collection.id,
-          title: collection.title,
-          description: collection.description,
-          isFeatured: collection.is_featured,
-          orderIndex: collection.order_index,
-          itemCount: collection.items.length,
-          createdAt: collection.created_at,
-          items: collection.items.map(item => ({
-            id: item.id,
-            imageUrl: item.image_url,
-            thumbUrl: item.thumb_url,
-            sourceType: item.source_type,
-            applySettings: item.apply_settings,
-            createdAt: item.created_at,
-            render: item.render_id ? {
-              id: item.render_id,
-              mode: item.apply_settings?.mode,
-              roomType: item.apply_settings?.roomType,
-              style: item.apply_settings?.style
-            } : null
-          }))
-        }))
-      }
-    }
-
-    // Return with caching headers for public content
-    ctx?.logger?.info?.('community.list', { type: (response as any)?.type, featuredOnly, hasSearch: !!search })
+    ctx?.logger?.info?.('community.list', { count: items.length, hasNext: !!nextCursor })
     return ok(response, undefined, CACHE_CONFIGS.PUBLIC)
 
   } catch (error: any) {

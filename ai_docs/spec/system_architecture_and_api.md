@@ -250,9 +250,9 @@ DELETE /api/v1/collections/:id/items/:renderId
 Removes from collection
 
 6.5 Community
-Public feed (images)
-- GET /api/v1/community — returns public gallery (featured|gallery|search) with items per collection; public caching enabled
-- GET /api/v1/community/collections — returns a synthesized collection summary (e.g., “Inspiration”) for marketing usage
+Public feed (flat, images-only)
+- GET /api/v1/community?limit=&cursor= — returns a flat list `{ items, nextCursor }`; public caching enabled. No search/featured in MVP.
+- GET /api/v1/community/collections — synthesized collection summary for marketing (unchanged for admin pages).
 
 Admin (temporary, allowlist-based)
 - POST /api/v1/admin/community/images/upload (multipart/form-data: files[])

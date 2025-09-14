@@ -50,17 +50,19 @@ Collections
 - GET `/api/v1/collections/:id/items?limit=&offset=` — List items with simple pagination. Auth required.
   - Response: `{ items: [...], pagination: { limit, offset, hasMore, total } }`
 - POST `/api/v1/collections/:id/items` — Add items.
-  - Single: `{ renderId }`; Batch: `{ renderIds: string[] }`. Special case: `:id = 'favorites'` acts as add‑to‑default.
+  - Single render: `{ renderId }`
+  - Batch renders: `{ renderIds: string[] }`
+  - Single community image: `{ communityImageId }` (Phase 11)
+  - Special case: `:id = 'favorites'` acts as add‑to‑default for either kind.
 
 Favorites (Shortcuts)
-- POST `/api/v1/favorites/toggle` — Toggle a render in default favorites. Auth required.
-  - Body: `{ generationId: uuid }`
+- POST `/api/v1/favorites/toggle` — Toggle a favorite in default favorites. Auth required.
+  - Body: one of `{ generationId: uuid }` (render) or `{ communityImageId: uuid }` (community image)
   - Response: `{ isFavorite: boolean }`
 
 Community (Public Read)
-- GET `/api/v1/community?featured=&itemsPerCollection=&search=` — Public gallery.
-  - Modes: `featured=true` returns featured collections; otherwise returns all collections; `search` returns matching items across collections.
-  - Response: one of `{ type: 'featured'|'gallery'|'search', collections?: [...], items?: [...] }` where items include `imageUrl`, optional linked `render`, and `applySettings` (prefill for Create).
+- GET `/api/v1/community?limit=&cursor=` — Flat, public gallery list (no search/featured in MVP).
+  - Response: `{ items: [{ id, imageUrl, thumbUrl?, applySettings?, createdAt }], nextCursor?: string }`
 
 Analytics (Public/Non-blocking)
 - POST `/api/v1/analytics/event` — Logs lightweight analytics events. Accepts `{ type: 'page'|'generation_submit'|'generation_done'|'error', payload? }`. Always returns OK and never blocks UX.

@@ -63,19 +63,32 @@ async function handleGET(req: NextRequest, ctx: Context & { logger?: any }) {
         itemCount: result.items.length,
         createdAt: result.collection.created_at
       },
-      items: result.items.map(item => ({
-        renderId: item.render_id,
-        addedAt: item.added_at,
-        render: item.render ? {
-          id: item.render.id,
-          mode: item.render.mode,
-          roomType: item.render.room_type,
-          style: item.render.style,
-          coverVariant: item.render.cover_variant,
-          coverImageUrl: item.render.cover_image_url,
-          createdAt: item.render.created_at
-        } : null
-      }))
+      items: result.items.map((item: any) => {
+        if (item.render) {
+          return {
+            type: 'render' as const,
+            renderId: item.render_id,
+            addedAt: item.added_at,
+            render: {
+              id: item.render.id,
+              mode: item.render.mode,
+              roomType: item.render.room_type,
+              style: item.render.style,
+              coverVariant: item.render.cover_variant,
+              coverImageUrl: item.render.cover_image_url,
+              createdAt: item.render.created_at
+            }
+          }
+        }
+        return {
+          type: 'community' as const,
+          communityImageId: item.community_image_id,
+          addedAt: item.added_at,
+          imageUrl: item.image_url,
+          thumbUrl: item.thumb_url,
+          applySettings: item.apply_settings,
+        }
+      })
     }
 
     ctx?.logger?.info?.('collections.detail', { userId: user.id, collectionId, itemCount: response.items.length })

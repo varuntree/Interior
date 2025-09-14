@@ -68,11 +68,30 @@ export function Hero() {
   return (
     <section className="bg-background pt-12 pb-14 md:pt-16 md:pb-16">
       <div className="container mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 px-4 text-center md:px-6 lg:px-8">
-        <h1 className="max-w-3xl text-4xl font-medium tracking-tighter text-foreground md:px-9 md:text-5xl">
-          <span className="italic">The only</span> App you'll ever need to stay <span className="italic">inspired</span>
+        <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground md:px-9 md:text-6xl">
+          <span className="relative inline-block align-baseline">
+            <span className="relative z-10">Fire your interior designer</span>
+            {/* Painted highlight for headline (warm → red), subtle skew, rounded */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-[-0.25em] right-[-0.25em] bottom-[0.06em] h-[0.62em] -skew-x-3 rounded-[0.55em] bg-gradient-to-r from-chart-3/90 via-chart-3/80 to-destructive/90"
+            />
+          </span>
+          —get <span className="font-serif italic">interior design</span> that <span className="font-serif italic">feels like you</span>.
         </h1>
-        <p className="mt-2 max-w-xl text-muted-foreground/80">
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Optio delectus neque aliquid cumque.
+        <p className="mt-2 max-w-2xl text-lg text-muted-foreground/80 md:text-xl">
+          Redesign your
+          {" "}
+          <span className="relative inline-block align-baseline">
+            <span className="relative z-10">interior with AI</span>
+            {/* Smooth, product-colored painted highlight (non-wavy) */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-[-0.2em] right-[-0.2em] bottom-[0.02em] h-[0.66em] -skew-x-3 rounded-[0.5em] bg-gradient-to-r from-primary/70 via-primary/60 to-accent/80"
+            />
+          </span>
+          {" "}
+          in less than 30 seconds.
         </p>
 
         {/* Dynamic text chip that changes with the current image (placeholder content) */}
@@ -104,7 +123,6 @@ export function Hero() {
         <div className="relative mt-4 w-full max-w-5xl pb-12">
           <Carousel
             className="max-w-5xl"
-            opts={{ loop: true }}
             plugins={[Autoplay({ delay: 1000, stopOnInteraction: true })]}
             setApi={setApi}
           >

@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, ExternalLink, Eye } from 'lucide-react';
+import { Sparkles, ExternalLink, Eye, Heart, FolderPlus } from 'lucide-react';
+import { ImageViewerDialog } from '@/components/shared/ImageViewerDialog';
 
 interface CommunityItemProps {
   item: {
@@ -33,9 +34,12 @@ interface CommunityItemProps {
     };
   };
   onApplySettings?: (payload: any) => void;
+  onToggleFavorite?: (renderId: string) => void | Promise<void>;
+  onAddToCollection?: (renderId: string) => void;
 }
 
-function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
+function CommunityItemInner({ item, onApplySettings, onToggleFavorite, onAddToCollection }: CommunityItemProps) {
+  const [viewerOpen, setViewerOpen] = React.useState(false);
 
   const handleApplySettings = () => {
     if (item.applySettings && onApplySettings) {
@@ -66,7 +70,27 @@ function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
           />
 
           {/* Overlay with Actions */}
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-between px-3">
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 w-8 p-0 bg-background/90 hover:bg-background text-foreground"
+                aria-label="Add to favorites"
+                onClick={() => onToggleFavorite?.(item.render?.id || item.id)}
+              >
+                <Heart className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 w-8 p-0 bg-background/90 hover:bg-background text-foreground"
+                aria-label="Add to collection"
+                onClick={() => onAddToCollection?.(item.render?.id || item.id)}
+              >
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+            </div>
             <div className="flex gap-2">
               <TooltipProvider>
                 <Tooltip>
@@ -75,7 +99,7 @@ function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
                       size="sm"
                       variant="secondary"
                       className="bg-background/90 hover:bg-background text-foreground"
-                      onClick={() => window.open(item.imageUrl, '_blank')}
+                      onClick={() => setViewerOpen(true)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -160,6 +184,14 @@ function CommunityItemInner({ item, onApplySettings }: CommunityItemProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Unified Image Viewer (no delete in community) */}
+      <ImageViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        imageUrl={item.imageUrl}
+        title={item.id}
+      />
     </Card>
   );
 }

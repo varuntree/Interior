@@ -8,9 +8,10 @@ import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic';
 
-const ToggleFavoriteSchema = z.object({
-  generationId: z.string().uuid('Generation ID must be a valid UUID')
-});
+const ToggleFavoriteSchema = z.union([
+  z.object({ generationId: z.string().uuid('Generation ID must be a valid UUID') }),
+  z.object({ communityImageId: z.string().uuid('Community image ID must be a valid UUID') })
+]);
 
 async function handlePOST(req: Request, ctx?: { logger?: any }) {
   const supabase = createServiceSupabaseClient();
@@ -32,12 +33,12 @@ async function handlePOST(req: Request, ctx?: { logger?: any }) {
   try {
     const result = await favoritesService.toggleFavorite(
       { supabase },
-      {
+      ({
         userId: user.id,
-        generationId: validation.data.generationId
-      }
+        ...(validation.data as any)
+      } as any)
     );
-    ctx?.logger?.info?.('favorites.toggle', { userId: user.id, generationId: validation.data.generationId, isFavorite: (result as any)?.isFavorite })
+    ctx?.logger?.info?.('favorites.toggle', { userId: user.id, isFavorite: (result as any)?.isFavorite })
     return ok(result, {
       headers: { 'Cache-Control': 'private, no-store' }
     });

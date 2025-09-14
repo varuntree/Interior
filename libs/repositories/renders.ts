@@ -277,20 +277,7 @@ export async function findVariantByRenderAndIdx(
   return data || null
 }
 
-export async function updateRenderCoverVariant(
-  supabase: SupabaseClient,
-  renderId: string,
-  ownerId: string,
-  coverVariant: number
-): Promise<void> {
-  const { error } = await supabase
-    .from('renders')
-    .update({ cover_variant: coverVariant })
-    .eq('id', renderId)
-    .eq('owner_id', ownerId)
-  
-  if (error) throw error
-}
+// Removed legacy cover variant update helper (no longer used).
 
 export async function countUserRenders(
   supabase: SupabaseClient,
