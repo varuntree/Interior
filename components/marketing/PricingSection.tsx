@@ -54,19 +54,27 @@ export default function PricingSection() {
     };
   });
 
-  function startCheckout(priceId: string) {
-    setLoading(priceId);
-    const params = new URLSearchParams({
-      priceId,
-      mode: 'subscription',
-      successUrl: `${window.location.origin}/dashboard/settings?success=true`,
-      cancelUrl: `${window.location.origin}/#pricing`
-    });
-    // Single canonical handoff: server-side in auth callback
-    if (authed) {
-      window.location.href = `/api/auth/callback?${params.toString()}`;
-    } else {
-      window.location.href = `/signin?${params.toString()}`;
+  async function startCheckout(priceId: string) {
+    try {
+      setLoading(priceId);
+      if (authed) {
+        const resp = await fetch('/api/v1/stripe/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priceId }),
+        });
+        const json = await resp.json();
+        if (!resp.ok || !json?.data?.url) throw new Error(json?.error?.message || 'checkout_failed');
+        window.location.href = json.data.url;
+        return;
+      }
+      // Guest: send to signin with priceId only; callback will create checkout
+      const sp = new URLSearchParams({ priceId });
+      window.location.href = `/signin?${sp.toString()}`;
+    } catch (e) {
+      console.error(e);
+      alert('Could not start checkout. Please try again.');
+      setLoading(null);
     }
   }
 

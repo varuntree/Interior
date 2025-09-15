@@ -22,39 +22,26 @@ export async function GET(req: NextRequest) {
   const baseUrl = getApplicationUrl(req);
   const origin = new URL(baseUrl).origin;
 
-  // Attempt post-login immediate checkout if params are present and valid
+  // Attempt post-login immediate checkout if priceId is present and valid (server computes URLs)
   const priceId = requestUrl.searchParams.get('priceId') || undefined;
-  const mode = (requestUrl.searchParams.get('mode') as 'payment' | 'subscription') || undefined;
-  const successUrlParam = requestUrl.searchParams.get('successUrl') || undefined;
-  const cancelUrlParam = requestUrl.searchParams.get('cancelUrl') || undefined;
-
-  // Helper to sanitize URLs to same-origin or fallback
-  const sanitize = (urlStr: string | undefined, fallbackPath: string) => {
-    try {
-      if (!urlStr) throw new Error('missing');
-      const u = new URL(urlStr);
-      if (u.origin !== origin) throw new Error('cross-origin');
-      return u.toString();
-    } catch {
-      return new URL(fallbackPath, baseUrl).toString();
-    }
-  };
 
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   try {
-    if (user && priceId && mode) {
+    if (user && priceId) {
       // Validate plan from config (marketing) and runtime (limits)
       const cfgPlan = config.stripe.plans.find((p) => p.priceId === priceId);
       const rtPlan = runtimeConfig.plans[priceId as keyof typeof runtimeConfig.plans];
       if (cfgPlan && rtPlan) {
-        const successUrl = sanitize(successUrlParam, '/dashboard/settings?success=true');
-        const cancelUrl = sanitize(cancelUrlParam, '/');
+        // Compute URLs server-side
+        const successUrl = new URL('/dashboard/settings?success=true', baseUrl).toString();
+        // When priceId present, assume pricing flow → cancel to marketing pricing section
+        const cancelUrl = new URL('/#pricing', baseUrl).toString();
         const result = await startCheckoutService(supabase, {
           userId: user.id,
           priceId,
-          mode,
+          mode: 'subscription',
           successUrl,
           cancelUrl,
         });
@@ -63,7 +50,7 @@ export async function GET(req: NextRequest) {
     }
   } catch (e: any) {
     const msg = e?.message ? String(e.message) : 'unknown_error';
-    logger.error('billing.checkout_error', { userId: user?.id, priceId, mode, message: msg });
+    logger.error('billing.checkout_error', { userId: user?.id, priceId, mode: 'subscription', message: msg });
     // Heuristic for Stripe mode/customer mismatch to aid debugging in future
     const isModeMismatch = /similar object exists in test mode/i.test(msg) || /No such customer/i.test(msg);
     const errCode = isModeMismatch ? 'mode_mismatch' : 'checkout_failed';

@@ -65,12 +65,8 @@ export function BillingSection() {
       
       const response = await fetch('/api/v1/stripe/create-portal', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          returnUrl: window.location.href
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
       });
 
       if (!response.ok) {
@@ -107,12 +103,7 @@ export function BillingSection() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          priceId: targetPriceId,
-          mode: 'subscription',
-          successUrl: `${(process.env.NEXT_PUBLIC_APP_URL || window.location.origin)}/dashboard/settings?success=true`,
-          cancelUrl: `${(process.env.NEXT_PUBLIC_APP_URL || window.location.origin)}/dashboard/settings`
-        })
+        body: JSON.stringify({ priceId: targetPriceId })
       });
 
       if (!response.ok) {

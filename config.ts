@@ -13,11 +13,8 @@ const config = {
     // Create multiple plans in your Stripe dashboard, then add them here. You can add as many plans as you want, just make sure to add the priceId
     plans: [
       {
-        // REQUIRED — used by webhooks to map the subscribed plan
-        priceId:
-          process.env.NODE_ENV === "development"
-            ? "price_1S782TCZJ3iopmxZOw8mbsOV" // Weekly $6.99 (test)
-            : "price_1S78OkCZJ3iopmxZpmXhaK1l", // Weekly $6.99 (live)
+        // REQUIRED — used by webhooks to map the subscribed plan (live)
+        priceId: "price_1S78OkCZJ3iopmxZpmXhaK1l", // Weekly $6.99 (live)
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Weekly",
         // A friendly description of the plan
@@ -34,10 +31,8 @@ const config = {
         ],
       },
       {
-        priceId:
-          process.env.NODE_ENV === "development"
-            ? "price_1S7832CZJ3iopmxZN96mdDtb" // Monthly $24.99 (test)
-            : "price_1S78PJCZJ3iopmxZuoOkwjdl", // Monthly $24.99 (live)
+        // Live monthly plan
+        priceId: "price_1S78PJCZJ3iopmxZuoOkwjdl", // Monthly $24.99 (live)
         // This plan will be highlighted on the pricing page.
         isFeatured: true,
         name: "Monthly",
@@ -53,12 +48,6 @@ const config = {
         ],
       },
     ],
-  },
-  aws: {
-    // If you use AWS S3/Cloudfront, put values in here
-    bucket: "bucket-name",
-    bucketUrl: `https://bucket-name.s3.amazonaws.com/`,
-    cdn: "https://cdn-id.cloudfront.net/",
   },
   resend: {
     // REQUIRED — Email 'From' field to be used when sending magic login links

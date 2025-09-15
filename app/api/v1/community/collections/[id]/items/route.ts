@@ -1,22 +1,30 @@
-import { NextRequest } from 'next/server'
-import { ok, fail } from '@/libs/api-utils/responses'
 import { withMethodsCtx } from '@/libs/api-utils/methods'
+import { ok, fail } from '@/libs/api-utils/responses'
+import { withRequestContext } from '@/libs/observability/request'
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase'
 import { listPublishedItems } from '@/libs/services/community'
-import { withRequestContext } from '@/libs/observability/request'
 
 export const dynamic = 'force-dynamic'
 
-async function handleGET(_req: NextRequest, ctx: { params: { id: string }, logger?: any }) {
-  try {
-    const supabase = createServiceSupabaseClient()
-    const data = await listPublishedItems({ supabase }, { collectionId: ctx.params.id })
-    ctx?.logger?.info?.('community.collections.items', { collectionId: ctx.params.id, count: data?.length ?? 0 })
-    return ok({ items: data })
-  } catch (err: any) {
-    ctx?.logger?.error?.('community.collections.items_error', { message: err?.message })
-    return fail(500, 'INTERNAL_ERROR', err?.message ?? 'Unexpected error')
-  }
-}
+interface Ctx { params: { id: string } }
 
-export const GET = withMethodsCtx(['GET'], withRequestContext(handleGET) as any)
+export const GET = withMethodsCtx(['GET'], withRequestContext(async (req: Request, ctx: Ctx & { logger?: any }) => {
+  try {
+    const { id } = ctx.params
+    // For MVP we expose a single synthesized collection id 'community'
+    if (id !== 'community') {
+      return fail(404, 'NOT_FOUND', 'Collection not found')
+    }
+    const supabase = createServiceSupabaseClient()
+    const url = new URL(req.url)
+    const limit = parseInt(url.searchParams.get('limit') || '24')
+    // Use service wrapper (no repo import in routes). Cursor ignored in MVP.
+    const rows = await listPublishedItems({ supabase }, { collectionId: id })
+    const items = rows.slice(0, Math.max(1, Math.min(100, limit)))
+    ctx?.logger?.info?.('community.collection_items', { id, count: items.length })
+    return ok({ items, nextCursor: undefined })
+  } catch (e: any) {
+    ctx?.logger?.error?.('community.collection_items_error', { message: e?.message })
+    return fail(500, 'INTERNAL_ERROR', 'Failed to fetch collection items')
+  }
+}) as any)

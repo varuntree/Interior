@@ -86,8 +86,10 @@ export const createCheckout = async ({
 
     return stripeSession.url;
   } catch (e) {
-    logger.error('billing.create_checkout_error', { message: (e as any)?.message || String(e) })
-    return null;
+    const msg = (e as any)?.message || String(e)
+    logger.error('billing.create_checkout_error', { message: msg })
+    // Re-throw so callers can map specific errors (e.g., env mismatch)
+    throw new Error(msg)
   }
 };
 
