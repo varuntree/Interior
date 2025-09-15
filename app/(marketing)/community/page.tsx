@@ -24,6 +24,8 @@ async function getCollections(): Promise<{ collections: CommunityCollection[] }>
   return result.data
 }
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function CommunityPage() {
   if (!runtimeConfig.featureFlags?.community) {
     return (

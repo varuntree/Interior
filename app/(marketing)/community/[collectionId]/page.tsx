@@ -33,6 +33,8 @@ async function getCollectionItems(collectionId: string): Promise<{
   return result.data
 }
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function CollectionPage({
   params
 }: {

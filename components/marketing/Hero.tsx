@@ -16,12 +16,23 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 
-// Hero images sourced only from Feature 1 (Redesign)
-// Iterate between these three images exclusively
-const testimonials = [
-  { id: 1, image: "/landing/f11.png" },
-  { id: 2, image: "/landing/f12.png" },
-  { id: 3, image: "/landing/f13.png" },
+// Hero carousel slides are ordered desktop-first, optimized for responsive crops
+const slides = [
+  {
+    id: 1,
+    image: "/landing/f11.png",
+    alt: "Living room redesign generated with warm coastal palette",
+  },
+  {
+    id: 2,
+    image: "/landing/f12.png",
+    alt: "Minimalist bedroom concept showcasing timber textures",
+  },
+  {
+    id: 3,
+    image: "/landing/f13.png",
+    alt: "Modern dining area staged with sculptural lighting",
+  },
 ];
 
 export function Hero() {
@@ -39,18 +50,26 @@ export function Hero() {
   // Auth status handled by useAuthStatus
 
   return (
-    <section className="bg-background pt-12 pb-14 md:pt-16 md:pb-16">
-      <div className="container mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 px-4 text-center md:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-background pt-12 pb-14 md:pt-16 md:pb-16">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[-20%] mx-auto h-[320px] max-w-6xl rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl"
+      />
+      <div className="container relative mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 px-4 text-center md:px-6 lg:px-8">
         <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground md:px-9 md:text-6xl">
-          <span className="relative inline-block align-baseline">
-            <span className="relative z-10">Fire your interior designer</span>
-            {/* Painted highlight for headline (warm → red), subtle skew, rounded */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute left-[-0.25em] right-[-0.25em] bottom-[0.06em] h-[0.62em] -skew-x-3 rounded-[0.55em] bg-gradient-to-r from-chart-3/90 via-chart-3/80 to-destructive/90"
-            />
+          <span className="block md:inline">
+            Fire your interior
+            {" "}
+            <span className="relative inline-block align-baseline">
+              <span className="relative z-10">designer</span>
+              {/* Painted highlight for key word (warm → primary) */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-[-0.2em] right-[-0.2em] bottom-[0.02em] h-[0.66em] -skew-x-2 rounded-[0.55em] bg-gradient-to-r from-chart-3/80 via-primary/80 to-primary/60"
+              />
+            </span>
           </span>
-          —get <span className="font-serif italic">interior design</span> that <span className="font-serif italic">feels like you</span>.
+          {" "}—get <span className="font-serif italic">interior design</span> that <span className="font-serif italic">feels like you</span>.
         </h1>
         <p className="mt-2 max-w-2xl text-lg text-muted-foreground/80 md:text-xl">
           Redesign your
@@ -60,7 +79,7 @@ export function Hero() {
             {/* Smooth, product-colored painted highlight (non-wavy) */}
             <span
               aria-hidden
-              className="pointer-events-none absolute left-[-0.2em] right-[-0.2em] bottom-[0.02em] h-[0.66em] -skew-x-3 rounded-[0.5em] bg-gradient-to-r from-primary/70 via-primary/60 to-accent/80"
+              className="pointer-events-none absolute left-[-0.2em] right-[-0.2em] bottom-[0.02em] h-[0.66em] -skew-x-2 rounded-[0.5em] bg-gradient-to-r from-primary/60 via-primary/40 to-accent/60"
             />
           </span>
           {" "}
@@ -85,17 +104,22 @@ export function Hero() {
 
         {/* CTAs above the animated label to avoid overlap */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <Button asChild size="lg" className="w-full sm:w-auto">
+          <Button asChild size="lg" className="w-full shadow-md shadow-primary/10 sm:w-auto">
             <Link href={isAuthed ? "/dashboard" : "/signin"}>
               {isAuthed ? "Open Dashboard" : "Try it free"}
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="w-full border-primary/30 bg-background/70 backdrop-blur transition hover:border-primary/60 hover:bg-primary/5 sm:w-auto"
+          >
             <Link href="/community">See examples</Link>
           </Button>
         </div>
 
-        <div className="relative mt-4 w-full max-w-5xl">
+          <div className="relative mt-4 w-full max-w-5xl">
           <Carousel
             className="max-w-5xl"
             opts={{ loop: true, align: "start", containScroll: "trimSnaps" }}
@@ -103,22 +127,29 @@ export function Hero() {
             setApi={setApi}
           >
             <CarouselContent>
-              {testimonials.map((item, index) => (
-                <CarouselItem key={index} className="my-2 basis-full sm:basis-3/4 md:basis-1/2 lg:basis-1/2">
-                  <div className="h-[clamp(14rem,36vh,22rem)] md:h-[clamp(18rem,40vh,26rem)] w-full overflow-hidden rounded-lg border bg-card shadow-sm">
-                    <AppImage
-                      alt={`Preview image ${index + 1}`}
-                      src={item.image}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 90vw, (max-width: 1024px) 33vw, 320px"
-                      priority={index === 0}
-                      fallback={
-                        <div className="absolute inset-0 grid place-items-center bg-muted">
-                          <span className="text-xs text-muted-foreground">Image coming soon</span>
-                        </div>
-                      }
+              {slides.map((item, index) => (
+                <CarouselItem
+                  key={item.id}
+                  className="my-2 basis-full sm:basis-3/4 md:basis-1/2 lg:basis-1/2"
+                >
+                  <div className="group relative w-full overflow-hidden rounded-2xl border border-border/60 bg-card shadow-lg shadow-black/5">
+                    <div className="relative aspect-[4/3] sm:aspect-[3/2] md:aspect-[5/3]">
+                      <AppImage
+                        alt={item.alt}
+                        src={item.image}
+                        fill
+                        quality={90}
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        sizes="(max-width: 640px) 92vw, (max-width: 1024px) 60vw, 520px"
+                        priority={index === 0}
+                        fallback={
+                          <div className="absolute inset-0 grid place-items-center bg-muted">
+                            <span className="text-xs text-muted-foreground">Image coming soon</span>
+                          </div>
+                        }
                     />
+                    </div>
+                    <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" aria-hidden />
                   </div>
                 </CarouselItem>
               ))}
@@ -127,11 +158,24 @@ export function Hero() {
 
           {/* Dots with progress synced to autoplay */}
           <div className="mt-4 flex w-full items-center gap-3 justify-center">
-            {testimonials.map((_, i) => (
-              <button key={`hero-dot-${i}`} onClick={() => api?.scrollTo(i)} className="h-3 w-12" aria-label={`Go to slide ${i+1}`}>
-                <div className={cn("relative h-1 w-full overflow-hidden rounded-full bg-muted", current === i && "bg-primary/20")}> 
+            {slides.map((_, i) => (
+              <button
+                key={`hero-dot-${i}`}
+                onClick={() => api?.scrollTo(i)}
+                className="h-3 w-12"
+                aria-label={`Go to slide ${i + 1}`}
+              >
+                <div
+                  className={cn(
+                    "relative h-1 w-full overflow-hidden rounded-full bg-muted",
+                    current === i && "bg-primary/20",
+                  )}
+                >
                   {current === i && (
-                    <span className="absolute inset-y-0 left-0 bg-primary" style={{ animation: "heroProgress 2s linear infinite", width: 0 }} />
+                    <span
+                      className="absolute inset-y-0 left-0 bg-primary"
+                      style={{ animation: "heroProgress 2s linear infinite", width: 0 }}
+                    />
                   )}
                 </div>
               </button>

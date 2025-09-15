@@ -17,6 +17,17 @@ export const getSEOTags = ({
   canonicalUrlRelative?: string;
   extraTags?: Record<string, any>;
 } = {}) => {
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.length > 0
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : `https://${config.domainName}`;
+  const absolute = (path: string) => {
+    try {
+      return new URL(path, appUrl).toString();
+    } catch {
+      return `${appUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+    }
+  };
   return {
     // up to 50 characters (what does your app do for the user?) > your main should be here
     title: title || config.appName,
@@ -25,17 +36,13 @@ export const getSEOTags = ({
     // some keywords separated by commas. by default it will be your app name
     keywords: keywords || [config.appName],
     applicationName: config.appName,
-    // set a base URL prefix for other fields that require a fully qualified URL (.e.g og:image: og:image: 'https://yourdomain.com/share.png' => '/share.png')
-    metadataBase: new URL(
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/"
-        : `https://${config.domainName}/`
-    ),
+    // Base URL for absolute URLs resolution
+    metadataBase: new URL(appUrl.endsWith("/") ? appUrl : `${appUrl}/`),
 
     openGraph: {
       title: openGraph?.title || config.appName,
       description: openGraph?.description || config.appDescription,
-      url: openGraph?.url || `https://${config.domainName}/`,
+      url: openGraph?.url || absolute("/"),
       siteName: openGraph?.title || config.appName,
       // If you add an opengraph-image.(jpg|jpeg|png|gif) image to the /app folder, you don't need the code below
       // images: [
@@ -52,10 +59,8 @@ export const getSEOTags = ({
     twitter: {
       title: openGraph?.title || config.appName,
       description: openGraph?.description || config.appDescription,
-      // If you add an twitter-image.(jpg|jpeg|png|gif) image to the /app folder, you don't need the code below
-      // images: [openGraph?.image || defaults.og.image],
       card: "summary_large_image",
-      creator: "@marc_louvion",
+      // Do not set creator until we have an official handle
     },
 
     // If a canonical URL is given, we add it. The metadataBase will turn the relative URL into a fully qualified URL
@@ -63,7 +68,7 @@ export const getSEOTags = ({
       alternates: { canonical: canonicalUrlRelative },
     }),
 
-    // If you want to add extra tags, you can pass them here
+    // If you want to add extra tags, you can pass them here (e.g., robots)
     ...extraTags,
   };
 };
@@ -85,13 +90,13 @@ export const renderSchemaTags = () => {
           "@type": "SoftwareApplication",
           name: config.appName,
           description: config.appDescription,
-          image: `https://${config.domainName}/icon.png`,
-          url: `https://${config.domainName}/`,
+          image: "/icon.png",
+          url: "/",
           author: {
             "@type": "Person",
-            name: "Marc Lou",
+            name: "QuickDesignHome",
           },
-          datePublished: "2023-08-01",
+          datePublished: "2025-01-01",
           applicationCategory: "EducationalApplication",
           aggregateRating: {
             "@type": "AggregateRating",
@@ -101,7 +106,7 @@ export const renderSchemaTags = () => {
           offers: [
             {
               "@type": "Offer",
-              price: "9.00",
+              price: "24.99",
               priceCurrency: "USD",
             },
           ],

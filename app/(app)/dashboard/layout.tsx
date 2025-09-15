@@ -6,6 +6,8 @@ import { SidebarMobile } from "@/components/layout/SidebarMobile";
 import { Logo } from "@/components/shared/Logo";
 import PaywallGate from "@/components/billing/PaywallGate";
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function LayoutPrivate({ children }: { children: ReactNode }) {
   // Use the same pattern as the /api/v1/auth/me route
   const supabase = createClient();
