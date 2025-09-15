@@ -143,6 +143,14 @@ export default function SettingsPage() {
                     {userProfile.id.substring(0, 8)}...
                   </p>
                 </div>
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { window.location.href = "/api/auth/signout"; }}
+                  >
+                    Sign out
+                  </Button>
+                </div>
               </>
             ) : (
               <LoadingStates.skeleton />

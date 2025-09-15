@@ -57,8 +57,8 @@ export function useAuth() {
         error: null,
       });
       
-      // Call Supabase logout API through our auth callback
-      window.location.href = "/api/auth/callback?next=%2Fsignin";
+      // Navigate to server sign-out endpoint
+      window.location.href = "/api/auth/signout";
     } catch (error: any) {
       setState(prev => ({
         ...prev,
