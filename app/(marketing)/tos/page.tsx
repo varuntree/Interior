@@ -57,39 +57,66 @@ const TOS = () => {
           className="leading-relaxed whitespace-pre-wrap"
           style={{ fontFamily: "sans-serif" }}
         >
-          {`Last Updated: September 14, 2025
+          {`Last Updated: September 15, 2025
 
-Welcome to QuickDesignHome!
+Welcome to QuickDesignHome ("QuickDesignHome", "we", "us"). These Terms of Service ("Terms") govern your access to and use of https://quickdesignhome.com and related services (the "Service"). By using the Service, you agree to these Terms.
 
-These Terms of Service ("Terms") govern your use of the QuickDesignHome website at https://quickdesignhome.com ("Website") and the services provided by QuickDesignHome. By using our Website and services, you agree to these Terms.
+1) Service Overview
 
-1. Description of QuickDesignHome
+QuickDesignHome provides an AI-powered interior design generator. Users can upload room photos or provide text prompts to generate photorealistic redesigns and organize results in their account.
 
-QuickDesignHome provides AI-powered interior design generation and related features to help users ideate and visualize room designs.
+2) Accounts and Eligibility
 
-2. Ownership and Usage Rights
+You must be at least 13 years old and capable of forming a binding contract to use the Service. You are responsible for safeguarding your account credentials and for all activity under your account.
 
-When you purchase a plan from QuickDesignHome, you gain the right to use the service in accordance with your subscription.
+3) Your Content and License to Us
 
-3. User Data and Privacy
+"User Content" includes images you upload (e.g., room photos) and any text prompts or settings you provide. You retain ownership of your User Content. You grant QuickDesignHome a non-exclusive, worldwide, royalty-free license to host, process, and display your User Content solely to operate and improve the Service. If you choose to publish content to public areas (e.g., community galleries), you additionally grant us a license to display, reproduce, and distribute that content for the purpose of operating those public features.
 
-We collect and store user data, including name, email, and payment information, as necessary to provide our services. For details on how we handle your data, please refer to our Privacy Policy at https://quickdesignhome.com/privacy-policy.
+4) Generated Outputs and Usage
 
-4. Non-Personal Data Collection
+Subject to these Terms and applicable law, you may use the images generated for you (the "Outputs") for personal and commercial purposes. You are responsible for ensuring your use of Outputs complies with applicable laws and third-party rights (e.g., trademarks, privacy, property, or design rights). We do not guarantee that Outputs will be unique or free from similarity to other content.
 
-We use web cookies to collect non-personal data for the purpose of improving our services and user experience.
+5) Acceptable Use
 
-5. Governing Law
+You agree not to use the Service to create, upload, or share content that is illegal, harmful, or violates others' rights, including content that is explicit, hateful, harassing, or that depicts criminal activity. You may not attempt to bypass plan limits, probe or disrupt our systems, or reverse engineer components of the Service.
 
-These Terms are governed by the laws of your local jurisdiction.
+6) Plans, Billing, and Taxes
 
-6. Updates to the Terms
+Paid access is provided via subscription plans listed on our website. Prices and features are subject to change with notice. Payments are processed by Stripe; by purchasing a plan, you agree to Stripe's terms. Taxes may be added where required. Plan limits (e.g., monthly generation caps, concurrency) are enforced as described on the pricing page and within the app.
 
-We may update these Terms from time to time. Users will be notified of any changes via email.
+7) Refunds and Cancellations
 
-For any questions or concerns regarding these Terms of Service, please contact us at support@quickdesignhome.com.
+You can cancel future renewals at any time via the billing portal link in the app. Where required by law, you may be entitled to a refund; otherwise refunds are handled case-by-case. Contact support@quickdesignhome.com if you believe you were charged in error.
 
-Thank you for using QuickDesignHome!`}
+8) Third-Party Services
+
+We rely on third parties, including Supabase (auth, database, storage), Stripe (payments), and Replicate (AI inference). Their services are subject to their own terms, and your use of the Service constitutes acceptance that we may process your data with them to operate the Service.
+
+9) Disclaimers
+
+The Service and Outputs are provided "as is" without warranties of any kind. We do not warrant uninterrupted or error-free operation or that Outputs will meet your expectations.
+
+10) Limitation of Liability
+
+To the maximum extent permitted by law, QuickDesignHome will not be liable for indirect, incidental, special, consequential, or exemplary damages, or for loss of profits, goodwill, or data. Our aggregate liability relating to the Service will not exceed the amounts you paid to us in the 3 months preceding the claim.
+
+11) Termination
+
+We may suspend or terminate access if you violate these Terms or misuse the Service. You may stop using the Service at any time.
+
+12) Changes to These Terms
+
+We may update these Terms from time to time. Material changes will be notified in-app or by email. Continued use after changes constitutes acceptance.
+
+13) Governing Law
+
+These Terms are governed by the laws of New South Wales, Australia, without regard to its conflict of laws principles. The exclusive venue for disputes is the state or federal courts located in New South Wales, Australia.
+
+14) Contact
+
+support@quickdesignhome.com
+Address/owner information available upon request.`}
         </pre>
       </div>
     </main>

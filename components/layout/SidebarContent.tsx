@@ -6,7 +6,7 @@ import { cn } from "@/libs/utils";
 import { Badge } from "@/components/ui/badge";
 import { Wand2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { SidebarProfile } from "./SidebarProfile";
 import { primaryNav, secondaryNav } from "./nav.config";
 import { NavLink } from "./NavLink";
 import { Logo } from "@/components/shared/Logo";
@@ -62,15 +62,8 @@ export function SidebarContent({ className, onNavigate }: { className?: string; 
       </div>
 
       {/* Footer */}
-      <div className="border-t border-sidebar-border p-4 space-y-4">
-        <div className="flex items-center justify-between text-xs text-sidebar-foreground/70">
-          <span>Generations used</span>
-          <Badge variant="outline" className="text-xs">45/150</Badge>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm">Theme</span>
-          <ThemeToggle />
-        </div>
+      <div className="border-t border-sidebar-border p-4">
+        <SidebarProfile />
       </div>
     </div>
   );

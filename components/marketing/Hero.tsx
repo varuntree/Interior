@@ -112,6 +112,7 @@ export function Hero() {
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 90vw, (max-width: 1024px) 33vw, 320px"
+                      priority={index === 0}
                       fallback={
                         <div className="absolute inset-0 grid place-items-center bg-muted">
                           <span className="text-xs text-muted-foreground">Image coming soon</span>

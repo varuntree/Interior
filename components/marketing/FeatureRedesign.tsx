@@ -122,7 +122,7 @@ export function FeatureRedesign() {
             >
               <AppImage
                 alt="Before redesign"
-                src="/landing/F11.png"
+                src="/landing/f11.png"
                 fill
                 className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 42vw, 480px"
@@ -151,7 +151,7 @@ export function FeatureRedesign() {
             >
               <AppImage
                 alt="After redesign variant 1"
-                src="/landing/F12.png"
+                src="/landing/f12.png"
                 fill
                 className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 42vw, 480px"
@@ -168,7 +168,7 @@ export function FeatureRedesign() {
             >
               <AppImage
                 alt="After redesign variant 2"
-                src="/landing/F13.png"
+                src="/landing/f13.png"
                 fill
                 className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 42vw, 480px"

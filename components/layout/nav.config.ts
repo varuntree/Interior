@@ -1,4 +1,4 @@
-import { Wand2, Image, FolderHeart, Users, Settings } from "lucide-react";
+import { Wand2, Image, FolderHeart, Users } from "lucide-react";
 import runtimeConfig from "@/libs/app-config/runtime";
 
 export type NavItem = {
@@ -23,5 +23,5 @@ export const primaryNav: NavItem[] = [
 ];
 
 export const secondaryNav: NavItem[] = [
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  // Intentionally empty: Settings access moves to the profile footer menu.
 ];

@@ -4,21 +4,13 @@ import { useState, useEffect } from 'react';
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingStates } from "@/components/dashboard/LoadingStates";
 import { BillingSection, UsageDisplay } from "@/components/settings";
-import { 
-  User, 
-  HelpCircle, 
-  Mail, 
-  ExternalLink,
-  Sparkles,
-  CheckCircle,
-  Clock
-} from "lucide-react";
+import { User, HelpCircle, Mail, CheckCircle, Clock } from "lucide-react";
 import { apiFetch } from "@/libs/api/http";
 import config from "@/config";
+import { UsageSummaryPill } from "@/components/settings/UsageSummaryPill";
 
 interface UserProfile {
   id: string;
@@ -90,10 +82,7 @@ export default function SettingsPage() {
         title="Settings" 
         subtitle="Manage your account, billing, and preferences"
       >
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <Sparkles className="h-3 w-3" />
-          Phase 7 Complete
-        </Badge>
+        <UsageSummaryPill />
       </DashboardHeader>
 
       {/* Success Alert */}
@@ -137,12 +126,6 @@ export default function SettingsPage() {
                   <label className="text-sm font-medium text-muted-foreground">Member since</label>
                   <p className="text-sm mt-1">{formatMemberSince(userProfile.createdAt)}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">User ID</label>
-                  <p className="text-xs mt-1 font-mono text-muted-foreground">
-                    {userProfile.id.substring(0, 8)}...
-                  </p>
-                </div>
                 <div className="pt-2">
                   <Button
                     variant="outline"
@@ -183,14 +166,6 @@ export default function SettingsPage() {
             >
               <Mail className="h-4 w-4 mr-2" />
               Contact Support
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => window.open('/docs', '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Documentation
             </Button>
           </div>
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">

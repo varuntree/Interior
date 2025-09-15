@@ -3,6 +3,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { Sparkles, Droplets, Palette } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import AppImage from "@/components/shared/Image";
 import type { CarouselApi } from "@/components/ui/carousel";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 
@@ -20,21 +21,21 @@ const FEATURES: Feature[] = [
     label: "Wood",
     icon: Sparkles,
     description: "Carry over the feel of your reference — furnishings stay put, the vibe changes.",
-    background: "/landing/F21.png",
+    background: "/landing/f21.png",
   },
   {
     title: "Swap materials and textures",
     label: "White Marble",
     icon: Droplets,
     description: "Try timber, stone, linen or leather without lifting a finger.",
-    background: "/landing/F22.png",
+    background: "/landing/f22.png",
   },
   {
     title: "Try a new colour story",
     label: "Black Stone",
     icon: Palette,
     description: "Explore warm, cool or neutral palettes that fit your space.",
-    background: "/landing/F23.png",
+    background: "/landing/f23.png",
   },
 ];
 
@@ -87,42 +88,44 @@ export function FeatureTransfer() {
                 <div className="p-1">
               <Card className="border-0 shadow-none">
                 <CardContent className="group relative overflow-hidden rounded-[1.75rem] p-0 transition-transform duration-300 hover:shadow-2xl">
-                  {/* Image layer */}
-                      <div
-                        style={{ backgroundImage: `url(${card.background})`, filter: "saturate(1.08) contrast(1.04) brightness(1.02)" }}
-                        className="relative aspect-[16/10] w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.01]"
-                        aria-label={card.title}
-                      >
-                    {/* Remove bottom white shade; keep transparent overlay for interactions */}
-                    <div className="pointer-events-none absolute inset-0" />
-
-                    {/* Glass bar across bottom */}
-                    <div className="absolute inset-x-3 bottom-3">
-                      <div className="backdrop-blur-2xl bg-background/25 ring-1 ring-white/15 shadow-lg rounded-2xl px-3.5 py-2 flex items-center gap-3">
-                        <span className="bg-background/80 text-foreground flex h-7 w-7 items-center justify-center rounded-full border">
-                          <card.icon className="h-4 w-4" />
+                  {/* Image layer via next/image for optimization */}
+                  <div className="relative aspect-[16/10] w-full transition-transform duration-300 group-hover:scale-[1.01]">
+                    <AppImage
+                      alt={card.title}
+                      src={card.background}
+                      fill
+                      className="object-cover object-center"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      fallback={<div className="absolute inset-0 grid place-items-center bg-muted"><span className="text-xs text-muted-foreground">Image preview</span></div>}
+                    />
+                  </div>
+                  
+                  {/* Glass bar across bottom */}
+                  <div className="absolute inset-x-3 bottom-3">
+                    <div className="backdrop-blur-2xl bg-background/25 ring-1 ring-white/15 shadow-lg rounded-2xl px-3.5 py-2 flex items-center gap-3">
+                      <span className="bg-background/80 text-foreground flex h-7 w-7 items-center justify-center rounded-full border">
+                        <card.icon className="h-4 w-4" />
+                      </span>
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <span className={`${
+                          card.label === "Wood"
+                            ? "bg-amber-300"
+                            : card.label === "White Marble"
+                            ? "bg-gray-200"
+                            : "bg-neutral-300"
+                        } inline-block h-2.5 w-2.5 rounded-full`} />
+                        <span className={
+                          card.label === "Wood"
+                            ? "text-amber-100"
+                            : card.label === "White Marble"
+                            ? "text-gray-100"
+                            : "text-neutral-100"
+                        }>
+                          {card.label}
                         </span>
-                        <div className="flex items-center gap-2 text-xs font-medium">
-                          <span className={`inline-block h-2.5 w-2.5 rounded-full ${
-                            card.label === "Wood"
-                              ? "bg-amber-300"
-                              : card.label === "White Marble"
-                              ? "bg-gray-200"
-                              : "bg-neutral-300"
-                          }`} />
-                          <span className={
-                            card.label === "Wood"
-                              ? "text-amber-100"
-                              : card.label === "White Marble"
-                              ? "text-gray-100"
-                              : "text-neutral-100"
-                          }>
-                            {card.label}
-                          </span>
-                        </div>
-                        <div className="ml-auto h-[1px] w-10 bg-white/40" />
-                        <span className="text-[11px] text-white/80">Applied</span>
                       </div>
+                      <div className="ml-auto h-[1px] w-10 bg-white/40" />
+                      <span className="text-[11px] text-white/80">Applied</span>
                     </div>
                   </div>
 
@@ -135,9 +138,9 @@ export function FeatureTransfer() {
                   </div>
                 </CardContent>
               </Card>
-              </div>
-            </CarouselItem>
-            ))}
+            </div>
+          </CarouselItem>
+          ))}
           </CarouselContent>
           <div className="mt-5 flex w-full items-center gap-2 md:hidden">
             {Array.from({ length: FEATURES.length }).map((_, i) => (

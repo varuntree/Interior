@@ -2,29 +2,6 @@ import Link from "next/link";
 import { getSEOTags } from "@/libs/seo";
 import config from "@/config";
 
-// CHATGPT PROMPT TO GENERATE YOUR PRIVACY POLICY — replace with your own data 👇
-
-// 1. Go to https://chat.openai.com/
-// 2. Copy paste bellow
-// 3. Replace the data with your own (if needed)
-// 4. Paste the answer from ChatGPT directly in the <pre> tag below
-
-// You are an excellent lawyer.
-
-// I need your help to write a simple privacy policy for my website. Here is some context:
-// - Website: https://shipfa.st
-// - Name: ShipFast
-// - Description: A JavaScript code boilerplate to help entrepreneurs launch their startups faster
-// - User data collected: name, email and payment information
-// - Non-personal data collection: web cookies
-// - Purpose of Data Collection: Order processing
-// - Data sharing: we do not share the data with any other parties
-// - Children's Privacy: we do not collect any data from children
-// - Updates to the Privacy Policy: users will be updated by email
-// - Contact information: marc@shipfa.st
-
-// Please write a simple privacy policy for my site. Add the current date.  Do not add or explain your reasoning. Answer:
-
 export const metadata = getSEOTags({
   title: `Privacy Policy | ${config.appName}`,
   canonicalUrlRelative: "/privacy-policy",
@@ -57,51 +34,68 @@ const PrivacyPolicy = () => {
           className="leading-relaxed whitespace-pre-wrap"
           style={{ fontFamily: "sans-serif" }}
         >
-          {`Last Updated: 2025-09-14
+          {`Last Updated: September 15, 2025
 
-Thank you for visiting QuickDesignHome ("we," "us," or "our"). This Privacy Policy outlines how we collect, use, and protect your personal and non-personal information when you use our website located at https://quickdesignhome.com (the "Website").
+This Privacy Policy explains how QuickDesignHome ("QuickDesignHome", "we", "us") collects, uses, and protects information when you use https://quickdesignhome.com and related services (the "Service"). By using the Service, you agree to this policy.
 
-By accessing or using the Website, you agree to the terms of this Privacy Policy. If you do not agree with the practices described in this policy, please do not use the Website.
+1) Information We Collect
 
-1. Information We Collect
+• Account data: email address and basic profile info needed to create and secure your account.
+• Billing data: payment method details are processed by our payment provider (Stripe) and are not stored on our servers. We retain non-sensitive billing metadata (e.g., Stripe customer/price IDs) to manage subscriptions.
+• Content you provide: room photos and other images you upload, prompts/text you enter, and preferences such as selected room type and style.
+• Generated outputs: images produced by the Service and basic metadata (mode, timestamps).
+• Technical data: IP address, device and browser info, cookies, and usage logs necessary for security, fraud prevention, analytics, and improving the Service.
 
-1.1 Personal Data
+2) How We Use Information
 
-We collect the following personal information from you:
+• Provide and improve the Service, including processing your uploads to generate designs.
+• Operate subscriptions, billing, and customer support.
+• Enforce plan limits and prevent abuse.
+• Communicate important updates (service, policy, billing).
 
-Name: We collect your name to personalize your experience and communicate with you effectively.
-Email: We collect your email address to send you important information regarding your orders, updates, and communication.
-Payment Information: We collect payment details to process your orders securely. However, we do not store your payment information on our servers. Payments are processed by trusted third-party payment processors.
+3) Service Providers and Data Sharing
 
-1.2 Non-Personal Data
+We use vetted providers to operate the Service:
+• Supabase for authentication, database, and storage of your uploads/outputs (with row‑level security).
+• Stripe for payments and subscription management.
+• Replicate to run the AI model that generates images from your inputs.
+We share only what is necessary for them to perform their services. We do not sell your personal data.
 
-We may use web cookies and similar technologies to collect non-personal information such as your IP address, browser type, device information, and browsing patterns. This information helps us to enhance your browsing experience, analyze trends, and improve our services.
+4) Your Images and Generated Outputs
 
-2. Purpose of Data Collection
+• Private by default: your uploads and generated images are private to your account unless you choose to share or publish them (e.g., adding items to a public community gallery when that feature is enabled).
+• Access and deletion: you can delete your generated images from within the app. Deleting does not affect any images you have explicitly published to public areas.
 
-We collect and use your personal data for the sole purpose of order processing. This includes processing your orders, sending order confirmations, providing customer support, and keeping you updated about the status of your orders.
+5) Cookies and Analytics
 
-3. Data Sharing
+We use cookies and similar technologies to keep you signed in, remember preferences, and measure usage. You can control cookies via your browser settings; the Service may not function correctly without required cookies.
 
-We do not share your personal data with any third parties except as required for order processing (e.g., sharing your information with payment processors). We do not sell, trade, or rent your personal information to others.
+6) Data Retention
 
-4. Children's Privacy
+We retain account and generation records as long as you maintain an account and as needed for legal, accounting, or security purposes. You may request deletion of your account by contacting support.
 
-QuickDesignHome is not intended for children under the age of 13. We do not knowingly collect personal information from children. If you are a parent or guardian and believe that your child has provided us with personal information, please contact us at the email address provided below.
+7) Children’s Privacy
 
-5. Updates to the Privacy Policy
+The Service is not directed to children under 13. We do not knowingly collect personal data from children.
 
-We may update this Privacy Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. Any updates will be posted on this page, and we may notify you via email about significant changes.
+8) Security
 
-6. Contact Information
+We implement reasonable administrative, technical, and organizational measures to protect your data. No system is perfectly secure; please use strong, unique passwords and keep them confidential.
 
-If you have any questions, concerns, or requests related to this Privacy Policy, you can contact us at:
+9) International Users
+
+Our Service may process data in regions where our providers operate. By using the Service, you consent to such processing and transfer.
+
+10) Changes to This Policy
+
+We may update this policy to reflect changes to the Service or applicable laws. Material changes will be notified in‑app or by email.
+
+11) Contact Us
 
 Email: support@quickdesignhome.com
+Address/owner information available upon request.
 
-For all other inquiries, please visit our Contact Us page on the Website.
-
-By using QuickDesignHome, you consent to the terms of this Privacy Policy.`}
+Using QuickDesignHome means you consent to this Privacy Policy.`}
         </pre>
       </div>
     </main>
