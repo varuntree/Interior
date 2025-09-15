@@ -9,6 +9,7 @@ import { GenerationResult } from "@/contexts/GenerationContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Download } from "lucide-react";
+import { appendDownloadParam, sanitizeFilename, triggerSequentialDownloads } from "@/libs/url/download";
 import runtimeConfig from "@/libs/app-config/runtime";
 
 interface ResultsGridProps {
@@ -138,18 +139,12 @@ function ResultsGridInner({
       {results.length > 1 && (
         <div className="flex justify-center gap-2 pt-4 border-t">
           <button
-            onClick={() => {
-              results.forEach((result) => {
-                const link = document.createElement('a');
-                link.href = result.url;
-                // Infer extension from URL; default to jpg
-                const extMatch = result.url.match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/);
-                const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
-                link.download = `interior-design-${result.index + 1}.${ext}`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            onClick={async () => {
+              const urls = results.map((result, i) => {
+                const file = sanitizeFilename(`interior-design-${(result.index ?? i) + 1}.jpg`);
+                return appendDownloadParam(result.url, file);
               });
+              await triggerSequentialDownloads(urls, 120);
             }}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >

@@ -6,7 +6,8 @@ import { cn } from "@/libs/utils";
 import AppImage from "@/components/shared/Image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, FolderPlus, Eye, Trash2, Loader2 } from "lucide-react";
+import { Heart, FolderPlus, Eye, Trash2, Loader2, Download } from "lucide-react";
+import { appendDownloadParam, sanitizeFilename, triggerDownload } from "@/libs/url/download";
 
 export interface ImageCardProps {
   id: string;
@@ -136,6 +137,21 @@ export function ImageCard({
                 </div>
 
                 <div className="flex items-center gap-1">
+                  {/* Download */}
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 w-8 p-0"
+                    aria-label="Download"
+                    onClick={() => {
+                      const filename = sanitizeFilename(`interior-design-${id}.jpg`);
+                      const href = appendDownloadParam(imageUrl, filename);
+                      triggerDownload(href);
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+
                   <Button
                     size="sm"
                     variant="secondary"
@@ -207,6 +223,21 @@ export function ImageCard({
               </div>
 
               <div className="flex items-center gap-1">
+                {/* Download */}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 w-8 p-0"
+                  aria-label="Download"
+                  onClick={() => {
+                    const filename = sanitizeFilename(`interior-design-${id}.jpg`);
+                    const href = appendDownloadParam(imageUrl, filename);
+                    triggerDownload(href);
+                  }}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+
                 <Button
                   size="sm"
                   variant="secondary"
