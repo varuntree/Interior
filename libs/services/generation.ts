@@ -174,7 +174,10 @@ export async function submitGeneration(
   // Submit to provider now that the lock is acquired
   try {
     const provider = getGenerationProvider();
-    const webhookUrl = `${(baseUrl || 'http://localhost:3000').replace(/\/$/, '')}${runtimeConfig.replicate.webhookRelativePath}`;
+    if (!baseUrl || !/^https:\/\//i.test(baseUrl)) {
+      throw new Error('CONFIGURATION_ERROR: A public HTTPS base URL is required for webhooks. Set PUBLIC_BASE_URL or NEXT_PUBLIC_APP_URL to your ngrok/Vercel HTTPS URL.');
+    }
+    const webhookUrl = `${baseUrl.replace(/\/$/, '')}${runtimeConfig.replicate.webhookRelativePath}`;
     const submitRes = await provider.submit({
       request: generationRequest,
       signedInputUrls: signedUrls,

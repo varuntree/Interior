@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # QuickDesignHome - Development Setup Script
-# This script helps set up local development using Cloudflare Tunnel for webhook support.
+# This script helps set up local development using ngrok for webhook support.
 
 set -e  # Exit on any error
 
@@ -32,15 +32,14 @@ else
   fi
 fi
 
-# Check if cloudflared is installed
-if command -v cloudflared &> /dev/null; then
-  echo -e "${GREEN}✓${NC} cloudflared is installed"
+# Check if ngrok is installed
+if command -v ngrok &> /dev/null; then
+  echo -e "${GREEN}✓${NC} ngrok is installed"
 else
-  echo -e "${YELLOW}⚠${NC} cloudflared (Cloudflare Tunnel) is not installed"
+  echo -e "${YELLOW}⚠${NC} ngrok is not installed"
   echo "  Please install it first:"
-  echo "    • macOS (Homebrew):   brew install cloudflare/cloudflare/cloudflared"
-  echo "    • Linux:              https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/"
-  echo "    • Windows (MSI):      https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/"
+  echo "    • macOS (Homebrew):   brew install ngrok/ngrok/ngrok"
+  echo "    • Linux/Windows:      https://ngrok.com/download"
   exit 1
 fi
 
@@ -49,7 +48,7 @@ if grep -q "^NEXT_PUBLIC_APP_URL=" .env.local && ! grep -q "your-url-here" .env.
   echo -e "${GREEN}✓${NC} NEXT_PUBLIC_APP_URL is configured"
   CURRENT_URL=$(grep "^NEXT_PUBLIC_APP_URL=" .env.local | cut -d'=' -f2)
   echo "  Current URL: ${CURRENT_URL}"
-  read -p "Do you want to update it with a new Cloudflare Tunnel URL? (y/N): " -r
+  read -p "Do you want to update it with a new ngrok URL? (y/N): " -r
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     UPDATE_URL=true
   else
@@ -63,10 +62,10 @@ fi
 
 if [ "$UPDATE_URL" = true ]; then
   echo ""
-  echo -e "${BLUE}🌐 Start a Cloudflare Tunnel in another terminal:${NC}"
-  echo "    cloudflared tunnel --url http://localhost:3000"
+  echo -e "${BLUE}🌐 Start an ngrok tunnel in another terminal:${NC}"
+  echo "    ngrok http 3000"
   echo ""
-  echo "Paste the HTTPS Cloudflare URL (e.g., https://<random>.trycloudflare.com):"
+  echo "Paste the HTTPS ngrok URL (e.g., https://<random>.ngrok-free.app):"
   read -r CF_URL
 
   if [[ -z "$CF_URL" ]]; then
@@ -94,19 +93,18 @@ echo ""
 echo -e "${GREEN}🎉 Setup complete!${NC}"
 echo ""
 echo -e "${BLUE}Next steps:${NC}"
-echo "1. ${YELLOW}Start Cloudflare Tunnel:${NC} cloudflared tunnel --url http://localhost:3000"
-echo "2. ${YELLOW}Copy the HTTPS URL${NC} from the cloudflared output"
-echo "3. ${YELLOW}Update .env.local:${NC} NEXT_PUBLIC_APP_URL=https://<random>.trycloudflare.com"
+echo "1. ${YELLOW}Start ngrok:${NC} ngrok http 3000"
+echo "2. ${YELLOW}Copy the HTTPS URL${NC} from the ngrok output"
+echo "3. ${YELLOW}Update .env.local:${NC} NEXT_PUBLIC_APP_URL=https://<random>.ngrok-free.app"
 echo "4. ${YELLOW}Start development server:${NC} npm run dev"
 echo ""
 echo -e "${BLUE}💡 Tips:${NC}"
-echo "• Keep cloudflared running in a separate terminal while developing"
-echo "• Each time you restart cloudflared, update NEXT_PUBLIC_APP_URL if the URL changed"
-echo "• For a stable URL, use a named Cloudflare Tunnel and DNS hostname"
+echo "• Keep ngrok running in a separate terminal while developing"
+echo "• Each time you restart ngrok, update NEXT_PUBLIC_APP_URL if the URL changed"
+echo "• For a stable URL, use a reserved domain or paid ngrok plan"
 echo "• Generation features require the HTTPS URL for webhooks"
 echo ""
 echo -e "${BLUE}📖 Need help?${NC}"
 echo "• Check README.md for detailed setup instructions"
-echo "• Cloudflare Tunnel docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/"
+echo "• ngrok docs: https://ngrok.com/docs"
 echo ""
-

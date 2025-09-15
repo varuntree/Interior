@@ -5,7 +5,7 @@ import type {
 } from '@/libs/services/generation/types'
 import { toGoogleNanoBananaInputs } from '@/libs/services/external/googleNanoBananaAdapter'
 import { createPrediction, getPrediction } from '@/libs/services/external/replicateClient'
-import { env } from '@/libs/env'
+
 
 export function createReplicateProvider() {
   return {

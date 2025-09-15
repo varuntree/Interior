@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { withMethods } from '@/libs/api-utils/methods';
 import { accepted, fail } from '@/libs/api-utils/responses';
 import { createServiceSupabaseClient } from '@/libs/api-utils/supabase';
-import { getApplicationUrl } from '@/libs/api-utils/url-validation';
+import { getWebhookBaseUrl } from '@/libs/api-utils/url-validation';
 import { submitGeneration } from '@/libs/services/generation';
 import { createClient } from '@/libs/supabase/server';
 import { generationRequestSchema, generationFormDataSchema, validateFile } from '@/libs/api-utils/schemas';
@@ -91,8 +91,8 @@ export const POST = withMethods(['POST'], withRequestContext(async (req: NextReq
       idempotencyKey: parsedData.idempotencyKey
     };
 
-    // Get base URL for webhook - prioritize environment variable
-    const baseUrl = getApplicationUrl(req);
+    // Get base URL for webhooks (must be HTTPS and public)
+    const baseUrl = getWebhookBaseUrl(req);
 
     // Submit generation
     const serviceSupabase = createServiceSupabaseClient();

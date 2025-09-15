@@ -10,7 +10,7 @@ An AI-powered interior design generation platform for the Australian market. Cre
 
 ### For Generation Features (Webhook Support)
 
-The generation features use webhooks from external services. In development, you can run the app normally at `http://localhost:3000`. For testing webhooks locally, use any method to expose a public HTTPS URL to your dev server or deploy a preview to your hosting provider.
+The generation features use webhooks from external services. In development, run the app at `http://localhost:3000` and expose a public HTTPS URL (e.g., via ngrok) so providers can reach your local machine.
 
 #### Manual Setup
 ```bash
@@ -24,9 +24,9 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
-### Run Locally with grok (public HTTPS + webhooks)
+### Run Locally with ngrok (public HTTPS + webhooks)
 
-Use grok to expose your local server so Replicate and Stripe webhooks can reach it.
+Use ngrok to expose your local server so Replicate and Stripe webhooks can reach it.
 
 ```bash
 # 0) Prereqs
@@ -45,20 +45,20 @@ $EDITOR .env.local   # Fill required vars:
 npm install
 npm run dev
 
-# 3) Start grok tunnel to your dev server
-grok http 3000
-# Copy the printed HTTPS URL (e.g., https://random.grok.dev)
+# 3) Start ngrok tunnel to your dev server
+ngrok http 3000
+# Copy the printed HTTPS URL (e.g., https://random.ngrok-free.app)
 
 # 4) Point the app at your grok URL (enables proper webhook URLs)
-echo "PUBLIC_BASE_URL=https://random.grok.dev" >> .env.local
-echo "NEXT_PUBLIC_APP_URL=https://random.grok.dev" >> .env.local
+echo "PUBLIC_BASE_URL=https://random.ngrok-free.app" >> .env.local
+echo "NEXT_PUBLIC_APP_URL=https://random.ngrok-free.app" >> .env.local
 
 # Restart dev to pick up env changes
 ^C && npm run dev
 
 # 5) Wire Stripe webhook (optional if not testing billing)
 stripe login
-stripe listen --forward-to https://random.grok.dev/api/v1/webhooks/stripe
+stripe listen --forward-to https://random.ngrok-free.app/api/v1/webhooks/stripe
 # Put the printed signing secret into STRIPE_WEBHOOK_SECRET in .env.local, then restart dev
 
 # 6) Health checks (confirm routing through grok)
@@ -67,8 +67,8 @@ curl https://random.grok.dev/api/v1/status
 ```
 
 Notes
-- Replicate webhook is built as `PUBLIC_BASE_URL + /api/v1/webhooks/replicate`, so setting `PUBLIC_BASE_URL` to your grok URL is sufficient.
-- If the grok URL changes, update `PUBLIC_BASE_URL` and `NEXT_PUBLIC_APP_URL` in `.env.local` and restart `npm run dev`.
+- Replicate webhook is built as `PUBLIC_BASE_URL + /api/v1/webhooks/replicate`, so setting `PUBLIC_BASE_URL` to your ngrok URL is sufficient.
+- If the ngrok URL changes, update `PUBLIC_BASE_URL` and `NEXT_PUBLIC_APP_URL` in `.env.local` and restart `npm run dev`.
 - You can skip Stripe wiring if you aren’t testing billing flows.
 
 ### Environment Variables

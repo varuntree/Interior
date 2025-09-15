@@ -11,23 +11,37 @@ import { logger } from '@/libs/observability/logger'
  * Validates HTTPS requirement in production environments.
  */
 export function getApplicationUrl(req?: NextRequest): string {
-  // Priority 1: Environment variable (most reliable)
+  // Priority 1: PUBLIC_BASE_URL (explicit server-side base, preferred for webhooks and canonical URLs)
+  if (process.env.PUBLIC_BASE_URL) {
+    const url = process.env.PUBLIC_BASE_URL.trim();
+
+    if (!isValidUrl(url)) {
+      throw new Error(`Invalid PUBLIC_BASE_URL: "${url}". Must be a valid HTTP/HTTPS URL.`);
+    }
+
+    // Enforce HTTPS in production
+    if (process.env.NODE_ENV === 'production' && !url.startsWith('https://')) {
+      throw new Error(`HTTPS required in production. Got: "${url}". Update PUBLIC_BASE_URL to use HTTPS.`);
+    }
+
+    return url;
+  }
+
+  // Priority 2: NEXT_PUBLIC_APP_URL (fallback, also used by client)
   if (process.env.NEXT_PUBLIC_APP_URL) {
     const url = process.env.NEXT_PUBLIC_APP_URL.trim();
-    
-    // Validate the environment URL
+
     if (!isValidUrl(url)) {
       throw new Error(`Invalid NEXT_PUBLIC_APP_URL: "${url}". Must be a valid HTTP/HTTPS URL.`);
     }
-    
-    // Enforce HTTPS in production
+
     if (process.env.NODE_ENV === 'production' && !url.startsWith('https://')) {
       throw new Error(`HTTPS required in production. Got: "${url}". Update NEXT_PUBLIC_APP_URL to use HTTPS.`);
     }
-    
+
     return url;
   }
-  
+
   // Priority 2: Request headers (fallback)
   if (req) {
     const origin = req.headers.get('origin');
@@ -66,11 +80,49 @@ export function getApplicationUrl(req?: NextRequest): string {
  * Uses the application URL and appends the webhook path
  */
 export function buildWebhookUrl(webhookPath: string, req?: NextRequest): string {
-  const baseUrl = getApplicationUrl(req);
+  const baseUrl = getWebhookBaseUrl(req);
   const cleanBaseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
   const cleanPath = webhookPath.startsWith('/') ? webhookPath : `/${webhookPath}`;
   
   return `${cleanBaseUrl}${cleanPath}`;
+}
+
+/**
+ * Returns a base URL that is safe for public webhooks.
+ * Order of preference:
+ * 1) PUBLIC_BASE_URL (must be HTTPS)
+ * 2) NEXT_PUBLIC_APP_URL (must be HTTPS)
+ * 3) Request origin/host (must be HTTPS and not localhost)
+ * Throws with a clear configuration error message otherwise.
+ */
+export function getWebhookBaseUrl(req?: NextRequest): string {
+  const envPublic = (process.env.PUBLIC_BASE_URL || '').trim();
+  const envNext = (process.env.NEXT_PUBLIC_APP_URL || '').trim();
+
+  const candidates = [envPublic, envNext].filter(Boolean) as string[];
+  for (const url of candidates) {
+    if (!isValidUrl(url)) continue;
+    if (!url.startsWith('https://')) continue; // webhooks require HTTPS always
+    if (isLocalhost(url)) continue;
+    return url;
+  }
+
+  // Fall back to request headers but still enforce HTTPS + non-localhost
+  if (req) {
+    const origin = req.headers.get('origin') || '';
+    if (origin && isValidUrl(origin) && origin.startsWith('https://') && !isLocalhost(origin)) {
+      return origin;
+    }
+
+    const host = req.headers.get('host') || '';
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+      return `https://${host}`;
+    }
+  }
+
+  throw new Error(
+    'HTTPS public base URL required for webhooks. Set PUBLIC_BASE_URL (recommended) or NEXT_PUBLIC_APP_URL to your ngrok/Vercel HTTPS URL.'
+  );
 }
 
 /**
@@ -88,6 +140,15 @@ function isValidUrl(urlString: string): boolean {
   try {
     const url = new URL(urlString);
     return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isLocalhost(urlString: string): boolean {
+  try {
+    const { hostname } = new URL(urlString);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
   } catch {
     return false;
   }

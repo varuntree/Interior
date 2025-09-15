@@ -20,7 +20,7 @@ Database & Storage Setup (Supabase)
 - Buckets created by migrations: `public` (public read), `private` (owner‑scoped). No extra bucket creation needed.
 
 Replicate Webhook (Dev)
-- Expose your dev server using Cloudflare Tunnel: `cloudflared tunnel --url http://localhost:3000` (or use a Vercel preview). Set `PUBLIC_BASE_URL` to the tunnel URL (e.g., https://<random>.trycloudflare.com) or rely on request origin if supported.
+- Expose your dev server using ngrok: `ngrok http 3000` (or use a Vercel preview). Set `PUBLIC_BASE_URL` to the tunnel URL (e.g., https://<random>.ngrok-free.app).
 - The service builds a webhook URL as `baseUrl + runtime.replicate.webhookRelativePath` (defaults to `/api/v1/webhooks/replicate`). Ensure the route is reachable from Replicate.
 - Optional: set `REPLICATE_WEBHOOK_SECRET` to verify signatures; otherwise rely on IP restrictions.
 
@@ -42,7 +42,7 @@ Post‑Deploy Smoke Check
 
 Common Pitfalls
 - Missing `REPLICATE_API_TOKEN` → generation submit fails with configuration error.
-- Webhook not firing in dev → ensure `PUBLIC_BASE_URL` uses your Cloudflare Tunnel URL and that `/api/v1/webhooks/replicate` is accessible.
+- Webhook not firing in dev → ensure `PUBLIC_BASE_URL` uses your ngrok HTTPS URL and that `/api/v1/webhooks/replicate` is accessible.
 - Images not visible → verify outputs are written to `public` bucket and that URLs resolve under your Supabase storage domain.
 - Quota not enforced → ensure Stripe webhook updates `profiles.price_id`; runtime plans map that priceId to monthly caps.
 
