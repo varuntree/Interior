@@ -220,9 +220,7 @@ export function GenerationProvider({ children, initialValues }: GenerationProvid
       if (!state.input1File) missing.push('Base room image required');
       if (!state.input2File) missing.push('Reference image required');
     }
-    if (state.mode === 'imagine' && !state.prompt.trim()) {
-      missing.push('Description required for Imagine mode');
-    }
+    // Imagine no longer requires a prompt; defaults are applied server-side
 
     return {
       requiredFiles: files,

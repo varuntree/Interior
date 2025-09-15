@@ -13,6 +13,7 @@ What changed (high level)
 - Migrations consolidated: `0001_baseline.sql` (core schema, RLS, buckets, triggers) + `0002_webhook_events.sql` (event store).
 - Observability standard enforced via `withRequestContext` with `x-request-id` header and structured logs.
 - Added analytics endpoint `POST /api/v1/analytics/event` (non‑blocking; logs to `logs_analytics`).
+ - Prompt Engine v2 introduced: centralized, generalized (no country context), includes negative constraints; Imagine no longer requires a user prompt.
 
  Key doc updates
 - spec/system_architecture_and_api.md

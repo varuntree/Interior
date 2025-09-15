@@ -3,7 +3,7 @@ export type Mode = 'redesign' | 'staging' | 'compose' | 'imagine'
 
 // AspectRatio/Quality removed for current provider
 
-export interface PresetItem { id: string; label: string }
+export interface PresetItem { id: string; label: string; promptSeed?: string }
 export interface Presets {
   roomTypes: PresetItem[]        // AU‑oriented list
   styles: PresetItem[]           // AU‑oriented list
@@ -49,6 +49,19 @@ export interface RuntimeConfig {
   limits: GenerationLimits
   plans: Plans
   replicate: ReplicateConfig
+  promptEngine: {
+    version: string
+    maxChars: number
+    negatives: string[]
+    modeDefaults: {
+      redesign: { includeStructureGuardrails: boolean }
+      staging: { retainColorMood: boolean }
+      compose: { enforceBaseVsReference: boolean }
+      imagine: { enforceInteriorOnly: boolean; fallbackStyleId?: string; fallbackRoomTypeId?: string }
+    }
+    styleSeeds: Record<string, string>
+    roomSeeds?: Record<string, string>
+  }
 }
 
 // ---- DEFAULT EXPORT (MVP baseline) ----
@@ -67,14 +80,14 @@ const runtimeConfig: RuntimeConfig = {
       { id: 'granny_flat', label: 'Granny Flat' }             // AU-flavoured
     ],
     styles: [
-      { id: 'coastal_au',  label: 'Coastal AU' },
-      { id: 'contemporary_au', label: 'Contemporary AU' },
-      { id: 'japandi',     label: 'Japandi' },
-      { id: 'scandi_au',   label: 'Scandi AU' },
-      { id: 'minimal_au',  label: 'Minimal AU' },
-      { id: 'midcentury_au', label: 'Mid‑Century AU' },
-      { id: 'industrial_au', label: 'Industrial AU' },
-      { id: 'hamptons_au', label: 'Hamptons AU' }             // AU-flavoured
+      { id: 'coastal_au',  label: 'Coastal AU', promptSeed: 'coastal style: light timbers, white walls, linen textures, pale blues/greens' },
+      { id: 'contemporary_au', label: 'Contemporary AU', promptSeed: 'contemporary style: clean lines, matte finishes, warm neutral palette' },
+      { id: 'japandi',     label: 'Japandi', promptSeed: 'japandi style: minimal forms, natural woods, soft contrast' },
+      { id: 'scandi_au',   label: 'Scandi AU', promptSeed: 'scandinavian style: light oak, white, soft greys, cozy textiles' },
+      { id: 'minimal_au',  label: 'Minimal AU', promptSeed: 'minimal style: restrained palette, functional layout' },
+      { id: 'midcentury_au', label: 'Mid‑Century AU', promptSeed: 'mid-century style: teak, low profiles, muted color accents' },
+      { id: 'industrial_au', label: 'Industrial AU', promptSeed: 'industrial style: concrete, metal accents, leather' },
+      { id: 'hamptons_au', label: 'Hamptons AU', promptSeed: 'hamptons style: white timber, navy accents, coastal elegance' }
     ],
   },
 
@@ -104,6 +117,21 @@ const runtimeConfig: RuntimeConfig = {
     webhookRelativePath: '/api/v1/webhooks/replicate',
     pollingIntervalMs: 2000,
     timeouts: { submitMs: 20000, overallMs: 180000 }
+  },
+
+  // Prompt Engine configuration (generalized, country-agnostic)
+  promptEngine: {
+    version: 'v2',
+    maxChars: 560,
+    negatives: ['no people','no humans','no person','no faces','no text','no captions','no watermark','no logos'],
+    modeDefaults: {
+      redesign: { includeStructureGuardrails: true },
+      staging: { retainColorMood: true },
+      compose: { enforceBaseVsReference: true },
+      imagine: { enforceInteriorOnly: true }
+    },
+    styleSeeds: {},
+    roomSeeds: {}
   }
 }
 

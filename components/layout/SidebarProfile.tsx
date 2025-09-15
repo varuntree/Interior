@@ -55,7 +55,11 @@ export function SidebarProfile() {
           const json: MeResponse = await res.json();
           if (mounted && json.success) setEmail(json.data?.email ?? null);
         }
-      } catch {}
+      } catch (_err) {
+        // Intentionally ignore network/unauth failures in sidebar profile fetch
+        // eslint-disable-next-line no-useless-return
+        return;
+      }
     })();
     return () => { mounted = false; };
   }, []);
@@ -73,7 +77,11 @@ export function SidebarProfile() {
           if (typeof rem === "number") setRemaining(rem);
           if (typeof lim === "number") setLimit(lim);
         }
-      } catch {}
+      } catch (_err) {
+        // Intentionally ignore network/unauth failures in usage fetch
+        // eslint-disable-next-line no-useless-return
+        return;
+      }
     })();
     return () => { mounted = false; };
   }, []);

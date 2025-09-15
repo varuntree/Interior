@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import * as jobsRepo from '@/libs/repositories/generation_jobs'
 import { processGenerationAssets } from '@/libs/services/storage/assets'
 import { logger } from '@/libs/observability/logger'
+import * as failuresRepo from '@/libs/repositories/generation_failures'
+import { mapProviderError, mapStorageError } from '@/libs/services/generation/errors'
 
 export interface ReplicateWebhookPayload {
   id: string
@@ -47,11 +49,28 @@ export async function handleReplicateWebhook(
         logger.warn('webhook_no_output', { jobId: job.id, predictionId })
         break
       }
-      await processGenerationAssets(supabase, {
-        jobId: job.id,
-        predictionId: predictionId,
-        outputUrls: outputs.filter((u) => u && typeof u === 'string')
-      })
+      try {
+        await processGenerationAssets(supabase, {
+          jobId: job.id,
+          predictionId: predictionId,
+          outputUrls: outputs.filter((u) => u && typeof u === 'string')
+        })
+      } catch (err: any) {
+        const classification = mapStorageError(err?.message, true)
+        try {
+          await failuresRepo.createFailure(supabase, {
+            job_id: job.id,
+            stage: 'storage',
+            code: classification.code,
+            provider_code: classification.provider_code,
+            message: (err?.message || '').slice(0, 500),
+            meta: { predictionId, outputs: outputs.length }
+          })
+        } catch {}
+        await jobsRepo.updateJobStatus(supabase, job.id, { status: 'failed', error: 'Asset processing failed', completed_at: new Date().toISOString() })
+        logger.error('storage.asset_process_error', { jobId: job.id, predictionId, message: err?.message })
+        break
+      }
       try {
         const durationMs = Date.now() - new Date(job.created_at).getTime()
         logger.info('webhook_processed', { jobId: job.id, predictionId, outputs: outputs.length, durationMs })
@@ -69,7 +88,18 @@ export async function handleReplicateWebhook(
         error: (error || 'Generation failed').slice(0, 500),
         completed_at: new Date().toISOString()
       })
-      logger.warn('webhook_failed', { jobId: job.id, predictionId, error })
+      const classification = mapProviderError(error || undefined)
+      logger.warn('webhook_failed', { jobId: job.id, predictionId, error, class: classification.code, provider_code: classification.provider_code })
+      try {
+        await failuresRepo.createFailure(supabase, {
+          job_id: job.id,
+          stage: 'webhook',
+          code: classification.code,
+          provider_code: classification.provider_code,
+          message: (error || '').slice(0, 500),
+          meta: { provider_status: status }
+        })
+      } catch {}
       break
     case 'canceled':
       await jobsRepo.updateJobStatus(supabase, job.id, {

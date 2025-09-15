@@ -118,7 +118,7 @@ Content-Type: multipart/form-data (preferred) or application/json
 If multipart/form-data, fields:
 
 - mode: redesign | staging | compose | imagine (required)
-- prompt: string (required for imagine; optional otherwise)
+- prompt: string (optional; imagine falls back to presets when omitted)
 - roomType: string (optional)
 - style: string (optional)
 - idempotencyKey: string UUID (optional but recommended)
@@ -150,7 +150,7 @@ Copy
     "mode": "redesign",
     "settings": {
       "roomType": "Living room",
-      "style": "Coastal AU"
+      "style": "Coastal"
     },
     "predictionId": "replicate_pred_123"
   }

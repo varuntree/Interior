@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import * as rendersRepo from '@/libs/repositories/renders';
 import * as jobsRepo from '@/libs/repositories/generation_jobs';
 import { logger } from '@/libs/observability/logger'
+import * as failuresRepo from '@/libs/repositories/generation_failures'
+import { mapStorageError } from '@/libs/services/generation/errors'
 
 export interface ProcessAssetsParams {
   jobId: string;
@@ -88,6 +90,17 @@ export async function processGenerationAssets(
       processedAssets.push(asset);
     } catch (error: any) {
       logger.error('storage.asset_process_error', { renderId: render.id, index: i, message: error?.message })
+      try {
+        const classification = mapStorageError(error?.message, true)
+        await failuresRepo.createFailure(supabase, {
+          job_id: job.id,
+          stage: 'storage',
+          code: classification.code,
+          provider_code: classification.provider_code,
+          message: (error?.message || '').slice(0, 500),
+          meta: { renderId: render.id, index: i, sourceUrl: outputUrl }
+        })
+      } catch {}
       // Continue processing other assets even if one fails
     }
   }

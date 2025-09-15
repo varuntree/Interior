@@ -1,9 +1,9 @@
 // libs/services/generation.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
 import runtimeConfig from '@/libs/app-config/runtime';
-import { buildPrompt, validatePromptParams } from './generation/prompts';
+import { composePrompt } from './generation/promptEngine/engine';
 import { moderateContent, moderateImageInputs } from './generation/moderation';
-import { uploadGenerationInput } from './storage/uploads';
+import { uploadGenerationInput, createSignedUrlForPath } from './storage/uploads';
 import * as jobsRepo from '@/libs/repositories/generation_jobs';
 import * as usageRepo from '@/libs/repositories/usage';
 import { checkGenerationAllowance } from '@/libs/services/usage'
@@ -11,6 +11,8 @@ import { getGenerationProvider } from '@/libs/services/providers/generationProvi
 import type { GenerationRequest } from '@/libs/services/generation/types';
 import { randomUUID } from 'crypto';
 import { logger } from '@/libs/observability/logger'
+import { mapProviderError } from '@/libs/services/generation/errors'
+import * as failuresRepo from '@/libs/repositories/generation_failures'
 
 export interface GenerationSubmission {
   mode: 'redesign' | 'staging' | 'compose' | 'imagine';
@@ -89,20 +91,13 @@ export async function submitGeneration(
     }
   }
 
-  // Build prompt
-  const promptParams = {
+  // Build prompt (generalized, country-agnostic). Allow empty userPrompt.
+  const { prompt: finalPrompt, length: promptLength, version: promptVersion, hadUserPrompt } = composePrompt({
     mode: submission.mode,
     roomType: submission.roomType,
     style: submission.style,
-    userPrompt: submission.prompt
-  };
-
-  const promptValidation = validatePromptParams(promptParams);
-  if (!promptValidation.valid) {
-    throw new Error(`VALIDATION_ERROR: ${promptValidation.error}`);
-  }
-
-  const finalPrompt = buildPrompt(promptParams);
+    userPrompt: submission.prompt,
+  })
 
   // Check user quota
   const allowance = await checkGenerationAllowance({ supabase }, userId)
@@ -113,6 +108,8 @@ export async function submitGeneration(
   // Handle file uploads
   const signedUrls: string[] = [];
   const inputDbPaths: string[] = [];
+  let imageCount = 0
+  let inputBytesTotal = 0
 
   if (submission.input1) {
     const upload1 = await uploadGenerationInput(supabase, {
@@ -123,6 +120,9 @@ export async function submitGeneration(
     });
     signedUrls.push(upload1.signedUrl);
     inputDbPaths.push(upload1.dbPath);
+    imageCount += 1
+    // @ts-ignore size exists on Blob/File
+    inputBytesTotal += (submission.input1 as any).size || 0
   }
 
   if (submission.input2) {
@@ -134,6 +134,9 @@ export async function submitGeneration(
     });
     signedUrls.push(upload2.signedUrl);
     inputDbPaths.push(upload2.dbPath);
+    imageCount += 1
+    // @ts-ignore size exists on Blob/File
+    inputBytesTotal += (submission.input2 as any).size || 0
   }
 
   // Build generation request
@@ -183,7 +186,7 @@ export async function submitGeneration(
       signedInputUrls: signedUrls,
       webhookUrl,
     });
-    logger.info('generation_submit', { ownerId: userId, jobId: job.id, predictionId: submitRes.predictionId, status: submitRes.status })
+    logger.info('generation_submit', { ownerId: userId, jobId: job.id, predictionId: submitRes.predictionId, status: submitRes.status, promptVersion, hasUserPrompt: hadUserPrompt, promptLength, mode: submission.mode, style: submission.style, roomType: submission.roomType, image_count: imageCount, input_bytes_total: inputBytesTotal, has_idempotency_key: !!submission.idempotencyKey })
 
     // Attach prediction id to job
     await jobsRepo.updateJobStatus(supabase, job.id, { prediction_id: submitRes.predictionId });
@@ -195,7 +198,18 @@ export async function submitGeneration(
       error: (err?.message || 'Provider submission failed').slice(0, 500),
       completed_at: new Date().toISOString(),
     });
-    logger.error('generation_submit_failed', { ownerId: userId, jobId: job.id, message: err?.message })
+    const classification = mapProviderError(err?.message)
+    logger.error('generation_submit_failed', { ownerId: userId, jobId: job.id, message: err?.message, class: classification.code, provider_code: classification.provider_code })
+    try {
+      await failuresRepo.createFailure(supabase, {
+        job_id: job.id,
+        stage: 'submit',
+        code: classification.code,
+        provider_code: classification.provider_code,
+        message: (err?.message || '').slice(0, 500),
+        meta: { has_idempotency_key: !!submission.idempotencyKey }
+      })
+    } catch {}
     throw err;
   }
 
@@ -312,6 +326,94 @@ export async function cancelGeneration(
     status: 'canceled',
     completed_at: new Date().toISOString()
   })
+}
+
+// Manual retry: clone failed job and resubmit without re-uploads
+export async function cloneAndRetry(
+  ctx: { supabase: SupabaseClient; userId: string; baseUrl?: string },
+  jobId: string
+): Promise<GenerationResult> {
+  const { supabase, userId, baseUrl } = ctx
+  const job = await jobsRepo.getJobById(supabase, jobId, userId)
+  if (!job) throw new Error('NOT_FOUND')
+  if (job.status !== 'failed') throw new Error('INVALID_STATE')
+
+  // Prevent retry if another job is inflight
+  const inflight = await jobsRepo.findInflightJobForUser(supabase, userId)
+  if (inflight) throw new Error('TOO_MANY_INFLIGHT')
+
+  // Re-sign existing input paths if present
+  const signedUrls: string[] = []
+  const inputDbPaths: string[] = []
+  if (job.input1_path && job.input1_path.startsWith('private/')) {
+    const p1 = job.input1_path.replace(/^private\//, '')
+    const url1 = await createSignedUrlForPath(supabase, { bucket: 'private', path: p1, expiresIn: 300 })
+    signedUrls.push(url1)
+    inputDbPaths.push(job.input1_path)
+  }
+  if (job.input2_path && job.input2_path.startsWith('private/')) {
+    const p2 = job.input2_path.replace(/^private\//, '')
+    const url2 = await createSignedUrlForPath(supabase, { bucket: 'private', path: p2, expiresIn: 300 })
+    signedUrls.push(url2)
+    inputDbPaths.push(job.input2_path)
+  }
+
+  // Create new job record (fresh idempotency key)
+  const newIdem = randomUUID()
+  const newJob = await jobsRepo.createJob(supabase, {
+    owner_id: userId,
+    mode: job.mode as any,
+    room_type: job.room_type || undefined,
+    style: job.style || undefined,
+    input1_path: inputDbPaths[0],
+    input2_path: inputDbPaths[1],
+    prompt: job.prompt || undefined,
+    status: 'starting',
+    idempotency_key: newIdem
+  })
+
+  try {
+    const provider = getGenerationProvider()
+    if (!baseUrl || !/^https:\/\//i.test(baseUrl)) {
+      throw new Error('CONFIGURATION_ERROR: A public HTTPS base URL is required for webhooks. Set PUBLIC_BASE_URL or NEXT_PUBLIC_APP_URL to your ngrok/Vercel HTTPS URL.')
+    }
+    const webhookUrl = `${baseUrl.replace(/\/$/, '')}${runtimeConfig.replicate.webhookRelativePath}`
+    const submitRes = await provider.submit({
+      request: {
+        ownerId: userId,
+        mode: job.mode as any,
+        prompt: job.prompt || undefined,
+        roomType: job.room_type || undefined,
+        style: job.style || undefined,
+        input1Path: job.input1_path || undefined,
+        input2Path: job.input2_path || undefined,
+        idempotencyKey: newIdem
+      },
+      signedInputUrls: signedUrls,
+      webhookUrl
+    })
+    await jobsRepo.updateJobStatus(supabase, newJob.id, { prediction_id: submitRes.predictionId })
+    logger.info('generation.retry_submitted', { ownerId: userId, oldJobId: job.id, jobId: newJob.id, predictionId: submitRes.predictionId })
+  } catch (err: any) {
+    await jobsRepo.updateJobStatus(supabase, newJob.id, { status: 'failed', error: (err?.message || '').slice(0, 500), completed_at: new Date().toISOString() })
+    const classification = mapProviderError(err?.message)
+    try {
+      await failuresRepo.createFailure(supabase, {
+        job_id: newJob.id,
+        stage: 'submit',
+        code: classification.code,
+        provider_code: classification.provider_code,
+        message: (err?.message || '').slice(0, 500),
+        meta: { retry_of: job.id }
+      })
+    } catch {}
+    throw err
+  }
+
+  // Debit usage for retry as a new job (idempotency metadata marks relation)
+  await usageRepo.debitGeneration(supabase, { ownerId: userId, jobId: newJob.id, idempotencyKey: newIdem })
+
+  return jobToResult({ ...newJob })
 }
 
 async function getUserPlan(supabase: SupabaseClient, userId: string): Promise<{ monthlyGenerations: number }> {

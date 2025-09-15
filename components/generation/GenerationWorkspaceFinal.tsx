@@ -197,7 +197,7 @@ export function GenerationWorkspaceFinal() {
             </TooltipProvider>
             <input
               className="flex-1 h-10 bg-transparent outline-none text-sm"
-              placeholder={state.mode === "imagine" ? "Prompt (required)…" : "Prompt (optional)…"}
+              placeholder={"Prompt (optional)…"}
               value={state.prompt}
               onChange={(e) => setPrompt(e.target.value)}
             />

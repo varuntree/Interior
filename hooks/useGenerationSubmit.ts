@@ -32,10 +32,7 @@ export function useGenerationSubmit({ onSuccess, onError }: UseGenerationSubmitO
       }
     }
 
-    // Prompt validation for imagine mode
-    if (state.mode === 'imagine' && !state.prompt.trim()) {
-      errors.push('Description is required for Imagine mode');
-    }
+    // Imagine mode does not require a prompt; server applies sensible defaults
 
     return errors;
   };

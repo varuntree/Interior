@@ -4,14 +4,14 @@ Purpose
 - Give a new contributor a crisp understanding of what the app does, how users flow through it, and what “good” looks like in the UI. Read this before touching code. This is not a code dump; it explains the product and UX contracts that the code must satisfy.
 
 Product Summary
-- An Australian‑oriented interior design generator. Users upload a room photo (or start from text) and receive photoreal redesigns. Four guided modes keep things simple: Redesign, Virtual Staging, Compose (two inputs), and Imagine (text‑only). Results are saved automatically to “My Renders” and can be organized into Collections, with a default “My Favorites.” Admin‑curated Community sets inspire and can prefill generation inputs.
+- A generalized interior design generator. Users upload a room photo (or start from text) and receive photoreal redesigns. Four guided modes keep things simple: Redesign, Virtual Staging, Compose (two inputs), and Imagine. Results are saved automatically to “My Renders” and can be organized into Collections, with a default “My Favorites.” Admin‑curated Community sets inspire and can prefill generation inputs.
 
 MVP Scope (and Non‑Goals)
-- In scope: the four modes above; AU‑relevant presets (Room Types, Styles); simple controls (mode, presets, prompt); one in‑flight generation per user; plan‑based monthly caps; webhook‑based async processing; public image delivery via Supabase Storage.
+- In scope: the four modes above; neutral presets (Room Types, Styles); simple controls (mode, presets, prompt); one in‑flight generation per user; plan‑based monthly caps; webhook‑based async processing; public image delivery via Supabase Storage.
 - Out of scope (for MVP): brush/mask editing; fine‑tuning; batch jobs; collaboration/teams; heavy custom infra (we rely on Replicate + webhooks); complex admin UI (basic admin actions exist via APIs/SQL).
 
 Primary Users & Use Cases
-- Homeowners/renters exploring AU styles before buying/renovating; agents/landlords staging listings; design‑curious users creating moodboards. Success means fast, believable visuals with minimal setup and clear presets.
+- Homeowners/renters exploring interior styles before buying/renovating; agents/landlords staging listings; design‑curious users creating moodboards. Success means fast, believable visuals with minimal setup and clear presets.
 
 End‑to‑End Flow (Happy Path)
 - User signs in → navigates to Create → selects a mode and presets (Room Type, Style), provides inputs (images or prompt), clicks Generate. API checks credits and enforces the “one in‑flight job” rule → uploads inputs (if any) → calls Replicate (Google nano‑banana) with a webhook back to our app. UI shows progress (polls job status). Webhook completes → image stored to public bucket and linked to a Render → UI shows result → user can Save to “My Favorites” or a Collection, and Download.
@@ -48,7 +48,7 @@ Modes & Inputs (At a Glance)
 - Redesign: restyle a room without changing structure. Requires image input (room). Optional prompt.
 - Staging: furnish empty/under‑furnished rooms. Requires image input (room). Optional prompt.
 - Compose: apply a reference style/object to a base room. Requires two images (base room + reference). Optional prompt.
-- Imagine: concept from text‑only. Requires prompt; no image uploads.
+- Imagine: interior concept from text‑only or presets; prompt optional; no image uploads required.
 
 Presets & Settings (Source of Truth)
 - Presets and defaults come from `libs/app-config/runtime.ts` (Room Types, Styles). The UI should render the lists from this config and enforce limits (e.g., accepted mime types, max upload size). Keep the config file the single source of truth; do not hardcode copies in components.

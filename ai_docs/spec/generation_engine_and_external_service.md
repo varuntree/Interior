@@ -10,7 +10,7 @@ type Mode = 'redesign' | 'staging' | 'compose' | 'imagine';
 type GenerationRequest = {
   ownerId: string;
   mode: Mode;
-  prompt?: string;                 // required for 'imagine'
+  prompt?: string;                 // user text optional; engine supplies defaults for imagine
   roomType?: string;               // preset dropdown
   style?: string;                  // preset dropdown
   input1Path?: string;             // storage path (private bucket)
@@ -19,12 +19,11 @@ type GenerationRequest = {
 };
 Route handler → builds GenerationRequest → calls GenerationService.
 
-2) Prompt system (mode templates)
-We construct a final prompt as:
+2) Prompt system (centralized, generalized)
+We construct a final prompt via the Prompt Engine v2 as:
 
-css
 Copy
-[Mode Guardrails] + [AU style context] + [Room Type context] + [User Prompt (optional)]
+[Mode Guardrails] + [Style/Room seeds (neutral)] + [User Prompt (optional)] + [Negatives]
 2.1 Constants
 Shared guardrails (Redesign/Staging/Compose):
 
@@ -34,27 +33,13 @@ Shared guardrails (Redesign/Staging/Compose):
 
 “Do not alter structural layout, view direction, or window positions.”
 
-AU context booster:
+Style seeds (examples; editable in config; neutral descriptors, no geography):
 
-“Use materials and furnishings commonly found in Australian homes.”
+coastal — light timbers, white walls, linen textures, pale blues/greens.
 
-“Respect local light quality: bright, airy daylight.”
+contemporary — clean lines, matte finishes, warm neutral palette.
 
-Style seeds (examples; editable in config):
-
-Coastal AU — light timbers, white walls, linen textures, pale blues/greens.
-
-Contemporary AU — clean lines, matte finishes, warm neutral palette.
-
-Japandi — minimal, natural woods, soft contrast.
-
-Scandi AU — light oak, white, soft greys, cozy textiles.
-
-Minimal AU — restrained palette, functional layout.
-
-Mid‑Century AU — teak, low profiles, muted color pops.
-
-Industrial AU — concrete, metal accents, leather.
+japandi — minimal, natural woods, soft contrast.
 
 2.2 Per‑mode templates
 Redesign
@@ -62,12 +47,12 @@ Redesign
 css
 Copy
 Keep room structure. Restyle furnishings, decor, color palette and finishes.
-Style: {style}. Room type: {roomType}. Australian context. {userPrompt?}
+Style: {style}. Room type: {roomType}. {userPrompt?}
 Staging
 
 pgsql
 Copy
-Assume the room may be empty or under-furnished. Add tasteful furniture and decor appropriate for {style}, for a {roomType} in an Australian home. Do not move walls/doors/windows. {userPrompt?}
+Assume the room may be empty or under-furnished. Add tasteful furniture and decor appropriate for {style} in a {roomType}. Retain overall color mood and lighting. Do not move walls/doors/windows. {userPrompt?}
 Compose (two inputs)
 
 csharp
@@ -79,7 +64,7 @@ Imagine (text-only)
 
 arduino
 Copy
-Generate a photoreal interior concept for a {roomType} in {style} for an Australian home. Balanced composition, realistic materials, natural light. {userPrompt}
+Generate a photoreal interior concept for a {roomType} in {style}. Balanced composition, realistic materials, natural light. {userPrompt?}
 The exact strings live in code as constants so we can iterate without schema changes.
 
 3) Parameter mapping (internal → Replicate model)
@@ -115,7 +100,7 @@ If input1Path/2Path are not already set, store uploads in private/…/inputs.
 
 Create signed URLs (60–300s) for Replicate.
 
-Prompt: build using mode template + AU context + presets + user prompt.
+Prompt: build using Prompt Engine v2 (generalized templates + seeds + negatives + optional user text).
 
 Replicate:
 
@@ -222,7 +207,7 @@ Submit path retries transient 429/5xx from Replicate up to 3 times (50ms, 200ms,
 10) Defaults & presets (source of truth)
 Modes order: ['redesign','staging','compose','imagine'] (config).
 
-Room Types & Styles: AU‑oriented lists from config; can be extended without code changes.
+Room Types & Styles: neutral lists from config; can be extended without code changes.
 
 Note: advanced generation knobs (aspect ratio, quality, variants) are not used by the current provider and are hidden in the UI.
 
@@ -255,7 +240,7 @@ Metrics (later): counts per mode, median processing time.
 - All routes return normalized JSON and use helpers in libs/api-utils/*
 
 14) Acceptance checklist (engine)
-✅ Redesign/Staging/Compose/Imagine produce expected outputs with AU styles.
+✅ Redesign/Staging/Compose/Imagine produce expected outputs with generalized prompts.
 
 ✅ Single in‑flight rule enforced; clear user feedback.
 
