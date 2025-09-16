@@ -129,11 +129,6 @@ export function Hero() {
                         className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                         sizes="(max-width: 640px) 92vw, (max-width: 1024px) 60vw, 520px"
                         priority={index === 0}
-                        fallback={
-                          <div className="absolute inset-0 grid place-items-center bg-muted">
-                            <span className="text-xs text-muted-foreground">Image coming soon</span>
-                          </div>
-                        }
                     />
                     </div>
                     <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" aria-hidden />

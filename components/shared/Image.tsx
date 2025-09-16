@@ -23,27 +23,50 @@ export function AppImage({
 }: AppImageProps) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  // If priority is passed, Next.js requires not to set loading="lazy"
-  // Extract it from rest so we can conditionally omit the loading prop.
-  const { priority, ...imgRest } = rest as { priority?: boolean } & Record<string, any>;
+  // Extract props we need to intercept so we can keep behaviour consistent with next/image
+  const {
+    priority,
+    onError: onErrorProp,
+    onLoad: onLoadProp,
+    onLoadingComplete,
+    src,
+    ...imgRest
+  } = rest as {
+    priority?: boolean;
+    onError?: ImageProps["onError"];
+    onLoad?: ImageProps["onLoad"];
+    onLoadingComplete?: ImageProps["onLoadingComplete"];
+    src: ImageProps["src"];
+  } & Record<string, any>;
 
-  // Safety: avoid infinite spinners if a remote host is blocked or very slow
-  React.useEffect(() => {
-    if (loaded || errored) return;
-    const t = window.setTimeout(() => {
-      if (!loaded && !errored) {
-        setErrored(true);
-      }
-    }, 6000);
-    return () => window.clearTimeout(t);
-  }, [loaded, errored]);
+  const handleLoadComplete = (img: HTMLImageElement) => {
+    setLoaded(true);
+    onLoadingComplete?.(img);
+  };
+
+  const handleError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    setErrored(true);
+    setLoaded(true);
+    // Surface actionable information without masking issues.
+    console.error("[AppImage] Failed to load image", { src });
+    onErrorProp?.(event);
+  };
 
   const common: any = {
     alt,
-    className: cn("object-cover transition-all duration-300", !loaded && "blur-sm", className),
-    onLoad: () => setLoaded(true),
-    onError: () => { setErrored(true); setLoaded(true); },
+    className: cn(
+      "object-cover transition-all duration-300",
+      !loaded && !errored && "blur-sm",
+      className,
+    ),
+    onLoad: (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+      setLoaded(true);
+      onLoadProp?.(event);
+    },
+    onLoadingComplete: handleLoadComplete,
+    onError: handleError,
     sizes,
+    src,
     ...imgRest,
   };
 
@@ -64,7 +87,7 @@ export function AppImage({
       )}
 
       {showLoader && !loaded && !errored && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/40 backdrop-blur-sm">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       )}

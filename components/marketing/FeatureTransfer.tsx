@@ -96,7 +96,6 @@ export function FeatureTransfer() {
                       fill
                       className="object-cover object-center"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      fallback={<div className="absolute inset-0 grid place-items-center bg-muted"><span className="text-xs text-muted-foreground">Image preview</span></div>}
                     />
                   </div>
                   

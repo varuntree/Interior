@@ -29,7 +29,6 @@ export default function FeatureStaging() {
               fill
               className="object-cover object-center"
               sizes="(max-width: 768px) 100vw, 50vw"
-              fallback={<div className="absolute inset-0 grid place-items-center bg-muted"><span className="text-xs text-muted-foreground">f31</span></div>}
             />
             <figcaption className="pointer-events-none absolute left-3 top-3">
               <span className="rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium shadow ring-1 ring-border">Before</span>
@@ -44,7 +43,6 @@ export default function FeatureStaging() {
               fill
               className="object-cover object-center"
               sizes="(max-width: 768px) 100vw, 50vw"
-              fallback={<div className="absolute inset-0 grid place-items-center bg-muted"><span className="text-xs text-muted-foreground">f32</span></div>}
             />
             <figcaption className="pointer-events-none absolute left-3 top-3">
               <span className="rounded-full bg-background/85 px-2.5 py-1 text-xs font-medium shadow ring-1 ring-border">Staged</span>

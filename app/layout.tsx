@@ -4,6 +4,8 @@ import { getSEOTags } from "@/libs/seo";
 import ClientLayout from "@/components/LayoutClient";
 import config from "@/config";
 import { Open_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 // Typography is driven via CSS tokens in globals.css (--font-sans, etc.).
@@ -27,6 +29,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 			<body className="font-sans">
 				{/* ClientLayout contains the client wrappers (theme, toasts, loading bar) */}
 				<ClientLayout>{children}</ClientLayout>
+				<Analytics />
+				<SpeedInsights />
 			</body>
 		</html>
 	);

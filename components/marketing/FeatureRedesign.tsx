@@ -126,11 +126,6 @@ export function FeatureRedesign() {
                 fill
                 className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 42vw, 480px"
-                fallback={
-                  <div className="absolute inset-0 grid place-items-center bg-muted">
-                    <span className="text-xs text-muted-foreground">F11 preview</span>
-                  </div>
-                }
               />
             </div>
 
@@ -155,11 +150,6 @@ export function FeatureRedesign() {
                 fill
                 className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 42vw, 480px"
-                fallback={
-                  <div className="absolute inset-0 grid place-items-center bg-muted">
-                    <span className="text-xs text-muted-foreground">F12 preview</span>
-                  </div>
-                }
               />
             </div>
             <div
@@ -172,11 +162,6 @@ export function FeatureRedesign() {
                 fill
                 className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 42vw, 480px"
-                fallback={
-                  <div className="absolute inset-0 grid place-items-center bg-muted">
-                    <span className="text-xs text-muted-foreground">F13 preview</span>
-                  </div>
-                }
               />
             </div>
           </div>
