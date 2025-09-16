@@ -6,11 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingStates } from "@/components/dashboard/LoadingStates";
-import { BillingSection, UsageDisplay } from "@/components/settings";
-import { User, HelpCircle, Mail, CheckCircle, Clock } from "lucide-react";
+import { User, HelpCircle, Mail, CheckCircle, Clock, Loader2, ExternalLink } from "lucide-react";
 import { apiFetch } from "@/libs/api/http";
 import config from "@/config";
-import { UsageSummaryPill } from "@/components/settings/UsageSummaryPill";
 
 interface UserProfile {
   id: string;
@@ -23,6 +21,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -64,6 +63,34 @@ export default function SettingsPage() {
     }
   };
 
+  const handleManageBilling = async () => {
+    try {
+      setPortalLoading(true);
+
+      const response = await fetch('/api/v1/stripe/create-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create billing portal session');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to access billing portal');
+      }
+
+      window.location.href = result.data.url;
+    } catch (err: any) {
+      console.error('Billing portal error:', err);
+      alert('Failed to open billing portal. Please try again.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 p-6">
@@ -81,9 +108,7 @@ export default function SettingsPage() {
       <DashboardHeader 
         title="Settings" 
         subtitle="Manage your account, billing, and preferences"
-      >
-        <UsageSummaryPill />
-      </DashboardHeader>
+      />
 
       {/* Success Alert */}
       {showSuccessAlert && (
@@ -95,15 +120,30 @@ export default function SettingsPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Profile Section */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="h-5 w-5" />
-              <span>Profile</span>
-            </CardTitle>
-            <CardDescription>Your account information</CardDescription>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <User className="h-5 w-5" />
+                <span>Profile</span>
+              </CardTitle>
+              <CardDescription>Your account information</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={handleManageBilling}
+              disabled={portalLoading}
+            >
+              {portalLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4 mr-2" />
+              )}
+              Manage Billing
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {error ? (
@@ -141,12 +181,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Billing Section */}
-        <BillingSection />
       </div>
-
-      {/* Usage Statistics */}
-      <UsageDisplay />
 
       {/* Support Section */}
       <Card>

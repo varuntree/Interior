@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Home, Layers, Palette, Sparkles, Wand2, UploadCloud, X, HelpCircle } from "lucide-react";
+import { Home, Layers, Palette, Sparkles, Wand2, UploadCloud, X, HelpCircle, Download } from "lucide-react";
+import { appendDownloadParam, sanitizeFilename, triggerDownload } from "@/libs/url/download";
 // Results grid is intentionally not used on this screen anymore.
 // The right preview panel now handles display of results and loading overlay.
 import { GenerationOverlay } from "./GenerationOverlay";
@@ -307,7 +308,7 @@ function ResultPreviewPanel({
   mode,
   baseUrl,
 }: {
-  results: { url: string }[] | null;
+  results: { url: string; renderId?: string; index?: number }[] | null;
   hasResult: boolean;
   isGenerating: boolean;
   status: 'idle' | 'uploading' | 'creating' | 'processing' | 'succeeded' | 'failed';
@@ -315,8 +316,19 @@ function ResultPreviewPanel({
   baseUrl: string | null;
 }) {
   const cover = results && results.length > 0 ? results[0]?.url : null;
+  const downloadTarget = results && results.length > 0 ? results[0] : null;
   const showBlurBase = isGenerating && mode !== 'imagine' && !!baseUrl;
   const isCompact = mode === 'imagine';
+
+  const handleDownload = () => {
+    if (!downloadTarget || !downloadTarget.url) return;
+    const baseName = downloadTarget.renderId
+      ? `interior-design-${downloadTarget.renderId}-${downloadTarget.index ?? 0}`
+      : `interior-design-${Date.now()}`;
+    const filename = sanitizeFilename(baseName);
+    const href = appendDownloadParam(downloadTarget.url, filename);
+    triggerDownload(href);
+  };
 
   return (
     <div className="relative rounded-md border bg-background overflow-hidden min-h-[22vh] grid place-items-center">
@@ -348,6 +360,30 @@ function ResultPreviewPanel({
       {cover && (
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 bg-black/35 text-primary-foreground px-2 py-1 text-xs">
           Latest result
+        </div>
+      )}
+
+      {/* Immediate download control */}
+      {cover && !isGenerating && (
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="hidden md:inline-flex h-9 w-9 p-0 rounded-full bg-popover/80 text-popover-foreground backdrop-blur border border-border hover:bg-popover"
+            onClick={handleDownload}
+            aria-label="Download result"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="md:hidden h-12 w-12 rounded-full bg-popover/90 text-popover-foreground backdrop-blur border border-border shadow-sm"
+            onClick={handleDownload}
+            aria-label="Download result"
+          >
+            <Download className="h-5 w-5" />
+          </Button>
         </div>
       )}
 

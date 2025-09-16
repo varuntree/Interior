@@ -74,7 +74,7 @@ export function Hero() {
           </span>
           {" "}—get <span className="font-serif italic">interior design</span> that <span className="font-serif italic">feels like you</span>.
         </h1>
-        <p className="mt-2 max-w-2xl text-lg text-muted-foreground/80 md:text-xl">
+        <p className="mt-3 max-w-3xl text-xl font-medium leading-relaxed text-foreground/90 md:text-2xl">
           Redesign your
           {" "}
           <span className="relative inline-block align-baseline">
