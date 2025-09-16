@@ -1,7 +1,6 @@
 "use client";
 
 import Autoplay from "embla-carousel-autoplay";
-import { AnimatePresence, motion } from "framer-motion";
 import React from "react";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 import Link from "next/link";
@@ -53,7 +52,11 @@ export function Hero() {
     <section className="relative overflow-hidden bg-background pt-12 pb-14 md:pt-16 md:pb-16">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[-20%] mx-auto h-[320px] max-w-6xl rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-transparent blur-3xl"
+        className="pointer-events-none absolute inset-x-0 bottom-[-18%] h-[620px]"
+        style={{
+          background:
+            "linear-gradient(0deg, hsl(var(--primary) / 0.42) 0%, hsl(var(--primary) / 0.3) 45%, hsl(var(--primary) / 0.14) 78%, transparent 100%)",
+        }}
       />
       <div className="container relative mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 px-4 text-center md:px-6 lg:px-8">
         <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground md:px-9 md:text-6xl">
@@ -86,23 +89,7 @@ export function Hero() {
           in less than 30 seconds.
         </p>
 
-        {/* Dynamic text chip that changes with the current image (placeholder content) */}
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={`chip-${current}`}
-            initial={{ opacity: 0, y: 6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.96 }}
-            transition={{ duration: 0.25 }}
-            className="mt-2 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground"
-            aria-live="polite"
-          >
-            <span className="inline-block h-2 w-2 rounded-full bg-primary" aria-hidden />
-            <span>Style preview {current + 1}</span>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* CTAs above the animated label to avoid overlap */}
+        {/* Primary calls-to-action */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg" className="w-full shadow-md shadow-primary/10 sm:w-auto">
             <Link href={isAuthed ? "/dashboard" : "/signin"}>
@@ -115,11 +102,11 @@ export function Hero() {
             size="lg"
             className="w-full border-primary/30 bg-background/70 backdrop-blur transition hover:border-primary/60 hover:bg-primary/5 sm:w-auto"
           >
-            <Link href="/community">See examples</Link>
+            <Link href="/#pricing">View pricing</Link>
           </Button>
         </div>
 
-          <div className="relative mt-4 w-full max-w-5xl">
+        <div className="relative mt-4 w-full max-w-5xl">
           <Carousel
             className="max-w-5xl"
             opts={{ loop: true, align: "start", containScroll: "trimSnaps" }}

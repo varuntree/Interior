@@ -16,7 +16,7 @@ export function CTASection() {
             <Link href="/signin">Get started</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
-            <Link href="/community">Explore community</Link>
+            <Link href="/blog">Read the blog</Link>
           </Button>
         </div>
       </div>
@@ -25,4 +25,3 @@ export function CTASection() {
 }
 
 export default CTASection;
-
