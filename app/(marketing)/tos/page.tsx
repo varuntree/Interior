@@ -2,28 +2,17 @@ import Link from "next/link";
 import { getSEOTags } from "@/libs/seo";
 import config from "@/config";
 
-// CHATGPT PROMPT TO GENERATE YOUR TERMS & SERVICES — replace with your own data 👇
-
-// 1. Go to https://chat.openai.com/
-// 2. Copy paste bellow
-// 3. Replace the data with your own (if needed)
-// 4. Paste the answer from ChatGPT directly in the <pre> tag below
-
-// You are an excellent lawyer.
-
-// I need your help to write a simple Terms & Services for my website. Here is some context:
-// - Website: https://shipfa.st
-// - Name: ShipFast
-// - Contact information: marc@shipfa.st
-// - Description: A JavaScript code boilerplate to help entrepreneurs launch their startups faster
-// - Ownership: when buying a package, users can download code to create apps. They own the code but they do not have the right to resell it. They can ask for a full refund within 7 day after the purchase.
-// - User data collected: name, email and payment information
-// - Non-personal data collection: web cookies
-// - Link to privacy-policy: https://shipfa.st/privacy-policy
-// - Governing Law: France
-// - Updates to the Terms: users will be updated by email
-
-// Please write a simple Terms & Services for my site. Add the current date. Do not add or explain your reasoning. Answer:
+// NOTE: To regenerate Terms & Conditions, adjust the prompt below with QuickDesignHome details.
+// - Website: https://quickdesignhome.com
+// - Name: QuickDesignHome
+// - Contact information: support@quickdesignhome.com
+// - Description: AI-powered interior design generator for Australian-inspired spaces
+// - Ownership: subscribers may download generated images for personal/commercial use but may not resell the service itself
+// - User data collected: email, payment information, uploaded room photos, prompts
+// - Non-personal data collection: analytics and cookies for performance and security
+// - Link to privacy policy: https://quickdesignhome.com/privacy-policy
+// - Governing Law: New South Wales, Australia
+// - Updates to the Terms: notified via email or in-app announcement
 
 export const metadata = getSEOTags({
   title: `Terms and Conditions | ${config.appName}`,

@@ -1,4 +1,4 @@
-# Handbook — ShipFast Base Template (Single Source of Truth)
+# Handbook — QuickDesignHome Engineering Guide (Single Source of Truth)
 
 Note: For a summary of the Phase 11 documentation refresh aligning specs with current implementation, see `ai_docs/docs/phase11-doc-refresh.md`.
 

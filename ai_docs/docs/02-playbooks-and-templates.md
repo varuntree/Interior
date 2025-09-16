@@ -1,4 +1,4 @@
-# Playbooks & Templates — ShipFast
+# Playbooks & Templates — QuickDesignHome
 
 This file contains step‑by‑step recipes and **copy‑paste templates**. Keep edits scoped and explicit.
 

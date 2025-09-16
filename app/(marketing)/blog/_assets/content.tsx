@@ -87,7 +87,7 @@ export const authors: authorType[] = [
     name: "QuickDesignHome Team",
     job: "Interior AI & Product",
     description:
-      "We build QuickDesignHome — practical guides on AI virtual staging, AU-inspired styling, and how to ship fast.",
+      "We build QuickDesignHome — practical guides on AI virtual staging, AU-inspired styling, and turning design ideas into reality quickly.",
     avatar: "/icon.png",
     socials: [],
   },
