@@ -15,7 +15,7 @@ export function DashboardHeader({
   className 
 }: DashboardHeaderProps) {
   return (
-    <div className={cn("border-b bg-background px-6 py-4", className)}>
+    <div className={cn("border-b bg-background px-4 py-3 sm:px-6", className)}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-foreground">{title}</h1>

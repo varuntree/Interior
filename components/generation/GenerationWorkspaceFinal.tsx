@@ -56,39 +56,44 @@ export function GenerationWorkspaceFinal() {
   return (
     <div className="relative">
       {/* Top: glass segmented modes with labels kept on mobile */}
-      <div className="px-4 sm:px-6 py-3 sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="relative">
-          <div className="mx-auto w-fit rounded-full border bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/40 p-1 grid grid-cols-4 gap-1">
-            {["redesign","staging","compose","imagine"].map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m as any)}
-                className={[
-                  "h-9 px-3 rounded-full text-sm flex items-center gap-2 transition-colors",
-                  state.mode === m ? "bg-primary text-primary-foreground" : "hover:bg-accent",
-                ].join(" ")}
-                aria-pressed={state.mode === m}
-              >
-                {m === "compose" ? (
-                  <Layers className="h-4 w-4" />
-                ) : m === "imagine" ? (
-                  <Sparkles className="h-4 w-4" />
-                ) : m === "redesign" ? (
-                  <Wand2 className="h-4 w-4" />
-                ) : (
-                  <Home className="h-4 w-4" />
-                )}
-              <span className="capitalize">{m}</span>
-              </button>
-            ))}
+      <div className="px-4 sm:px-6 py-2 sticky top-0 z-10 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/65">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full max-w-[28rem]">
+            <div className="grid grid-cols-2 gap-1 rounded-3xl border bg-background/60 p-1 backdrop-blur supports-[backdrop-filter]:bg-background/40 sm:grid-cols-4">
+              {["redesign","staging","compose","imagine"].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m as any)}
+                  className={[
+                    "flex h-10 items-center justify-center gap-2 rounded-full px-3 text-sm transition-colors",
+                    state.mode === m ? "bg-primary text-primary-foreground" : "hover:bg-accent",
+                  ].join(" ")}
+                  aria-pressed={state.mode === m}
+                >
+                  {m === "compose" ? (
+                    <Layers className="h-4 w-4" />
+                  ) : m === "imagine" ? (
+                    <Sparkles className="h-4 w-4" />
+                  ) : m === "redesign" ? (
+                    <Wand2 className="h-4 w-4" />
+                  ) : (
+                    <Home className="h-4 w-4" />
+                  )}
+                  <span className="capitalize">{m}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          {/* On-demand mode help: small glass help button at top-right */}
-          <div className="absolute right-0 top-1">
+
+          <div className="flex w-full items-center justify-end sm:w-auto">
             <Dialog>
               <TooltipProvider>
                 <Tooltip>
                   <DialogTrigger asChild>
-                    <button aria-label="Mode guide" className="inline-flex items-center justify-center h-8 w-8 rounded-full border bg-background/60 backdrop-blur hover:bg-accent">
+                    <button
+                      aria-label="Mode guide"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-background/70 backdrop-blur transition-colors hover:bg-accent"
+                    >
                       <HelpCircle className="h-4 w-4" />
                     </button>
                   </DialogTrigger>
@@ -112,7 +117,7 @@ export function GenerationWorkspaceFinal() {
       </div>
 
       {/* Middle split: smaller to fit bottom bars */}
-      <div className="p-4 sm:p-6 pb-44 grid gap-4">
+      <div className="grid gap-5 px-4 pb-[17rem] pt-4 sm:px-6 sm:pb-[14rem]">
         <section
           className={[
             "rounded-lg border bg-card p-4 grid gap-3",
@@ -145,9 +150,9 @@ export function GenerationWorkspaceFinal() {
       </div>
 
       {/* Presets bar above dock with labels */}
-      <div className="fixed left-0 right-0 md:left-64 bottom-28 z-30">
-        <div className="mx-auto max-w-3xl rounded-xl border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 px-4 py-2 shadow-sm">
-          <div className="grid grid-cols-2 gap-3 text-xs">
+      <div className="fixed inset-x-0 bottom-28 z-30 px-4 sm:px-6 md:left-64 md:right-8 md:px-0">
+        <div className="mx-auto w-full max-w-3xl rounded-xl border bg-background/70 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/50">
+          <div className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:text-sm">
             <div className="grid gap-1">
               <span className="text-muted-foreground">Room Type</span>
               <SelectPopover
@@ -171,45 +176,54 @@ export function GenerationWorkspaceFinal() {
       </div>
 
       {/* Bottom dock: uploader pills + prompt + generate */}
-      <div className="fixed left-0 right-0 md:left-64 bottom-4 z-40">
-        <div className="mx-auto max-w-3xl rounded-2xl border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md px-3 py-2">
-          <div className="flex items-center gap-2">
-            <TooltipProvider>
-              {showInput1 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Pill icon={<Home className="h-4 w-4" />} label="Base room" kind="base" onPick={setInput1File} />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    Upload the photo of your room. We keep the architecture (walls, windows, layout).
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              {showInput2 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Pill icon={<Palette className="h-4 w-4" />} label="Reference (style/object)" kind="reference" onPick={setInput2File} />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    Add a style or object reference. We transfer palette/materials or a specific object.
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </TooltipProvider>
-            <input
-              className="flex-1 h-10 bg-transparent outline-none text-sm"
-              placeholder={"Prompt (optional)…"}
-              value={state.prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
-            <Button size="sm" disabled={!canSubmit || isSubmitting} onClick={onGenerate}>
-              {isSubmitting ? (
-                <Wand2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              {isSubmitting ? "Starting…" : state.isGenerating ? "Generating…" : "Generate"}
-            </Button>
+      <div className="fixed inset-x-0 bottom-4 z-40 px-4 pb-[env(safe-area-inset-bottom)] sm:px-6 md:left-64 md:right-6 md:px-0">
+        <div className="mx-auto w-full max-w-3xl rounded-2xl border bg-background/75 px-3 py-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/55">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto sm:overflow-visible sm:pb-0">
+              <TooltipProvider>
+                {showInput1 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Pill icon={<Home className="h-4 w-4" />} label="Base room" kind="base" onPick={setInput1File} />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      Upload the photo of your room. We keep the architecture (walls, windows, layout).
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {showInput2 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Pill icon={<Palette className="h-4 w-4" />} label="Reference (style/object)" kind="reference" onPick={setInput2File} />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      Add a style or object reference. We transfer palette/materials or a specific object.
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </TooltipProvider>
+            </div>
+            <div className="flex w-full items-center gap-2 sm:flex-1">
+              <input
+                className="h-11 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
+                placeholder={"Prompt (optional)…"}
+                value={state.prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+              <Button
+                size="sm"
+                className="shrink-0 whitespace-nowrap"
+                disabled={!canSubmit || isSubmitting}
+                onClick={onGenerate}
+              >
+                {isSubmitting ? (
+                  <Wand2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                {isSubmitting ? "Starting…" : state.isGenerating ? "Generating…" : "Generate"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

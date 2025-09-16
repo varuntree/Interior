@@ -37,7 +37,7 @@ export default function DashboardCreatePage() {
 
   return (
     <GenerationProvider initialValues={prefillData}>
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 px-4 pb-6 pt-2 sm:space-y-6 sm:px-6 sm:pt-3">
         <DashboardHeader
           title="Create Design"
           subtitle="Transform your space with AI-powered interior design"
