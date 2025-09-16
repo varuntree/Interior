@@ -136,10 +136,8 @@ export default function PricingSection() {
                   </CardContent>
                   <CardFooter className="mt-auto px-6 pb-6">
                     <Button
-                      className={[
-                        "w-full rounded-full text-base lg:text-lg",
-                        featured ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
-                      ].join(" ")}
+                      variant={featured ? "default" : "secondary"}
+                      className="w-full rounded-full text-base lg:text-lg"
                       onClick={() => startCheckout(plan.priceId)}
                       disabled={loading === plan.priceId}
                     >
