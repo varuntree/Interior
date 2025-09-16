@@ -39,25 +39,38 @@ This repository uses the Next.js App Router metadata system for a fast, maintain
   - `robots: noindex, nofollow` for now; remove when content is robust and include in sitemap.
 
 ## Blog System
-- Content source: `app/(marketing)/blog/_assets/content.tsx`.
-  - Authors: single `QuickDesignHome Team` entry.
-  - Categories: `Features`, `Tutorials`.
-  - Articles: one authoritative guide — `ai-virtual-staging-guide`.
-  - OG image requirements: 1200×630, referenced by `image.urlRelative` (currently reusing `/blog/introducing-supabase/header.png`).
+- Content lives in `app/(marketing)/blog/_assets/content.tsx`.
+  - Authors: currently a single `QuickDesignHome Team` profile (extend as we add specialists).
+  - Categories: `Features`, `How Tos & Tutorials`, and `Australian Styles` (used for clustering AU-focused expertise).
+  - Articles (September 2025):
+    - `ai-virtual-staging-guide` (pillar, with FAQ schema and rich media gallery).
+    - `how-to-photograph-rooms-for-ai-virtual-staging` (supporting shoot guide).
+  - Each article supplies `faq?: FAQItem[]`; the page route injects `Article`, `BreadcrumbList`, and conditional `FAQPage` JSON-LD.
 - Rendering:
-  - Index: `app/(marketing)/blog/page.tsx` with updated copy.
-  - Article: `app/(marketing)/blog/[articleId]/page.tsx`:
-    - `generateMetadata()` sets canonical and OG images.
-    - Injects JSON‑LD `Article` schema.
-  - Author/category pages compute metadata dynamically.
+  - Index: `app/(marketing)/blog/page.tsx` (sorts by `publishedAt`, surfaces up to six latest posts plus category tiles).
+  - Article: `app/(marketing)/blog/[articleId]/page.tsx` (people-first layout, related links, structured data bundle, canonical + OG).
+  - Author/category pages continue to compute metadata dynamically based on category definitions.
 
 ### Adding a New Article
-1) Add an OG image under `public/blog/<slug>/header.png` (1200×630, optimized).
-2) In `content.tsx`:
-   - Add an `article` entry with fields: `slug`, `title`, `description`, `categories`, `author`, `publishedAt`, `image` (src import + `urlRelative`), and `content` JSX.
-3) Build and run:
-   - `npm run build` → ensure `/blog/<slug>` appears in `/sitemap.xml`.
-   - Validate OG/Twitter previews and JSON‑LD in Google’s Rich Results test.
+1. Media
+   - Add a hero asset at `public/blog/<slug>/header.(png|webp)` sized 1200×630 (≤300 KB). For galleries, import static assets via `next/image` to gain automatic blur placeholders.
+2. Content entry
+   - In `app/(marketing)/blog/_assets/content.tsx` add an object with `slug`, `title`, `description`, `categories`, `author`, `publishedAt`, `image`, and JSX `content`.
+   - Optional: include a `faq` array (each `{ question, answer }`), which automatically emits FAQ schema.
+3. Review
+   - `npm run lint && npm run typecheck`.
+   - Validate structured data in Google Rich Results tester.
+   - Confirm `/sitemap.xml` now lists the article (Next.js handles this automatically off the content array).
+4. Publish hygiene
+   - Update internal links (pillar ↔ support) for topical authority.
+   - Refresh publish dates in article copy if content is revised.
+
+### Writing & layout guidelines (2025 Helpful Content alignment)
+- **People-first detail**: weave real workflows, prompts, and AU-focused examples to demonstrate hands-on experience (E in E‑E‑A‑T).
+- **Avoid over-optimisation**: keep language natural, skip thin listicles, and consolidate duplicate coverage—Google’s 2025 updates target generic or purely AI-spun content.
+- **Structured data + architecture**: Article + Breadcrumb + FAQ schema and clear internal linking help crawlers understand topical depth. Keep content clustered and ensure mobile-friendly, fast pages.
+- **Freshness & audits**: schedule quarterly reviews to update imagery, prompts, and stats so content stays accurate; stale assets drag engagement metrics.
+- **UX polish**: maintain clean typography, accessible colour contrast, responsive image sizes via `next/image`, and compress assets (<300 KB) to protect LCP.
 
 ## Images & LCP
 - Use `next/image` and mark only the first above‑the‑fold hero image as `priority`.
@@ -82,4 +95,3 @@ This repository uses the Next.js App Router metadata system for a fast, maintain
 ## Notes
 - Default locale is `en_US` for broad English targeting. Australian content remains first‑class in copy and presets.
 - Keep SEO logic minimal and centralized; new pages should export `metadata`/`generateMetadata` and set a canonical.
-

@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
       const rtPlan = runtimeConfig.plans[priceId as keyof typeof runtimeConfig.plans];
       if (cfgPlan && rtPlan) {
         // Compute URLs server-side
-        const successUrl = new URL('/dashboard/settings?success=true', baseUrl).toString();
+        const successUrl = new URL('/dashboard/settings?success=true', origin).toString();
         // When priceId present, assume pricing flow → cancel to marketing pricing section
-        const cancelUrl = new URL('/#pricing', baseUrl).toString();
+        const cancelUrl = new URL('/#pricing', origin).toString();
         const result = await startCheckoutService(supabase, {
           userId: user.id,
           priceId,
@@ -54,11 +54,12 @@ export async function GET(req: NextRequest) {
     // Heuristic for Stripe mode/customer mismatch to aid debugging in future
     const isModeMismatch = /similar object exists in test mode/i.test(msg) || /No such customer/i.test(msg);
     const errCode = isModeMismatch ? 'mode_mismatch' : 'checkout_failed';
-    const redirectUrl = new URL('/#pricing', baseUrl);
+    const redirectUrl = new URL('/#pricing', origin);
     redirectUrl.searchParams.set('billing_error', errCode);
     return NextResponse.redirect(redirectUrl.toString());
   }
 
   // Default: redirect to dashboard
-  return NextResponse.redirect(baseUrl + config.auth.callbackUrl);
+  const dashboardUrl = new URL(config.auth.callbackUrl, origin).toString();
+  return NextResponse.redirect(dashboardUrl);
 }

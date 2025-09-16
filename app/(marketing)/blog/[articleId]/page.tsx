@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Script from "next/script";
+import { notFound } from "next/navigation";
 import { articles } from "../_assets/content";
 import BadgeCategory from "../_assets/components/BadgeCategory";
 import Avatar from "../_assets/components/Avatar";
@@ -11,7 +12,10 @@ export async function generateMetadata({
 }: {
   params: { articleId: string };
 }) {
-  const article = articles.find((article) => article.slug === params.articleId);
+  const article = articles.find((entry) => entry.slug === params.articleId);
+  if (!article) {
+    return {};
+  }
 
   return getSEOTags({
     title: article.title,
@@ -26,11 +30,10 @@ export async function generateMetadata({
           {
             url: article.image.urlRelative,
             width: 1200,
-            height: 660,
+            height: 630,
+            alt: article.image.alt,
           },
         ],
-        locale: "en_US",
-        type: "website",
       },
     },
   });
@@ -41,13 +44,17 @@ export default async function Article({
 }: {
   params: { articleId: string };
 }) {
-  const article = articles.find((article) => article.slug === params.articleId);
+  const article = articles.find((entry) => entry.slug === params.articleId);
+  if (!article) {
+    notFound();
+  }
+
   const articlesRelated = articles
     .filter(
-      (a) =>
-        a.slug !== params.articleId &&
-        a.categories.some((c) =>
-          article.categories.map((c) => c.slug).includes(c.slug)
+      (entry) =>
+        entry.slug !== params.articleId &&
+        entry.categories.some((c) =>
+          article.categories.map((category) => category.slug).includes(c.slug)
         )
     )
     .sort(
@@ -56,9 +63,23 @@ export default async function Article({
     )
     .slice(0, 3);
 
+  const breadcrumbItems = [
+    {
+      name: "Home",
+      item: `https://${config.domainName}/`,
+    },
+    {
+      name: "Blog",
+      item: `https://${config.domainName}/blog`,
+    },
+    {
+      name: article.title,
+      item: `https://${config.domainName}/blog/${article.slug}`,
+    },
+  ];
+
   return (
     <>
-      {/* SCHEMA JSON-LD MARKUP FOR GOOGLE */}
       <Script
         type="application/ld+json"
         id={`json-ld-article-${article.slug}`}
@@ -80,15 +101,60 @@ export default async function Article({
               "@type": "Person",
               name: article.author.name,
             },
+            publisher: {
+              "@type": "Organization",
+              name: config.appName,
+              logo: {
+                "@type": "ImageObject",
+                url: `https://${config.domainName}/icon.png`,
+              },
+            },
           }),
         }}
       />
 
-      {/* GO BACK LINK */}
+      <Script
+        type="application/ld+json"
+        id={`json-ld-breadcrumb-${article.slug}`}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: breadcrumbItems.map((crumb, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              name: crumb.name,
+              item: crumb.item,
+            })),
+          }),
+        }}
+      />
+
+      {article.faq && (
+        <Script
+          type="application/ld+json"
+          id={`json-ld-faq-${article.slug}`}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: article.faq.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
+
       <div>
         <Link
           href="/blog"
-          className="link !no-underline text-base-content/80 hover:text-base-content inline-flex items-center gap-1"
+          className="link !no-underline text-foreground/70 hover:text-foreground inline-flex items-center gap-1"
           title="Back to Blog"
         >
           <svg
@@ -108,9 +174,8 @@ export default async function Article({
       </div>
 
       <article>
-        {/* HEADER WITH CATEGORIES AND DATE AND TITLE */}
         <section className="my-12 md:my-20 max-w-[800px]">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-6 flex-wrap">
             {article.categories.map((category) => (
               <BadgeCategory
                 category={category}
@@ -118,8 +183,8 @@ export default async function Article({
                 extraStyle="!badge-lg"
               />
             ))}
-            <span className="text-base-content/80" itemProp="datePublished">
-              {new Date(article.publishedAt).toLocaleDateString("en-US", {
+            <span className="text-foreground/70" itemProp="datePublished">
+              {new Date(article.publishedAt).toLocaleDateString("en-AU", {
                 month: "long",
                 day: "numeric",
                 year: "numeric",
@@ -131,39 +196,36 @@ export default async function Article({
             {article.title}
           </h1>
 
-          <p className="text-base-content/80 md:text-lg max-w-[700px]">
+          <p className="text-foreground/80 md:text-lg max-w-[700px]">
             {article.description}
           </p>
         </section>
 
         <div className="flex flex-col md:flex-row">
-          {/* SIDEBAR WITH AUTHORS AND 3 RELATED ARTICLES */}
-          <section className="max-md:pb-4 md:pl-12 max-md:border-b md:border-l md:order-last md:w-72 shrink-0 border-base-content/10">
-            <p className="text-base-content/80 text-sm mb-2 md:mb-3">
-              Posted by
-            </p>
+          <section className="max-md:pb-4 md:pl-12 max-md:border-b md:border-l md:order-last md:w-72 shrink-0 border-border/20">
+            <p className="text-foreground/70 text-sm mb-2 md:mb-3">Posted by</p>
             <Avatar article={article} />
 
             {articlesRelated.length > 0 && (
               <div className="hidden md:block mt-12">
-                <p className=" text-base-content/80 text-sm  mb-2 md:mb-3">
+                <p className="text-foreground/70 text-sm mb-2 md:mb-3">
                   Related reading
                 </p>
-                <div className="space-y-2 md:space-y-5">
-                  {articlesRelated.map((article) => (
-                    <div className="" key={article.slug}>
+                <div className="space-y-3">
+                  {articlesRelated.map((entry) => (
+                    <div key={entry.slug}>
                       <p className="mb-0.5">
                         <Link
-                          href={`/blog/${article.slug}`}
+                          href={`/blog/${entry.slug}`}
                           className="link link-hover hover:link-primary font-medium"
-                          title={article.title}
+                          title={entry.title}
                           rel="bookmark"
                         >
-                          {article.title}
+                          {entry.title}
                         </Link>
                       </p>
-                      <p className="text-base-content/80 max-w-full text-sm">
-                        {article.description}
+                      <p className="text-foreground/70 text-sm">
+                        {entry.description}
                       </p>
                     </div>
                   ))}
@@ -172,9 +234,22 @@ export default async function Article({
             )}
           </section>
 
-          {/* ARTICLE CONTENT */}
           <section className="w-full max-md:pt-4 md:pr-20 space-y-12 md:space-y-20">
             {article.content}
+
+            {article.faq && (
+              <div className="space-y-6 rounded-3xl border border-border/40 bg-muted/20 p-8">
+                <h2 className="text-2xl font-semibold">Frequently asked questions</h2>
+                <div className="space-y-4">
+                  {article.faq.map((item) => (
+                    <div key={item.question}>
+                      <p className="font-medium text-foreground">{item.question}</p>
+                      <p className="text-foreground/80 leading-relaxed">{item.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </article>
