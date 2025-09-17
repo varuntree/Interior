@@ -71,6 +71,9 @@ Usage
 - GET `/api/v1/usage?includeHistory=&historyLimit=` — Usage summary and plan info. Auth required.
   - Response: `{ usage: { currentMonth: { used,debits,credits }, remaining, monthlyLimit, percentage }, plan: {...}, billingPeriod: { start,end,daysRemaining }, billing: { customerId, hasAccess, subscriptionStatus }, computed: { isNearLimit, canGenerate, daysUntilReset, averagePerDay }, history? }`
 
+Stripe helpers
+- GET `/api/v1/stripe/session?session_id=` — Checkout session summary (amount, currency, planType, eventId). Auth required and tied to the current user. Used by `/checkout/success` to fire the Meta Pixel `Purchase` event and display the confirmation card.
+
 Webhooks (Admin‑Only)
 - POST `/api/v1/webhooks/replicate` — Receives Replicate prediction updates. Verifies signature if configured. Uses admin Supabase client. Idempotent: on success creates render/variants and marks job succeeded; on failure marks job failed.
 - POST `/api/v1/webhooks/stripe` — Receives Stripe events; verifies via Stripe library; updates profiles/subscriptions using admin client.

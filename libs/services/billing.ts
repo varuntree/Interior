@@ -1,9 +1,11 @@
+import type Stripe from "stripe";
 import config from "@/config";
 import runtimeConfig from "@/libs/app-config/runtime";
 import { createCheckout, createCustomerPortal, findCheckoutSession } from "@/libs/stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getProfileById, getProfileByEmail, setBillingByUserId, setAccessByCustomerId, setBillingByCustomerId } from "@/libs/repositories/profiles";
+import { getProfileById, getProfileByEmail, setBillingByUserId, setBillingByCustomerId } from "@/libs/repositories/profiles";
 import { recordWebhookEventIfNew } from "@/libs/repositories/webhook_events";
+import { sendMetaPurchase } from "@/libs/services/external/metaConversions";
 
 export async function startCheckoutService(db: SupabaseClient, args: {
   userId: string;
@@ -11,6 +13,7 @@ export async function startCheckoutService(db: SupabaseClient, args: {
   mode: "payment" | "subscription";
   successUrl: string;
   cancelUrl: string;
+  metadata?: Record<string, string | undefined>;
 }) {
   const profile = await getProfileById(db, args.userId);
   const url = await createCheckout({
@@ -23,6 +26,7 @@ export async function startCheckoutService(db: SupabaseClient, args: {
       email: profile?.email ?? undefined,
       customerId: profile?.customer_id ?? undefined,
     },
+    metadata: args.metadata,
   });
   if (!url) throw new Error("Failed to create Stripe Checkout Session");
   return { url };
@@ -61,6 +65,64 @@ export interface UserBillingInfo {
   plan: PlanDetails
   nextBillingDate?: string
   subscriptionStatus?: string
+}
+
+export interface CheckoutSessionSummary {
+  amount: number
+  currency: string
+  planType: 'weekly' | 'monthly' | 'one_time' | 'unknown'
+  eventId: string
+  subscriptionId?: string | null
+  customerEmail?: string
+  customerId?: string | null
+  priceId?: string | null
+  tracking: {
+    fbp?: string
+    fbc?: string
+    ua?: string
+    ip?: string
+  }
+}
+
+export function inferPlanType(price?: Stripe.Price | null): CheckoutSessionSummary['planType'] {
+  const nickname = price?.nickname ?? ''
+  const recurringInterval = price?.recurring?.interval ?? ''
+  if (/week/i.test(nickname) || /week/i.test(recurringInterval)) return 'weekly'
+  if (/month/i.test(nickname) || /month/i.test(recurringInterval)) return 'monthly'
+  if (price?.type === 'one_time') return 'one_time'
+  return 'unknown'
+}
+
+export async function getCheckoutSessionSummary(sessionId: string): Promise<CheckoutSessionSummary | null> {
+  const session = await findCheckoutSession(sessionId)
+  if (!session) return null
+
+  const subscription = session.subscription as Stripe.Subscription | null
+  const lineItemPrice = session.line_items?.data?.[0]?.price as Stripe.Price | undefined
+  const subscriptionPrice = subscription?.items?.data?.[0]?.price as Stripe.Price | undefined
+  const price = subscriptionPrice ?? lineItemPrice ?? null
+  const amountCents = price?.unit_amount ?? session.amount_total ?? 0
+  const currency = (price?.currency || session.currency || 'aud').toUpperCase()
+  const planType = inferPlanType(price)
+  const subscriptionId = subscription?.id ?? (typeof session.subscription === 'string' ? session.subscription : null)
+  const eventId = subscriptionId ? `sub_${subscriptionId}` : `cs_${session.id}`
+
+  return {
+    amount: amountCents / 100,
+    currency,
+    planType,
+    eventId,
+    subscriptionId,
+    customerEmail: session.customer_details?.email || undefined,
+    customerId: (session.customer as string) ?? null,
+    priceId: price?.id ?? null,
+    tracking: {
+      fbp: typeof session.metadata?.fbp === 'string' ? session.metadata?.fbp : undefined,
+      fbc: typeof session.metadata?.fbc === 'string' ? session.metadata?.fbc : undefined,
+      ua: typeof session.metadata?.ua === 'string' ? session.metadata?.ua : undefined,
+      ip: typeof session.metadata?.ip === 'string' ? session.metadata?.ip : undefined,
+    },
+  }
 }
 
 export function getAllAvailablePlans(): PlanDetails[] {
@@ -214,16 +276,19 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
   } catch (e) {
     // If de-dup check fails, proceed cautiously (better to process once than drop)
   }
+  const eventSourceUrlBase = (process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '')
+
   switch (event.type) {
     case "checkout.session.completed": {
-      const stripeObject = event.data.object;
-      const session = await findCheckoutSession(stripeObject.id);
-      const customerId = session?.customer as string | null;
-      const priceId = session?.line_items?.data?.[0]?.price?.id ?? null;
+      const stripeObject = event.data.object as Stripe.Checkout.Session;
+      const summary = await getCheckoutSessionSummary(stripeObject.id);
+      if (!summary) return;
+
+      const priceId = summary.priceId;
       const userId = stripeObject.client_reference_id as string | null;
-      const customerEmail = (session?.customer_details?.email ||
-                             stripeObject.customer_details?.email) as string | undefined;
-      const subscriptionId = (session?.subscription as string) || null;
+      const customerEmail = summary.customerEmail || stripeObject.customer_details?.email || undefined;
+      const subscriptionId = summary.subscriptionId || null;
+      const customerId = summary.customerId;
 
       // Validate plan from both config and runtime config
       const configPlan = config.stripe.plans.find((p) => p.priceId === priceId);
@@ -252,6 +317,25 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
         await setBillingByCustomerId(adminDb, {
           customerId: customerId || '',
           subscriptionId,
+        })
+      }
+
+      if (summary.amount > 0 && eventSourceUrlBase) {
+        await sendMetaPurchase({
+          eventId: summary.eventId,
+          value: summary.amount,
+          currency: summary.currency,
+          orderId: stripeObject.id,
+          planType: summary.planType,
+          eventSourceUrl: `${eventSourceUrlBase}/checkout/success`,
+          eventTime: stripeObject.created,
+          userData: {
+            email: customerEmail,
+            fbp: summary.tracking.fbp,
+            fbc: summary.tracking.fbc,
+            clientUserAgent: summary.tracking.ua,
+            clientIpAddress: summary.tracking.ip,
+          },
         })
       }
       break;
@@ -339,6 +423,49 @@ export async function handleStripeWebhookService(adminDb: SupabaseClient, event:
         customerId,
         hasAccess: false,
       });
+      break;
+    }
+
+    case "invoice.payment_succeeded": {
+      const stripeObject = event.data.object as Stripe.Invoice;
+      const price = stripeObject.lines.data[0]?.price as Stripe.Price | undefined;
+      const priceId = price?.id;
+      const customerId = stripeObject.customer as string;
+      const period = stripeObject.lines.data[0]?.period;
+      const cps = period?.start ? new Date(period.start * 1000).toISOString() : undefined;
+      const cpe = period?.end ? new Date(period.end * 1000).toISOString() : undefined;
+
+      if (priceId && runtimeConfig.plans[priceId]) {
+        await setBillingByCustomerId(adminDb, {
+          customerId,
+          priceId,
+          hasAccess: true,
+          currentPeriodStart: cps || null,
+          currentPeriodEnd: cpe || null,
+        })
+      } else {
+        await setBillingByCustomerId(adminDb, {
+          customerId,
+          hasAccess: true,
+          currentPeriodStart: cps || null,
+          currentPeriodEnd: cpe || null,
+        })
+      }
+
+      if (stripeObject.billing_reason !== 'subscription_create' && stripeObject.amount_paid && eventSourceUrlBase) {
+        await sendMetaPurchase({
+          eventId: `inv_${stripeObject.id}`,
+          value: (stripeObject.amount_paid ?? 0) / 100,
+          currency: (stripeObject.currency || 'AUD').toUpperCase(),
+          orderId: stripeObject.id,
+          planType: inferPlanType(price ?? null),
+          eventSourceUrl: `${eventSourceUrlBase}/checkout/success`,
+          eventTime: stripeObject.created,
+          userData: {
+            email: typeof stripeObject.customer_email === 'string' ? stripeObject.customer_email : undefined,
+          },
+        })
+      }
       break;
     }
 

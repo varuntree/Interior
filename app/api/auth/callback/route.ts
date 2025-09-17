@@ -35,15 +35,26 @@ export async function GET(req: NextRequest) {
       const rtPlan = runtimeConfig.plans[priceId as keyof typeof runtimeConfig.plans];
       if (cfgPlan && rtPlan) {
         // Compute URLs server-side
-        const successUrl = new URL('/dashboard/settings?success=true', origin).toString();
+        const successUrl = new URL('/checkout/success?session_id={CHECKOUT_SESSION_ID}', origin).toString();
         // When priceId present, assume pricing flow → cancel to marketing pricing section
         const cancelUrl = new URL('/#pricing', origin).toString();
+        const forwardedFor = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+        const ip = forwardedFor.split(',')[0]?.trim() || undefined;
+        const fbp = req.cookies.get('_fbp')?.value;
+        const fbc = req.cookies.get('_fbc')?.value;
+        const userAgent = req.headers.get('user-agent') || undefined;
         const result = await startCheckoutService(supabase, {
           userId: user.id,
           priceId,
           mode: 'subscription',
           successUrl,
           cancelUrl,
+          metadata: {
+            fbp,
+            fbc,
+            ua: userAgent,
+            ip,
+          },
         });
         return NextResponse.redirect(result.url);
       }

@@ -281,6 +281,8 @@ POST /api/v1/stripe/create-checkout
 
 POST /api/v1/stripe/create-portal
 
+GET /api/v1/stripe/session?session_id= — Auth required. Returns a sanitized summary of the Checkout Session (amount, currency, planType, eventId). Used by `/checkout/success` to fire the browser Purchase event with a dedupe `eventID`.
+
 Stripe webhook remains under /api/v1/webhooks/stripe (already bridged at /api/webhook/stripe)
 
 7) Webhooks
@@ -316,7 +318,7 @@ Behavior:
 Stripe delivers events at-least-once. The app persists a record per event in `public.webhook_events` with a unique `(provider, event_id)` constraint. The webhook handler inserts the event before processing and early-exits on duplicates. This guarantees replay-safety across retries or multiple instances.
 
 7.2 Stripe
-Existing webhook continues to manage plan state (customer ids, plan mapping). No changes needed here.
+Existing webhook continues to manage plan state (customer ids, plan mapping). In addition, on `checkout.session.completed` the webhook now publishes a Meta Conversions API `Purchase` event (matches the browser event via shared `event_id`). On `invoice.payment_succeeded` it emits a renewal `Purchase` with a new id (skips the initial invoice via `billing_reason`). Events include hashed email and any captured `_fbp`/`_fbc` values from the Checkout session metadata.
 
 7.3 Admin endpoints (temporary exception)
 Admin endpoints under /api/v1/admin/** are server-only, allowlist-gated via ADMIN_EMAILS, and may use the service-role client to write to DB/storage. Keys are never exposed to clients. Remove these endpoints when an alternative admin workflow is established.

@@ -30,6 +30,13 @@ STRIPE_PUBLIC_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=                 # from Stripe CLI or dashboard webhook
 
+# --- Meta Pixel / Conversions API ---
+NEXT_PUBLIC_FB_PIXEL_ID=
+FB_PIXEL_ID=                           # server-side CAPI uses this (usually matches NEXT_PUBLIC)
+META_CAPI_ACCESS_TOKEN=
+# Optional for test stream validation in Meta Events Manager
+META_TEST_EVENT_CODE=
+
 # --- Replicate (required for generation) ---
 REPLICATE_API_TOKEN=                   # Personal token
 # Optional: override model (we default in runtime config)
@@ -119,7 +126,7 @@ See loading, then 1–2 images appear.
 
 Save one to My Favorites → verify in Collections.
 
-8.2 Quota & in‑flight
+8.2 Quota & in-flight
 Temporarily set a plan limit in libs/app-config/runtime.ts to something tiny (e.g., monthlyGenerations: 1), restart, and:
 
 Run one successful generation.
@@ -127,6 +134,16 @@ Run one successful generation.
 Try again → expect a friendly quota message.
 
 Click Generate twice quickly → second attempt blocked with toast.
+
+8.3 Meta tracking sanity
+
+- Meta Events Manager → **Test Events** (optional: add META_TEST_EVENT_CODE to env) → run a Stripe Checkout in test mode.
+- On `/checkout/success` you should see a pixel `Purchase` with value + AUD and the event ID returned from `/api/v1/stripe/session`.
+- Stripe webhook (`checkout.session.completed`) should log success and Meta should keep a matching server `Purchase` (same `event_id`), while renewals come from `invoice.payment_succeeded` with `inv_*` IDs.
+- Stripe CLI quick check:
+  - `stripe trigger checkout.session.completed`
+  - `stripe trigger invoice.payment_succeeded`
+  Review webhook logs + Meta Test Events to confirm browser/server dedup (one kept, one marked "deduplicated").
 
 9) Quality gates (fast)
 bash

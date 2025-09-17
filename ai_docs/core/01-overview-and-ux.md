@@ -14,7 +14,8 @@ Primary Users & Use Cases
 - Homeowners/renters exploring interior styles before buying/renovating; agents/landlords staging listings; design‑curious users creating moodboards. Success means fast, believable visuals with minimal setup and clear presets.
 
 End‑to‑End Flow (Happy Path)
-- User signs in → navigates to Create → selects a mode and presets (Room Type, Style), provides inputs (images or prompt), clicks Generate. API checks credits and enforces the “one in‑flight job” rule → uploads inputs (if any) → calls Replicate (Google nano‑banana) with a webhook back to our app. UI shows progress (polls job status). Webhook completes → image stored to public bucket and linked to a Render → UI shows result → user can Save to “My Favorites” or a Collection, and Download.
+- User signs in → navigates to Create → selects a mode and presets (Room Type, Style), provides inputs (images or prompt), clicks Generate. API checks credits and enforces the “one in-flight job” rule → uploads inputs (if any) → calls Replicate (Google nano-banana) with a webhook back to our app. UI shows progress (polls job status). Webhook completes → image stored to public bucket and linked to a Render → UI shows result → user can Save to “My Favorites” or a Collection, and Download.
+- Billing success: Stripe Checkout redirects to `/checkout/success?session_id=…`. That page fetches `/api/v1/stripe/session` for the sanitized summary, fires the Meta Pixel `Purchase` with value/currency/eventID, thanks the user, and points them back to the dashboard (settings alert still appears via `?success=true`).
 
 Navigation Map (Dashboard)
 - Create (primary at /dashboard): generation workspace for the four modes.

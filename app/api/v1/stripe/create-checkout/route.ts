@@ -1,3 +1,4 @@
+import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { withMethods } from "@/libs/api-utils/methods";
 import { ok, fail } from "@/libs/api-utils/responses";
@@ -37,10 +38,19 @@ export const POST = withMethods(['POST'], withRequestContext(async (req: Request
     // Compute URLs server-side; ignore client-provided URLs.
     const baseUrl = getApplicationUrl(req as any);
     const referer = (req.headers.get('referer') || '');
-    const successUrl = new URL('/dashboard/settings?success=true', baseUrl).toString();
+    const successUrl = new URL('/checkout/success?session_id={CHECKOUT_SESSION_ID}', baseUrl).toString();
     // If the request originates from marketing/pricing, send cancel back to pricing; otherwise dashboard
     const cancelPath = referer.includes('/#pricing') ? '/#pricing' : '/dashboard';
     const cancelUrl = new URL(cancelPath, baseUrl).toString();
+
+    // Capture Meta tracking identifiers for server-side CAPI calls
+    const cookieStore = cookies();
+    const headerStore = headers();
+    const fbp = cookieStore.get('_fbp')?.value;
+    const fbc = cookieStore.get('_fbc')?.value;
+    const userAgent = headerStore.get('user-agent') || undefined;
+    const forwardedFor = headerStore.get('x-forwarded-for') || headerStore.get('x-real-ip') || '';
+    const ip = forwardedFor.split(',')[0]?.trim() || undefined;
 
     try {
       const result = await startCheckoutService(supabase, {
@@ -49,6 +59,12 @@ export const POST = withMethods(['POST'], withRequestContext(async (req: Request
         mode: 'subscription',
         successUrl,
         cancelUrl,
+        metadata: {
+          fbp,
+          fbc,
+          ua: userAgent,
+          ip,
+        },
       });
       ctx?.logger?.info?.('billing.checkout.started', { userId: user.id, priceId, mode: 'subscription' })
       return ok(result);

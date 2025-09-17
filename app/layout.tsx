@@ -7,6 +7,7 @@ import { Open_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import MetaPixel from "./components/MetaPixel";
 
 // Typography is driven via CSS tokens in globals.css (--font-sans, etc.).
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning className={openSans.className}>
 			<body className="font-sans">
+				<MetaPixel />
 				{/* ClientLayout contains the client wrappers (theme, toasts, loading bar) */}
 				<ClientLayout>{children}</ClientLayout>
 				<Analytics />

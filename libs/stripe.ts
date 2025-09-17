@@ -13,6 +13,7 @@ interface CreateCheckoutParams {
     customerId?: string;
     email?: string;
   };
+  metadata?: Record<string, string | undefined>;
 }
 
 interface CreateCustomerPortalParams {
@@ -29,6 +30,7 @@ export const createCheckout = async ({
   cancelUrl,
   priceId,
   couponId,
+  metadata: rawMetadata,
 }: CreateCheckoutParams): Promise<string> => {
   try {
     const secret = env.server.STRIPE_SECRET_KEY;
@@ -62,6 +64,11 @@ export const createCheckout = async ({
       extraParams.tax_id_collection = { enabled: true };
     }
 
+    const metadata = Object.entries(rawMetadata || {}).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (value) acc[key] = value;
+      return acc;
+    }, {});
+
     const stripeSession = await stripe.checkout.sessions.create({
       mode,
       allow_promotion_codes: true,
@@ -81,6 +88,7 @@ export const createCheckout = async ({
         : [],
       success_url: successUrl,
       cancel_url: cancelUrl,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
       ...extraParams,
     });
 
@@ -124,7 +132,11 @@ export const findCheckoutSession = async (sessionId: string) => {
     });
 
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items"],
+      expand: [
+        "line_items.data.price",
+        "subscription",
+        "subscription.items.data.price",
+      ],
     });
 
     return session;

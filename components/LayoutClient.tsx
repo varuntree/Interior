@@ -5,10 +5,13 @@ import { Toaster } from "sonner";
 import NextTopLoader from "nextjs-toploader";
 import config from "@/config";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { useFbPageView } from "@/app/components/useFbPageView";
 
 // This component wraps the app with client-side providers and components
 // It includes toast notifications, loading bar, and theme provider
 const ClientLayout = ({ children }: { children: ReactNode }) => {
+  useFbPageView();
+
   return (
     <ThemeProvider
       attribute="class"
