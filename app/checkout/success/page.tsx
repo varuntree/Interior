@@ -23,12 +23,22 @@ function CheckoutSuccessContent() {
   const [summary, setSummary] = useState<SessionResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const purchaseSentRef = useRef(false)
+  const hasProcessedRef = useRef(false)
 
   useEffect(() => {
     const sessionId = search.get('session_id')
+
     if (!sessionId) {
+      // If we've already processed a session successfully, keep the success state.
+      if (hasProcessedRef.current || summary) {
+        return
+      }
       setError('Missing checkout session. Please contact support if this continues.')
       setStatus('error')
+      return
+    }
+
+    if (hasProcessedRef.current) {
       return
     }
 
@@ -46,6 +56,7 @@ function CheckoutSuccessContent() {
         const data = json.data as SessionResponse
         setSummary(data)
         setStatus('complete')
+        hasProcessedRef.current = true
         if (typeof window !== 'undefined' && !purchaseSentRef.current) {
           const fbq = (window as any).fbq
           if (typeof fbq === 'function') {
@@ -69,10 +80,10 @@ function CheckoutSuccessContent() {
       })
 
     return () => controller.abort()
-  }, [search])
+  }, [search, summary])
 
   useEffect(() => {
-    if (status === 'complete') {
+    if (status === 'complete' && hasProcessedRef.current) {
       const url = new URL(window.location.href)
       url.searchParams.delete('session_id')
       window.history.replaceState({}, '', url.toString())
@@ -100,8 +111,8 @@ function CheckoutSuccessContent() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="secondary" onClick={() => router.replace('/pricing')}>
-              Back to pricing
+            <Button variant="secondary" onClick={() => router.replace('/dashboard')}>
+              Go to dashboard
             </Button>
             {config.resend.supportEmail ? (
               <Button asChild>
