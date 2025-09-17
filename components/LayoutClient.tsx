@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import { Toaster } from "sonner";
 import NextTopLoader from "nextjs-toploader";
 import config from "@/config";
@@ -9,9 +9,12 @@ import { useFbPageView } from "@/app/components/useFbPageView";
 
 // This component wraps the app with client-side providers and components
 // It includes toast notifications, loading bar, and theme provider
-const ClientLayout = ({ children }: { children: ReactNode }) => {
+const FbPageViewTracker = (): null => {
   useFbPageView();
+  return null;
+};
 
+const ClientLayout = ({ children }: { children: ReactNode }) => {
   return (
     <ThemeProvider
       attribute="class"
@@ -19,6 +22,9 @@ const ClientLayout = ({ children }: { children: ReactNode }) => {
       enableSystem
       disableTransitionOnChange
     >
+      <Suspense fallback={null}>
+        <FbPageViewTracker />
+      </Suspense>
       {/* Loading bar for page transitions */}
       <NextTopLoader
         color={config.colors.main}

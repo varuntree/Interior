@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ interface SessionResponse {
 
 type Status = 'idle' | 'loading' | 'complete' | 'error'
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const router = useRouter()
   const search = useSearchParams()
   const [status, setStatus] = useState<Status>('idle')
@@ -46,8 +46,10 @@ export default function CheckoutSuccessPage() {
         const data = json.data as SessionResponse
         setSummary(data)
         setStatus('complete')
-        if (typeof window !== 'undefined' && (window as any).fbq && !purchaseSentRef.current) {
-          (window as any).fbq(
+        if (typeof window !== 'undefined' && !purchaseSentRef.current) {
+          const fbq = (window as any).fbq
+          if (typeof fbq === 'function') {
+            fbq(
             'track',
             'Purchase',
             {
@@ -58,6 +60,7 @@ export default function CheckoutSuccessPage() {
             { eventID: data.eventId }
           )
           purchaseSentRef.current = true
+          }
         }
       })
       .catch((err: Error) => {
@@ -69,7 +72,6 @@ export default function CheckoutSuccessPage() {
   }, [search])
 
   useEffect(() => {
-    // Remove session_id from the URL once we have processed it
     if (status === 'complete') {
       const url = new URL(window.location.href)
       url.searchParams.delete('session_id')
@@ -160,5 +162,13 @@ export default function CheckoutSuccessPage() {
         {renderContent()}
       </div>
     </main>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[70vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }
