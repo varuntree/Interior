@@ -34,10 +34,16 @@ const slides = [
   },
 ];
 
+const HERO_AUTOPLAY_DELAY = 4000;
+
 export function Hero() {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
   const { authed: isAuthed } = useAuthStatus();
+  const autoplayPlugin = React.useMemo(
+    () => Autoplay({ delay: HERO_AUTOPLAY_DELAY, stopOnInteraction: true }),
+    [],
+  );
 
   React.useEffect(() => {
     if (!api) return;
@@ -105,7 +111,7 @@ export function Hero() {
           <Carousel
             className="max-w-5xl"
             opts={{ loop: true, align: "start", containScroll: "trimSnaps" }}
-            plugins={[Autoplay({ delay: 2000, stopOnInteraction: true })]}
+            plugins={[autoplayPlugin]}
             setApi={setApi}
           >
             <CarouselContent>
@@ -124,7 +130,7 @@ export function Hero() {
                         className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                         sizes="(max-width: 640px) 92vw, (max-width: 1024px) 60vw, 520px"
                         priority={index === 0}
-                    />
+                      />
                     </div>
                     <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-black/5" aria-hidden />
                   </div>
@@ -151,7 +157,10 @@ export function Hero() {
                   {current === i && (
                     <span
                       className="absolute inset-y-0 left-0 bg-primary"
-                      style={{ animation: "heroProgress 2s linear infinite", width: 0 }}
+                      style={{
+                        animation: `heroProgress ${HERO_AUTOPLAY_DELAY}ms linear infinite`,
+                        width: 0,
+                      }}
                     />
                   )}
                 </div>
