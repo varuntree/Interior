@@ -92,33 +92,34 @@ export function GenerationDrawer({
       <SheetContent
         side="bottom"
         hideClose
-        className="relative h-[86vh] w-full rounded-t-3xl border-none bg-background/85 px-0 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-6 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/70"
+        className="h-[86vh] w-full rounded-t-3xl border-none bg-background/85 px-0 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-6 shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-background/70"
       >
-        {fallbackBackdrop && (
-          <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <img
-              src={fallbackBackdrop}
-              alt="Generation backdrop"
-              className="h-full w-full scale-110 object-cover blur-2xl opacity-60"
-            />
-            <div className="absolute inset-0 bg-background/70" />
-          </div>
-        )}
-
-        <div className="absolute left-1/2 top-2 h-1 w-12 -translate-x-1/2 rounded-full bg-foreground/20" />
-        <Button
-          variant="secondary"
-          size="icon"
-          onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 z-10 h-9 w-9 rounded-full bg-background/80 backdrop-blur"
-          aria-label="Close generation drawer"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-
         <div className="relative flex h-full flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-5 pb-6">
-            <section className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm backdrop-blur">
+          {fallbackBackdrop && (
+            <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+              <img
+                src={fallbackBackdrop}
+                alt="Generation backdrop"
+                className="h-full w-full scale-110 object-cover blur-2xl opacity-60"
+              />
+              <div className="absolute inset-0 bg-background/70" />
+            </div>
+          )}
+
+          <div className="absolute left-1/2 top-2 z-10 h-1 w-12 -translate-x-1/2 rounded-full bg-foreground/20" />
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+            className="absolute right-4 top-4 z-10 h-9 w-9 rounded-full bg-background/80 backdrop-blur"
+            aria-label="Close generation drawer"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+
+          <div className="flex h-full flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-5 pb-6">
+              <section className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm backdrop-blur">
               <div className={cn('grid gap-3', showReference && referenceImage ? 'grid-cols-2' : 'grid-cols-1')}>
                 <DrawerImagePreview
                   label={showReference && referenceImage ? 'Base room' : 'Input'}
@@ -216,6 +217,7 @@ export function GenerationDrawer({
                 </div>
               )}
             </section>
+          </div>
           </div>
         </div>
       </SheetContent>
