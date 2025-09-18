@@ -110,7 +110,8 @@ module.exports = {
   			popup: 'popup 0.25s ease-in-out',
   			shimmer: 'shimmer 3s ease-out infinite alternate',
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'step-glow': 'step-glow 1s linear infinite'
   		},
   		keyframes: {
   			opacity: {
@@ -171,6 +172,14 @@ module.exports = {
   				},
   				'100%': {
   					backgroundPosition: '0% 50%'
+  				}
+  			},
+  			'step-glow': {
+  				'0%': {
+  					backgroundPosition: '0% 50%'
+  				},
+  				'100%': {
+  					backgroundPosition: '100% 50%'
   				}
   			},
   			'accordion-down': {

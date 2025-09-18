@@ -15,7 +15,9 @@ import { appendDownloadParam, sanitizeFilename, triggerDownload } from "@/libs/u
 // Results grid is intentionally not used on this screen anymore.
 // The right preview panel now handles display of results and loading overlay.
 import { GenerationOverlay } from "./GenerationOverlay";
+import { GenerationDrawer } from "./GenerationDrawer";
 import { toastSuccess, toastError } from "@/components/shared/Toast";
+import useIsMobile from "@/hooks/use-mobile";
 
 export function GenerationWorkspaceFinal() {
   const {
@@ -46,12 +48,53 @@ export function GenerationWorkspaceFinal() {
   const showInput2 = state.mode === "compose";
   const [hasResult, setHasResult] = useState(false);
   const basePreviewUrl = useObjectUrl(state.input1File);
+  const referencePreviewUrl = useObjectUrl(state.input2File);
+  const isMobile = useIsMobile();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerDismissed, setDrawerDismissed] = useState(false);
+  const hasGeneratedResults = Boolean(state.results && state.results.length > 0);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setDrawerOpen(false);
+      setDrawerDismissed(false);
+      return;
+    }
+
+    if (state.isGenerating) {
+      setDrawerDismissed(false);
+      setDrawerOpen(true);
+      return;
+    }
+
+    if (hasGeneratedResults && !drawerDismissed) {
+      setDrawerOpen(true);
+    } else if (!hasGeneratedResults) {
+      setDrawerOpen(false);
+    }
+  }, [isMobile, state.isGenerating, hasGeneratedResults, drawerDismissed]);
 
   function onGenerate() {
     if (!canSubmit) return;
     submitGeneration();
     setHasResult(true);
+    setDrawerDismissed(false);
+    if (isMobile) {
+      setDrawerOpen(true);
+    }
   }
+
+  const handleDrawerOpenChange = (next: boolean) => {
+    if (!next) {
+      if (state.isGenerating) {
+        return;
+      }
+      setDrawerDismissed(true);
+    } else {
+      setDrawerDismissed(false);
+    }
+    setDrawerOpen(next);
+  };
 
   return (
     <div className="relative">
@@ -144,6 +187,7 @@ export function GenerationWorkspaceFinal() {
             status={state.generationStatus}
             mode={state.mode}
             baseUrl={basePreviewUrl}
+            showOverlay={!isMobile}
           />
         </section>
 
@@ -228,7 +272,23 @@ export function GenerationWorkspaceFinal() {
         </div>
       </div>
 
-      {/* Loader is now overlaid inside the right ResultPreviewPanel */}
+      {isMobile && (
+        <GenerationDrawer
+          open={drawerOpen}
+          onOpenChange={handleDrawerOpenChange}
+          baseImage={basePreviewUrl}
+          referenceImage={referencePreviewUrl}
+          showReference={showInput2}
+          mode={state.mode}
+          roomType={state.roomType}
+          style={state.style}
+          prompt={state.prompt}
+          status={state.generationStatus}
+          isGenerating={state.isGenerating}
+          results={state.results}
+          error={state.error}
+        />
+      )}
     </div>
   );
 }
@@ -321,6 +381,7 @@ function ResultPreviewPanel({
   status,
   mode,
   baseUrl,
+  showOverlay = true,
 }: {
   results: { url: string; renderId?: string; index?: number }[] | null;
   hasResult: boolean;
@@ -328,6 +389,7 @@ function ResultPreviewPanel({
   status: 'idle' | 'uploading' | 'creating' | 'processing' | 'succeeded' | 'failed';
   mode: string;
   baseUrl: string | null;
+  showOverlay?: boolean;
 }) {
   const cover = results && results.length > 0 ? results[0]?.url : null;
   const downloadTarget = results && results.length > 0 ? results[0] : null;
@@ -402,7 +464,7 @@ function ResultPreviewPanel({
       )}
 
       {/* Overlay loader during generation */}
-      {isGenerating && (
+      {isGenerating && showOverlay && (
         <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] supports-[backdrop-filter]:bg-background/35">
           <GenerationOverlay status={status} mode={mode} />
         </div>

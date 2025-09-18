@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Menu, X } from "lucide-react";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function MarketingNavbar() {
   const pathname = usePathname();
@@ -47,6 +48,9 @@ export function MarketingNavbar() {
               </NavigationMenuList>
             </div>
             <div className="flex items-center gap-2">
+              <div className="hidden lg:block">
+                <ThemeToggle />
+              </div>
               {pathname !== "/signin" && (
                 <Button asChild className="hidden md:block">
                   <Link href={authed ? "/dashboard" : "/signin"}>
@@ -84,6 +88,7 @@ export function MarketingNavbar() {
                 </Button>
               </div>
               <div className="mx-8 mt-auto flex flex-col items-center gap-8 py-16">
+                <ThemeToggle />
                 {pathname !== "/signin" && (
                   <Button asChild>
                     <Link href={authed ? "/dashboard" : "/signin"}>

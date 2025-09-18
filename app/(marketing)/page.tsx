@@ -5,6 +5,8 @@ import { CTASection } from "@/components/marketing/CTASection";
 import { FeatureRedesign } from "@/components/marketing/FeatureRedesign";
 import { FeatureTransfer } from "@/components/marketing/FeatureTransfer";
 import { FeatureStaging } from "@/components/marketing/FeatureStaging";
+import { FeatureAiBentoV4 } from "@/components/marketing/FeatureAiBentoV4";
+import { FeatureTransformSlope } from "@/components/marketing/FeatureTransformSlope";
 import PricingSection from "@/components/marketing/PricingSection";
 import { getSEOTags } from "@/libs/seo";
 import config from "@/config";
@@ -15,6 +17,8 @@ export default function Page() {
     <>
       <main>
         <Hero />
+        <FeatureAiBentoV4 />
+        <FeatureTransformSlope />
         <StylesStrip />
         <FeatureRedesign />
         <FeatureTransfer />

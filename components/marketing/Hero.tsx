@@ -60,19 +60,14 @@ export function Hero() {
       />
       <div className="container relative mx-auto flex max-w-7xl flex-col items-center justify-center gap-3 px-4 text-center md:px-6 lg:px-8">
         <h1 className="max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-foreground md:px-9 md:text-6xl">
-          <span className="block md:inline">
-            Fire your interior
-            {" "}
-            <span className="relative inline-block align-baseline">
-              <span className="relative z-10">designer</span>
-              {/* Painted highlight for key word (warm → primary) */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute left-[-0.2em] right-[-0.2em] bottom-[0.02em] h-[0.66em] -skew-x-2 rounded-[0.55em] bg-gradient-to-r from-chart-3/80 via-primary/80 to-primary/60"
-              />
-            </span>
+          <span className="block md:inline">Interior design</span>{" "}
+          <span className="relative inline-block align-baseline">
+            <span className="relative z-10">with AI</span>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-[-0.2em] right-[-0.2em] bottom-[0.02em] h-[0.66em] -skew-x-2 rounded-[0.55em] bg-gradient-to-r from-chart-3/80 via-primary/80 to-primary/60"
+            />
           </span>
-          {" "}—get <span className="font-serif italic">interior design</span> that <span className="font-serif italic">feels like you</span>.
         </h1>
         <p className="mt-3 max-w-3xl text-xl font-medium leading-relaxed text-foreground/90 md:text-2xl">
           Redesign your
@@ -86,7 +81,7 @@ export function Hero() {
             />
           </span>
           {" "}
-          in less than 30 seconds.
+          in less than 30 seconds. Get interior design that feels like you.
         </p>
 
         {/* Primary calls-to-action */}

@@ -28,7 +28,7 @@ export function AppImage({
     priority,
     onError: onErrorProp,
     onLoad: onLoadProp,
-    onLoadingComplete,
+    onLoadingComplete: onLoadingCompleteProp,
     src,
     ...imgRest
   } = rest as {
@@ -38,11 +38,6 @@ export function AppImage({
     onLoadingComplete?: ImageProps["onLoadingComplete"];
     src: ImageProps["src"];
   } & Record<string, any>;
-
-  const handleLoadComplete = (img: HTMLImageElement) => {
-    setLoaded(true);
-    onLoadingComplete?.(img);
-  };
 
   const handleError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
     setErrored(true);
@@ -62,8 +57,12 @@ export function AppImage({
     onLoad: (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
       setLoaded(true);
       onLoadProp?.(event);
+      const target = event.currentTarget;
+      if (target?.complete) {
+        // Backwards compatibility for consumers relying on onLoadingComplete.
+        onLoadingCompleteProp?.(target);
+      }
     },
-    onLoadingComplete: handleLoadComplete,
     onError: handleError,
     sizes,
     src,
